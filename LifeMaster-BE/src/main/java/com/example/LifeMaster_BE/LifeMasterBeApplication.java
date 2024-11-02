@@ -18,7 +18,7 @@ public class LifeMasterBeApplication {
 
 	@GetMapping("/hello")
 	public ResponseEntity<String> testApi() {
-		String result = "api 정상 실행";
+		String result = "APP 정상 실행";
 		return new ResponseEntity<>(result, HttpStatus.OK);
 	}
 }
