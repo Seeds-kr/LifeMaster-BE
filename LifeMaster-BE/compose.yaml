@@ -1,0 +1,29 @@
+services:
+
+  mysql:
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: root_1234  # root 사용자 비밀번호
+      MYSQL_USER: user                  # 새로 생성할 일반 사용자
+      MYSQL_PASSWORD: 1234              # 일반 사용자의 비밀번호
+      MYSQL_DATABASE: LifeMaster_db      # 생성할 데이터베이스
+    ports:
+      - "3307:3306"  # 호스트의 3307 포트를 컨테이너의 3306 포트에 매핑
+    volumes:
+      - mysql_data:/var/lib/mysql       # 데이터 영속성을 위한 볼륨
+
+  app:
+    image: lifemaster_app               # 빌드된 Spring Boot 애플리케이션 이미지 이름 (소문자)
+    build:
+      context: .                        # Dockerfile이 있는 디렉터리 경로
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/LifeMaster_db  # MySQL 서비스 이름 사용
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: 1234
+    ports:
+      - "8081:8080"                     # Spring Boot의 8080 포트를 호스트에 매핑
+    depends_on:
+      - mysql                           # mysql 서비스가 준비된 후 app 시작
+
+volumes:
+  mysql_data:
