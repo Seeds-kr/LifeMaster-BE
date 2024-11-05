@@ -3,8 +3,8 @@ services:
   mysql:
     image: mysql:latest
     environment:
-      MYSQL_ROOT_PASSWORD: root_1234  # root 사용자 비밀번호
-      MYSQL_USER: user                  # 새로 생성할 일반 사용자
+      MYSQL_ROOT_PASSWORD: 1234  # root 사용자 비밀번호
+      MYSQL_USER: user                # 새로 생성할 일반 사용자
       MYSQL_PASSWORD: 1234              # 일반 사용자의 비밀번호
       MYSQL_DATABASE: LifeMaster_db      # 생성할 데이터베이스
     ports:
