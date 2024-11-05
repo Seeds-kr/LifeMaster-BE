@@ -10,5 +10,9 @@
         <module name="LifeMaster-BE.LifeMaster-BE.main" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="LifeMaster-BE.LifeMaster-BE.main~1" target="21" />
+      <module name="LifeMaster-BE.LifeMaster-BE.test~1" target="21" />
+    </bytecodeTargetLevel>
   </component>
 </project>
