@@ -1,4 +1,4 @@
-package com.example.LifeMaster_BE.SelfDevelop.note;
+package com.example.LifeMaster_BE.SelfDevelop.note.thank;
 
 import jakarta.persistence.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -8,16 +8,23 @@ import java.time.LocalDateTime;
 
 @Entity
 @EntityListeners(AuditingEntityListener.class) // Auditing 설정
-public class Diary {
+public class ThankEntity {
 
     @Id
     @GeneratedValue
     private Long id;
 
-    private LocalDateTime diaryDate;
+//    @CreatedDate
+    private LocalDateTime thankDate;
 
-    @Lob
-    private String diaryContent;
+    @CreatedDate
+    private LocalDateTime createdAt;
+
+    private String thankOne;
+    private String thankTwo;
+    private String thankThree;
+    private String thankFour;
+    private String thankFive;
 
     // 추후에 User 엔티티가 추가된다면
     /*
