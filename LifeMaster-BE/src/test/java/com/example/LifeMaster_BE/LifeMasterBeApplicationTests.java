@@ -36,6 +36,7 @@ class TodoServiceTest {
 
 	private TodoEntity todo;
 
+	//테스트 셋업
 	@BeforeEach
 	public void setUp() {
 		MockitoAnnotations.openMocks(this);
@@ -43,8 +44,10 @@ class TodoServiceTest {
 		todo.setId(1L);
 		todo.setTitle("Test Todo");
 		todo.setDescription("This is a test todo.");
+		todo.setDate("20240101");
 	}
 
+	//생성 테스트
 	@Test
 	public void findAll_ShouldReturnListOfTodos() {
 		List<TodoEntity> todos = new ArrayList<>();
@@ -56,8 +59,10 @@ class TodoServiceTest {
 
 		assertEquals(1, result.size());
 		assertEquals("Test Todo", result.get(0).getTitle());
+		assertEquals("20240101",result.get(0).getDate());
 	}
 
+	//생성 테스트2
 	@Test
 	public void save_ShouldReturnSavedTodo() {
 		when(todoRepository.save(any(TodoEntity.class))).thenReturn(todo);
@@ -68,6 +73,7 @@ class TodoServiceTest {
 		assertEquals("Test Todo", result.getTitle());
 	}
 
+	//조회 테스트
 	@Test
 	public void findById_ShouldReturnTodo_WhenExists() {
 		when(todoRepository.findById(anyLong())).thenReturn(Optional.of(todo));
@@ -78,6 +84,7 @@ class TodoServiceTest {
 		assertEquals("Test Todo", result.get().getTitle());
 	}
 
+	//조회 테스트2
 	@Test
 	public void findById_ShouldReturnEmpty_WhenNotExists() {
 		when(todoRepository.findById(anyLong())).thenReturn(Optional.empty());
@@ -87,6 +94,7 @@ class TodoServiceTest {
 		assertFalse(result.isPresent());
 	}
 
+	//삭제 테스트
 	@Test
 	public void deleteById_ShouldReturnTrue_WhenExists() {
 		when(todoRepository.existsById(anyLong())).thenReturn(true);
@@ -97,6 +105,7 @@ class TodoServiceTest {
 		verify(todoRepository, times(1)).deleteById(1L);
 	}
 
+	//삭제 테스트2
 	@Test
 	public void deleteById_ShouldReturnFalse_WhenNotExists() {
 		when(todoRepository.existsById(anyLong())).thenReturn(false);
@@ -107,6 +116,7 @@ class TodoServiceTest {
 		verify(todoRepository, never()).deleteById(anyLong());
 	}
 
+	//업데이트 테스트
 	@Test
 	public void update_ShouldReturnUpdatedTodo_WhenExists() {
 		when(todoRepository.existsById(anyLong())).thenReturn(true);
@@ -118,6 +128,7 @@ class TodoServiceTest {
 		assertEquals("Test Todo", result.get().getTitle());
 	}
 
+	//업데이트 테스트2
 	@Test
 	public void update_ShouldReturnEmpty_WhenNotExists() {
 		when(todoRepository.existsById(anyLong())).thenReturn(false);

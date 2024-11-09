@@ -12,7 +12,7 @@ public class TodoEntity {
     private Long id;
 
     @Nullable
-    private Long date;
+    private String date;
     private String title;
     @Nullable
     private String description;
@@ -23,7 +23,7 @@ public class TodoEntity {
     }
 
     // Getter와 Setter
-    public Long getDate() {
+    public String getDate() {
         return date;
     }
 
@@ -51,7 +51,7 @@ public class TodoEntity {
         this.description = description;
     }
 
-    public void setDate(Long date){
+    public void setDate(String date){
         this.date = date;
     }
 
