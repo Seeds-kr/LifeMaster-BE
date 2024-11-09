@@ -18,7 +18,7 @@ public class TodoService {
         return todoRepository.findAll();
     }
 
-    // 새로운 Todo 엔티티를 저장합니다.
+    // 새로운 Todo 엔티티를 생성합니다.
     public TodoEntity save(TodoEntity todo) {
         return todoRepository.save(todo);
     }

@@ -1,4 +1,5 @@
 package com.example.LifeMaster_BE.FunctionManager.ToDoList;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -9,7 +10,11 @@ public class TodoEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Nullable
+    private Long date;
     private String title;
+    @Nullable
     private String description;
     private boolean completed;
 
@@ -18,6 +23,10 @@ public class TodoEntity {
     }
 
     // Getter와 Setter
+    public Long getDate() {
+        return date;
+    }
+
     public Long getId() {
         return id;
     }
@@ -40,6 +49,10 @@ public class TodoEntity {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public void setDate(Long date){
+        this.date = date;
     }
 
     public boolean isCompleted() {
