@@ -21,7 +21,7 @@ public class DiaryService {
         DiaryEntity diary = diaryRepository.findById(diaryId)
                 .orElseThrow(() -> new RuntimeException("Diary not found"));
 
-        diary.setDiaryContent(diary.getDiaryContent());
+        diary.setDiaryContent(diaryDto.getDiaryContent());
         return diary;
     }
 
