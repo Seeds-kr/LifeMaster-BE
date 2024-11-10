@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
-@RequestMapping("/schedule/self-reflection")
+@RequestMapping("/schedule/self-reflection/diary")
 @RequiredArgsConstructor
 public class DiaryController {
 
@@ -19,13 +19,13 @@ public class DiaryController {
      * User id 처리가 필요(session or client 측에서)
      */
 
-    @PostMapping("/diary")
+    @PostMapping()
     public ResponseEntity<DiaryEntity> newDiary(@RequestBody DiaryEntity diary) {
         DiaryEntity createdDiary = diaryService.createDiary(diary);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdDiary);
     }
 
-    @PatchMapping("/diary/{diary-id}")
+    @PatchMapping("/{diary-id}")
     public ResponseEntity<DiaryEntity> editDiary(
             @RequestBody DiaryUpdateDto diaryDto,
             @PathVariable("diary-id") Long diaryId) {
@@ -34,7 +34,7 @@ public class DiaryController {
         return ResponseEntity.ok(updatedDiary);
     }
 
-    @DeleteMapping("/diary/{diary-id}")
+    @DeleteMapping("/{diary-id}")
     public ResponseEntity<Void> deleteDiary(
             @PathVariable("diary-id") Long diaryId){
         diaryService.deleteDiary(diaryId);
