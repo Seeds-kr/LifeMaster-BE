@@ -1,8 +1,5 @@
 package com.example.LifeMaster_BE.SelfDevelop.note.thank;
 
-import com.example.LifeMaster_BE.SelfDevelop.note.diary.DiaryEntity;
-import com.example.LifeMaster_BE.SelfDevelop.note.diary.DiaryRepository;
-import com.example.LifeMaster_BE.SelfDevelop.note.diary.DiaryUpdateDto;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
