@@ -19,7 +19,7 @@ public class DiaryController {
      * User id 처리가 필요(session or client 측에서)
      */
 
-    @PostMapping()
+    @PostMapping
     public ResponseEntity<DiaryEntity> newDiary(@RequestBody DiaryEntity diary) {
         DiaryEntity createdDiary = diaryService.createDiary(diary);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdDiary);
