@@ -1,5 +1,7 @@
 package com.example.LifeMaster_BE.FunctionManager.Calender;
 
+import com.example.LifeMaster_BE.FunctionManager.ToDoList.TodoEntity;
+import com.example.LifeMaster_BE.FunctionManager.ToDoList.TodoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.time.DayOfWeek;
@@ -14,6 +16,9 @@ import java.util.Objects;
 public class CalendarService {
 
     private final CalendarRepository calendarRepository;
+
+    @Autowired
+    private TodoRepository todoRepository;
 
     @Autowired
     public CalendarService(CalendarRepository calendarRepository) {
@@ -105,6 +110,11 @@ public class CalendarService {
         LocalDate today = LocalDate.now(); // 오늘 날짜 가져오기
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
         return today.format(formatter);
+    }
+
+    //특정 날짜의 ToDoList를 반환하는 메소드
+    public List<TodoEntity> getTodosForDate(String date) {
+        return todoRepository.findByDate(date);
     }
 }
 

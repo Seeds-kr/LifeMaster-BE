@@ -3,6 +3,7 @@ package com.example.LifeMaster_BE.FunctionManager.Calender;
 
 import jakarta.persistence.*;
 import java.util.List;
+import com.example.LifeMaster_BE.FunctionManager.ToDoList.TodoEntity;
 
 @Entity
 public class CalendarEntity {
@@ -16,6 +17,10 @@ public class CalendarEntity {
 
     @ElementCollection
     private List<String> events; // 이벤트 리스트
+
+    @OneToMany
+    @JoinColumn(name = "calendar_date", referencedColumnName = "date", insertable = false, updatable = false)
+    private List<TodoEntity> todos; // To-Do 리스트 (외래키 관계)
 
     // Getter와 Setter
 
