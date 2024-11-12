@@ -21,23 +21,24 @@ public class TodoController {
         return ResponseEntity.ok(todos); // 일관성을 위해 ResponseEntity 사용
     }
 
-    @PostMapping
+    @PostMapping("/create")
     public ResponseEntity<TodoEntity> createTodo(@RequestBody TodoEntity todo) {
         TodoEntity createdTodo = todoService.save(todo);
         return new ResponseEntity<>(createdTodo, HttpStatus.CREATED); // 생성 성공 상태 코드 반환
     }
 
     @GetMapping("/{id}") // 특정 Todo 항목 조회
-    public ResponseEntity<TodoEntity> getTodoById(@PathVariable Long id) {
+    public ResponseEntity<TodoEntity> getTodoById(@PathVariable("id") Long id) {
         Optional<TodoEntity> todo = todoService.findById(id);
-        return todo != null ? (ResponseEntity<TodoEntity>) ResponseEntity.ok() : ResponseEntity.notFound().build(); // 항목이 없으면 404 반환
+        return todo.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build()); // 항목이 없으면 404 반환
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<TodoEntity> updateTodo(@PathVariable Long id, @RequestBody TodoEntity todo) {
+    public ResponseEntity<TodoEntity> updateTodo(@PathVariable("id") Long id, @RequestBody TodoEntity todo) {
         Optional<TodoEntity> updatedTodo = todoService.update(id, todo);
-        return updatedTodo != null ? (ResponseEntity<TodoEntity>) ResponseEntity.ok() : ResponseEntity.notFound().build(); // 업데이트 실패 시 404 반환
+        return updatedTodo.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build()); // 업데이트 실패 시 404 반환
     }
+
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTodo(@PathVariable("id") Long id) {

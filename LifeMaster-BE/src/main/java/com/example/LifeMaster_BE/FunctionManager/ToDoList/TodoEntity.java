@@ -1,9 +1,6 @@
 package com.example.LifeMaster_BE.FunctionManager.ToDoList;
 import jakarta.annotation.Nullable;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 
 @Entity
 public class TodoEntity {
@@ -11,8 +8,9 @@ public class TodoEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Nullable
+    @Column(name = "calendar_date")
     private String date;
+
     private String title;
     @Nullable
     private String description;
