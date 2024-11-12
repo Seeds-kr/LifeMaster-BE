@@ -10,6 +10,7 @@ public class TodoEntity {
 
     @Column(name = "calendar_date")
     private String date;
+
     private String title;
     @Nullable
     private String description;

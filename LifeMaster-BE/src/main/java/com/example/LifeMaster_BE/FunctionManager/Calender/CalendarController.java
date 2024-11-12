@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/calendar")
+@RequestMapping("/schedule/calendar")
 public class CalendarController {
 
     private final CalendarService calendarService;
@@ -44,7 +44,7 @@ public class CalendarController {
 
     @PostMapping("/create")
     public ResponseEntity<CalendarEntity> createEvent(@RequestBody CalendarEntity calendarEntity) {
-        CalendarEntity entry = calendarService.createEvent(calendarEntity.getDate(),calendarEntity.getEvents());
+        CalendarEntity entry = calendarService.createCalendarEntity(calendarEntity);
         return ResponseEntity.ok(entry);
     }
 

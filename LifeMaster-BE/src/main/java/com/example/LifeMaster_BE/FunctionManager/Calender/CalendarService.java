@@ -57,6 +57,17 @@ public class CalendarService {
         return calendarRepository.save(entry);
     }
 
+    public CalendarEntity createCalendarEntity(CalendarEntity calendarEntity) {
+        CalendarEntity entry = new CalendarEntity();
+        String day = getDayOfWeek(calendarEntity.getDate());
+        entry.setDay(day);
+        //날짜가 있으면 해당 날짜로, 아니면 오늘 날짜로 할당
+        entry.setDate(Objects.requireNonNullElseGet(calendarEntity.getDate(), CalendarService::getTodayDate));
+        entry.setEvents(calendarEntity.getEvents());
+        entry.setToDoList(calendarEntity.getToDoList());
+        return calendarRepository.save(entry);
+    }
+
     // 특정 날짜에 항목 추가 또는 업데이트
     public CalendarEntity addOrUpdateEvent(String date, String event) {
         List<CalendarEntity> entries = calendarRepository.findByDate(date);
@@ -75,7 +86,13 @@ public class CalendarService {
     public boolean deleteEventByDate(String date) {
         List<CalendarEntity> entries = calendarRepository.findByDate(date);
         if (!entries.isEmpty()) {
-            calendarRepository.delete(entries.get(0));
+            CalendarEntity entry = entries.get(0);
+            calendarRepository.delete(entry);
+            List<TodoEntity> todoEntries = todoRepository.findByDate(date);
+            if (!entries.isEmpty()) {
+                TodoEntity todoEntry = todoEntries.get(0);
+                todoRepository.delete(todoEntry);
+            }
             return true;
         }
         return false;

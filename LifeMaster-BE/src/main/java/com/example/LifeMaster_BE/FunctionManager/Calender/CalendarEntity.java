@@ -11,6 +11,8 @@ public class CalendarEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+
+    @Column(unique = true)
     private String date; // 날짜
 
     private String day; // 요일
@@ -55,6 +57,14 @@ public class CalendarEntity {
 
     public void setEvents(List<String> events) {
         this.events = events;
+    }
+
+    public List<TodoEntity> getToDoList() {
+        return todos;
+    }
+
+    public void setToDoList(List<TodoEntity> todos) {
+        this.todos = todos;
     }
 }
 
