@@ -66,7 +66,7 @@ public class CalendarController {
         }
     }
 
-    // 특정 날짜의 특정 항목 삭제
+    // 특정 날짜의 특정 갓생 항목 삭제
     @DeleteMapping("/{date}/event")
     public ResponseEntity<CalendarEntity> deleteSpecificEvent(@PathVariable(name="date") String date, @RequestBody String event) {
         CalendarEntity entry = calendarService.deleteSpecificEvent(date, event);
