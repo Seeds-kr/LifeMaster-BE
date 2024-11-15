@@ -4,12 +4,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.Random;
 
 @RestController
 @RequestMapping("/time/pomodoro")
 public class PomodoroTimerController {
     @Autowired
     private PomodoroTimerService service;
+    private String currentEscapePhrase;
 
     // 모든 포모도로 타이머를 조회하는 메서드
     @GetMapping
@@ -63,5 +65,24 @@ public class PomodoroTimerController {
     public ResponseEntity<Void> deleteTimerByDate(@PathVariable(name="date") String date) {
         service.deleteAllByDate(date);
         return ResponseEntity.noContent().build();
+    }
+
+    // 비상 탈출 문장을 제공하는 메서드
+    @GetMapping("/escape/generate")
+    public String generateEscapePhrase() {
+        currentEscapePhrase = EscapePhrases.getRandomPhrase();
+        return "Type this phrase to escape: " + currentEscapePhrase;
+    }
+
+    // 사용자 입력을 확인하여 비상 탈출이 가능한지 검사하는 메서드
+    @PostMapping("/escape/verify")
+    public ResponseEntity<String> verifyEscapePhrase(@RequestBody String userInput) {
+        System.out.println(userInput);
+        if (currentEscapePhrase != null && currentEscapePhrase.equals(userInput)) {
+            currentEscapePhrase = null;  // 탈출 후 현재 문장 초기화
+            return ResponseEntity.ok("Escape successful! You are free.");
+        } else {
+            return ResponseEntity.status(403).body("Escape failed! Try again.");
+        }
     }
 }
