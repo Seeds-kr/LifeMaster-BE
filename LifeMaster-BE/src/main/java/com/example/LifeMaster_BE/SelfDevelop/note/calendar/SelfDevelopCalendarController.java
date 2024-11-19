@@ -13,9 +13,9 @@ import java.time.LocalDateTime;
 @RestController("selfDevelopCalendarController")
 @RequestMapping("/schedule/self-reflection")
 @RequiredArgsConstructor
-public class CalendarController {
+public class SelfDevelopCalendarController {
 
-    private final CalendarService calendarService;
+    private final SelfDevelopCalendarService calendarService;
 
     // ISO 8601 형식(yyyy-MM-dd 또는 yyyy-MM-dd'T'HH:mm:ss) 아닌 경우
     // @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME

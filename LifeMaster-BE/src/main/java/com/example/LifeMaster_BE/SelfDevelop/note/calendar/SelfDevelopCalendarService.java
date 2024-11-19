@@ -9,9 +9,9 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 
-@Service
+@Service("selfDevelopCalendarService")
 @RequiredArgsConstructor
-public class CalendarService {
+public class SelfDevelopCalendarService {
 
     private final DiaryRepository diaryRepository;
     private final ThankRepository thankRepository;

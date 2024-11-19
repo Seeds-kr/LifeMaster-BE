@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController("scheduleCalendarController")
-@RequestMapping("/schedule/calendar")
+@RequestMapping("/calendar")
 public class ScheduleCalendarController {
 
     private final ScheduleCalendarService calendarService;

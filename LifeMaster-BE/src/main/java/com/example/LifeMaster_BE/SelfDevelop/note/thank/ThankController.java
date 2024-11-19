@@ -29,7 +29,7 @@ public class ThankController {
         return ResponseEntity.ok(updatedThank);
     }
 
-    @PatchMapping("/{thank-id}")
+    @DeleteMapping("/{thank-id}")
     public ResponseEntity<Void> deleteThank(
             @PathVariable("thank-id") Long thankId){
         thankService.deleteDiary(thankId);
