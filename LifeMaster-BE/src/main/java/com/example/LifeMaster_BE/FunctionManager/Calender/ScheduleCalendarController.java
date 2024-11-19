@@ -1,5 +1,6 @@
 package com.example.LifeMaster_BE.FunctionManager.Calender;
 
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -18,6 +19,7 @@ public class ScheduleCalendarController {
     }
 
     // 전체 조회
+    @Operation(summary = "전체 조회", description = "캘린더 전체 리스트 조회")
     @GetMapping
     public List<ScheduleCalendarEntity> getAllEntries() {
         return calendarService.findAll();
@@ -43,7 +45,8 @@ public class ScheduleCalendarController {
     }
 
     @PostMapping("/create")
-    public ResponseEntity<ScheduleCalendarEntity> createEvent(@RequestBody ScheduleCalendarEntity calendarEntity) {
+    @Operation(summary = "캘린더 엔티티 생성", description = "캘린더 엔티티 생성, 날짜 형식 YYYYMMDD, TODO 리스트 기본 NULL")
+    public ResponseEntity<ScheduleCalendarEntity> createDay(@RequestBody ScheduleCalendarEntity calendarEntity) {
         ScheduleCalendarEntity entry = calendarService.createCalendarEntity(calendarEntity);
         return ResponseEntity.ok(entry);
     }
