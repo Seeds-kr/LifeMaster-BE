@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDateTime;
 
 @Slf4j
-@RestController
+@RestController("selfDevelopCalendarController")
 @RequestMapping("/schedule/self-reflection")
 @RequiredArgsConstructor
 public class CalendarController {

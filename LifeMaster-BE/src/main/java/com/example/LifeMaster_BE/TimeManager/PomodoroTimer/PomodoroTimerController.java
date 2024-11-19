@@ -1,9 +1,9 @@
 package com.example.LifeMaster_BE.TimeManager.PomodoroTimer;
 
+import com.example.LifeMaster_BE.FunctionManager.Calender.ScheduleCalendarService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.example.LifeMaster_BE.FunctionManager.Calender.CalendarService;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
@@ -15,7 +15,7 @@ public class PomodoroTimerController {
     private PomodoroTimerService service;
 
     @Autowired
-    private CalendarService calendarService;
+    private ScheduleCalendarService calendarService;
     private String currentEscapePhrase;
 
     // 모든 포모도로 타이머를 조회하는 메서드

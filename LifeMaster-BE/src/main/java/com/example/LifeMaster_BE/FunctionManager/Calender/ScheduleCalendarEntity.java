@@ -6,7 +6,7 @@ import java.util.List;
 import com.example.LifeMaster_BE.FunctionManager.ToDoList.TodoEntity;
 
 @Entity
-public class CalendarEntity {
+public class ScheduleCalendarEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

@@ -13,30 +13,30 @@ import java.util.List;
 import java.util.Objects;
 
 @Service
-public class CalendarService {
+public class ScheduleCalendarService {
 
-    private final CalendarRepository calendarRepository;
+    private final ScheduleCalendarRepository calendarRepository;
 
     @Autowired
     private TodoRepository todoRepository;
 
     @Autowired
-    public CalendarService(CalendarRepository calendarRepository) {
+    public ScheduleCalendarService(ScheduleCalendarRepository calendarRepository) {
         this.calendarRepository = calendarRepository;
     }
 
     // 전체 조회
-    public List<CalendarEntity> findAll() {
+    public List<ScheduleCalendarEntity> findAll() {
         return calendarRepository.findAll();
     }
 
     // 특정 날짜 조회
-    public List<CalendarEntity> findByDate(String date) {
+    public List<ScheduleCalendarEntity> findByDate(String date) {
         return calendarRepository.findByDate(date);
     }
 
     // 월별 조회 (yyyy-MM 형식의 month 값)
-    public List<CalendarEntity> findByMonth(String date) {
+    public List<ScheduleCalendarEntity> findByMonth(String date) {
         // 입력된 date의 'YYYYMMDD' 형식에서 'YYYYMM' 형식으로 변환
         if (date.length() >= 6) {
             String month = date.substring(0, 6); // 'YYYYMM'만 추출
@@ -47,33 +47,33 @@ public class CalendarService {
     }
 
     // 새 항목 추가 (생성)
-    public CalendarEntity createEvent(String date, List<String> events) {
-        CalendarEntity entry = new CalendarEntity();
+    public ScheduleCalendarEntity createEvent(String date, List<String> events) {
+        ScheduleCalendarEntity entry = new ScheduleCalendarEntity();
         String day = getDayOfWeek(date);
         entry.setDay(day);
         //날짜가 있으면 해당 날짜로, 아니면 오늘 날짜로 할당
-        entry.setDate(Objects.requireNonNullElseGet(date, CalendarService::getTodayDate));
+        entry.setDate(Objects.requireNonNullElseGet(date, ScheduleCalendarService::getTodayDate));
         entry.setEvents(events);
         return calendarRepository.save(entry);
     }
 
-    public CalendarEntity createCalendarEntity(CalendarEntity calendarEntity) {
-        CalendarEntity entry = new CalendarEntity();
+    public ScheduleCalendarEntity createCalendarEntity(ScheduleCalendarEntity calendarEntity) {
+        ScheduleCalendarEntity entry = new ScheduleCalendarEntity();
         String day = getDayOfWeek(calendarEntity.getDate());
         entry.setDay(day);
         //날짜가 있으면 해당 날짜로, 아니면 오늘 날짜로 할당
-        entry.setDate(Objects.requireNonNullElseGet(calendarEntity.getDate(), CalendarService::getTodayDate));
+        entry.setDate(Objects.requireNonNullElseGet(calendarEntity.getDate(), ScheduleCalendarService::getTodayDate));
         entry.setEvents(calendarEntity.getEvents());
         entry.setToDoList(calendarEntity.getToDoList());
         return calendarRepository.save(entry);
     }
 
     // 특정 날짜에 항목 추가 또는 업데이트
-    public CalendarEntity addOrUpdateEvent(String date, String event) {
-        List<CalendarEntity> entries = calendarRepository.findByDate(date);
-        CalendarEntity entry;
+    public ScheduleCalendarEntity addOrUpdateEvent(String date, String event) {
+        List<ScheduleCalendarEntity> entries = calendarRepository.findByDate(date);
+        ScheduleCalendarEntity entry;
         if (entries.isEmpty()) {
-            entry = new CalendarEntity();
+            entry = new ScheduleCalendarEntity();
             entry.setDate(date);
         } else {
             entry = entries.get(0);
@@ -84,9 +84,9 @@ public class CalendarService {
 
     // 날짜 전체 삭제
     public boolean deleteEventByDate(String date) {
-        List<CalendarEntity> entries = calendarRepository.findByDate(date);
+        List<ScheduleCalendarEntity> entries = calendarRepository.findByDate(date);
         if (!entries.isEmpty()) {
-            CalendarEntity entry = entries.get(0);
+            ScheduleCalendarEntity entry = entries.get(0);
             calendarRepository.delete(entry);
             List<TodoEntity> todoEntries = todoRepository.findByDate(date);
             if (!entries.isEmpty()) {
@@ -99,10 +99,10 @@ public class CalendarService {
     }
 
     // 특정 항목 삭제
-    public CalendarEntity deleteSpecificEvent(String date, String event) {
-        List<CalendarEntity> entries = calendarRepository.findByDate(date);
+    public ScheduleCalendarEntity deleteSpecificEvent(String date, String event) {
+        List<ScheduleCalendarEntity> entries = calendarRepository.findByDate(date);
         if (!entries.isEmpty()) {
-            CalendarEntity entry = entries.get(0);
+            ScheduleCalendarEntity entry = entries.get(0);
             entry.getEvents().remove(event);
             return calendarRepository.save(entry);
         }
