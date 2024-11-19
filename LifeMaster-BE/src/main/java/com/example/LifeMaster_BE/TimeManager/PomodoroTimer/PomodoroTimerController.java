@@ -3,7 +3,9 @@ package com.example.LifeMaster_BE.TimeManager.PomodoroTimer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.example.LifeMaster_BE.FunctionManager.Calender.CalendarService;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 
 @RestController
@@ -11,6 +13,9 @@ import java.util.Random;
 public class PomodoroTimerController {
     @Autowired
     private PomodoroTimerService service;
+
+    @Autowired
+    private CalendarService calendarService;
     private String currentEscapePhrase;
 
     // 모든 포모도로 타이머를 조회하는 메서드
@@ -36,6 +41,8 @@ public class PomodoroTimerController {
     // 새로운 포모도로 타이머를 생성하는 메서드
     @PostMapping("/create")
     public PomodoroTimerEntity createTimer(@RequestBody PomodoroTimerEntity timer) {
+        //캘린더에서 포모도로 타이머 항목 추가
+        calendarService.addOrUpdateEvent(timer.getDate(),"pomodoroTimer");
         return service.save(timer);
     }
 
@@ -56,6 +63,12 @@ public class PomodoroTimerController {
     // ID로 특정 포모도로 타이머를 삭제하는 메서드
     @DeleteMapping("/id/{id}")
     public ResponseEntity<Void> deleteTimerById(@PathVariable(name="id") Long id) {
+        Optional<PomodoroTimerEntity> timer = service.findById(id);
+        //캘린더에서 포모도로 타이머 항목 삭제
+        if (timer.isPresent()) {
+            String date = timer.get().getDate();
+            calendarService.deleteSpecificEvent(date,"pomodoroTimer");
+        }
         service.deleteById(id);
         return ResponseEntity.noContent().build();
     }
