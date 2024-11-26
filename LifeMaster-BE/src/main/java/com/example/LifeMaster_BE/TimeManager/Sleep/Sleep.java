@@ -35,6 +35,9 @@ public class Sleep {
     @Column(nullable = false)
     private MoodStatus sleepMood;  // 오늘의 기분 (ENUM 타입)
 
+    @Column
+    private Integer sleepAwakeCnt; // 꺤 횟수
+
     @Column(nullable = true)
     private Double sleepScore;  // 알람 점수
 
