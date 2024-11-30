@@ -2,10 +2,12 @@ package com.example.LifeMaster_BE.TimeManager.Alarm.Snooze;
 
 import com.example.LifeMaster_BE.TimeManager.Alarm.AlarmEntity;
 import jakarta.persistence.*;
+import lombok.Getter;
 
 import java.sql.Timestamp;
 
 @Entity
+@Getter
 public class SnoozeEntity {
 
     @Id
