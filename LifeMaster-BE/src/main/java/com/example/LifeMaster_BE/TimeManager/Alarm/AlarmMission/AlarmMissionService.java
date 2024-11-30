@@ -1,6 +1,5 @@
-package com.example.LifeMaster_BE.TimeManager.Alarm;
+package com.example.LifeMaster_BE.TimeManager.Alarm.AlarmMission;
 
-import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 
 import java.util.Random;
