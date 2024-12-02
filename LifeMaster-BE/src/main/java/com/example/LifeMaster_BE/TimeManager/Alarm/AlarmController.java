@@ -25,9 +25,21 @@ public class AlarmController {
         return ResponseEntity.ok(alarmById);
     }
 
-    @PostMapping("/{alarmId}/update-status")
+    @PutMapping("/{alarmId}/update-status")
     public ResponseEntity<AlarmEntity> setAlarmStatus(@PathVariable Long alarmId, @RequestBody StatusDto statusDto){
         AlarmEntity updatedAlarm = alarmService.updateBooleanField(alarmId, statusDto.getField(), statusDto.isStatus());
         return ResponseEntity.ok(updatedAlarm);
+    }
+
+    @PostMapping
+    public ResponseEntity<AlarmEntity> createAlarm(@RequestBody AlarmEntity newAlarm) {
+        AlarmEntity createdAlarm = alarmService.createAlarm(newAlarm);
+        return ResponseEntity.ok(createdAlarm);
+    }
+
+    @GetMapping("/{alarmId}/time-difference")
+    public ResponseEntity<String> getTimeDifference(@PathVariable("alarmId") Long alarmId) {
+        String timeDifference = alarmService.getTimeDifference(alarmId);
+        return ResponseEntity.ok(timeDifference);
     }
 }

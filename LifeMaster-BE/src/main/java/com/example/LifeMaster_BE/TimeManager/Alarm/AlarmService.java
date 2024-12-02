@@ -6,6 +6,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.Field;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Slf4j
@@ -40,4 +42,23 @@ public class AlarmService {
 
         return alarmRepository.save(alarm);
     }
+
+    public String getTimeDifference(Long alarmId) {
+        AlarmEntity alarm = alarmRepository.findById(alarmId)
+                .orElseThrow(() -> new EntityNotFoundException("Alarm " + alarmId + " not found"));
+
+        LocalDateTime alarmTime = alarm.getAlarmTime();
+        LocalDateTime now = LocalDateTime.now();
+
+        long days = ChronoUnit.DAYS.between(now, alarmTime);
+        long hours = ChronoUnit.HOURS.between(now, alarmTime) % 24;
+        long minutes = ChronoUnit.MINUTES.between(now, alarmTime) % 60;
+
+        return String.format("Time difference: %d days, %d hours, %d minutes", days, hours, minutes);
+    }
+
+    public AlarmEntity createAlarm(AlarmEntity newAlarm) {
+        return alarmRepository.save(newAlarm);
+    }
+
 }
