@@ -3,11 +3,13 @@ package com.example.LifeMaster_BE.TimeManager.Alarm;
 import com.example.LifeMaster_BE.TimeManager.Alarm.Snooze.SnoozeEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Getter
+@Setter // Update operations for alarmStatus
 public class AlarmEntity {
 
     @Id
