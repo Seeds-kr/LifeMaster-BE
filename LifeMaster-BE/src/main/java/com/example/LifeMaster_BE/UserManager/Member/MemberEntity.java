@@ -19,7 +19,7 @@ public class MemberEntity {
     private String password;
 
     private String nickname;
-    private String picture;
+    private String imageUrl;
 
     // enum 타입
     @Enumerated(EnumType.STRING)

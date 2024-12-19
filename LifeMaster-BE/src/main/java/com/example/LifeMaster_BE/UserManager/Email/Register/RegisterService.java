@@ -1,6 +1,7 @@
 package com.example.LifeMaster_BE.UserManager.Email.Register;
 
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
+import com.example.LifeMaster_BE.UserManager.S3Service;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +10,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+
 @Slf4j
 @Service
 @Transactional
@@ -16,15 +19,16 @@ import org.springframework.web.multipart.MultipartFile;
 public class RegisterService {
 
     private final RegisterRepository registerRepository;
+    private final S3Service s3Service;
 
-    public void registerMember(String email, String password, String passwordConfirm) {
+    public MemberEntity registerMember(String email, String password, String passwordConfirm) {
 
         if(!confirmPassword(password, passwordConfirm)){
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다");
         }
         String encodedPassword = encodePassword(password);
         MemberEntity memberEntity = new MemberEntity(email, encodedPassword);
-        registerRepository.save(memberEntity);
+        return registerRepository.save(memberEntity);
     }
 
     public void registerMemberWithNickname(String nickname, MultipartFile image){
@@ -36,7 +40,15 @@ public class RegisterService {
                 .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다"));
 
         memberEntity.setNickname(nickname);
-        // 프로필 사진 설정 기능
+        // 프로필 사진 설정
+        if(!image.isEmpty()){
+            try{
+                String fileUrl = s3Service.uploadFile(image);
+                memberEntity.setImageUrl(fileUrl);
+            } catch (IOException e) {
+                throw new RuntimeException("File upload failed", e); // 런타임 예외로 변환
+            }
+        }
     }
 
     private boolean confirmPassword(String password, String confirmPassword){
