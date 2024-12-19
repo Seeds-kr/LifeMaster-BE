@@ -5,6 +5,7 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -21,8 +22,8 @@ public class RegisterService {
         if(!confirmPassword(password, passwordConfirm)){
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다");
         }
-
-        MemberEntity memberEntity = new MemberEntity(email, password);
+        String encodedPassword = encodePassword(password);
+        MemberEntity memberEntity = new MemberEntity(email, encodedPassword);
         registerRepository.save(memberEntity);
     }
 
@@ -44,5 +45,10 @@ public class RegisterService {
 
     private boolean checkNicknameDuplicate(String nickname){
         return registerRepository.existsByNickname(nickname);
+    }
+
+    private String encodePassword(String password){
+        BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder();
+        return bCryptPasswordEncoder.encode(password);
     }
 }
