@@ -13,12 +13,15 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class RegisterController {
 
+    private final RegisterService registerService;
+
     @PostMapping("/register")
     public String register(@RequestBody RegisterDto registerDto){
         String password = registerDto.getPassword();
         String passwordConfirm = registerDto.getPasswordConfirm();
         String email = registerDto.getEmail();
 
+        registerService.registerMember(email, password, passwordConfirm);
         return "ok";
     }
 
@@ -27,6 +30,7 @@ public class RegisterController {
         String nickName = registerWithNicknameDto.getNickName();
         MultipartFile image = registerWithNicknameDto.getImage();
 
+        registerService.registerMemberWithNickname(nickName, image);
         return "ok";
     }
 }
