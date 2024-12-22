@@ -1,11 +1,9 @@
 package com.example.LifeMaster_BE.Challenge.Detox;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.*;
 import java.time.LocalTime;
+import java.util.List;
 
 @Entity
 public class TimeDetoxEntity {
@@ -15,9 +13,20 @@ public class TimeDetoxEntity {
 
     private String cycle; // WEEKLY, BIWEEKLY
     private String day; // MONDAY, TUESDAY, etc.
+
+    @Schema(description = "Start time in HH:mm:ss format", example = "10:30:00")
     private LocalTime startTime;
+
+    @Schema(description = "End time in HH:mm:ss format", example = "18:30:00")
     private LocalTime endTime;
+
     private boolean isActive;
+
+    @ElementCollection
+    @CollectionTable(name = "detox_locked_apps", joinColumns = @JoinColumn(name = "detox_id"))
+    @Column(name = "app_name")
+    @Schema(description = "잠금 대상 앱 목록", example = "[\"YouTube\", \"Instagram\", \"Facebook\"]")
+    private List<String> lockedApps; // 잠금 대상 앱 목록
 
     // Getters and Setters
     public Long getId() {
@@ -66,5 +75,13 @@ public class TimeDetoxEntity {
 
     public void setActive(boolean active) {
         isActive = active;
+    }
+
+    public List<String> getLockedApps() {
+        return lockedApps;
+    }
+
+    public void setLockedApps(List<String> lockedApps) {
+        this.lockedApps = lockedApps;
     }
 }
