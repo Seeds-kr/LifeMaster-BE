@@ -1,6 +1,7 @@
 package com.example.LifeMaster_BE.UserManager.Email.Register;
 
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
+import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import com.example.LifeMaster_BE.UserManager.S3Service;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -18,7 +19,7 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class RegisterService {
 
-    private final RegisterRepository registerRepository;
+    private final MemberRepository memberRepository;
     private final S3Service s3Service;
 
     public MemberEntity registerMember(String email, String password, String passwordConfirm) {
@@ -28,7 +29,7 @@ public class RegisterService {
         }
         String encodedPassword = encodePassword(password);
         MemberEntity memberEntity = new MemberEntity(email, encodedPassword);
-        return registerRepository.save(memberEntity);
+        return memberRepository.save(memberEntity);
     }
 
     public void registerMemberWithNickname(String nickname, MultipartFile image){
@@ -36,7 +37,7 @@ public class RegisterService {
             throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
         }
 
-        MemberEntity memberEntity = registerRepository.findByNickname(nickname)
+        MemberEntity memberEntity = memberRepository.findByNickname(nickname)
                 .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다"));
 
         memberEntity.setNickname(nickname);
@@ -56,7 +57,7 @@ public class RegisterService {
     }
 
     private boolean checkNicknameDuplicate(String nickname){
-        return registerRepository.existsByNickname(nickname);
+        return memberRepository.existsByNickname(nickname);
     }
 
     private String encodePassword(String password){
