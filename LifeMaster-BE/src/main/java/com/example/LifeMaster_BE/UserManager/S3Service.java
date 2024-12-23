@@ -44,4 +44,5 @@ public class S3Service {
         s3Client.putObject(bucketName, uniqueFileName, file.getInputStream(), metadata);
         return s3Client.getUrl(bucketName, uniqueFileName).toString();
     }
+
 }
