@@ -4,22 +4,20 @@ import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 
 @Slf4j
-@RestController("/user")
+@RestController
+@RequestMapping("/user/register")
 @RequiredArgsConstructor
 public class RegisterController {
 
     private final RegisterService registerService;
 
-    @PostMapping("/register")
+    @PostMapping
     public ResponseEntity<MemberEntity> register(@RequestBody RegisterDto registerDto){
         String password = registerDto.getPassword();
         String passwordConfirm = registerDto.getPasswordConfirm();
@@ -29,7 +27,7 @@ public class RegisterController {
         return ResponseEntity.ok(memberEntity);
     }
 
-    @PostMapping("/register-nickname")
+    @PostMapping("/nickname")
     public ResponseEntity<String> registerNickname(@ModelAttribute RegisterWithNicknameDto registerWithNicknameDto) {
         String nickName = registerWithNicknameDto.getNickName();
         MultipartFile image = registerWithNicknameDto.getImage();
