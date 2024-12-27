@@ -189,4 +189,10 @@ public class TimeDetoxController {
         }
         return ResponseEntity.badRequest().body("Incorrect phrase. Detox remains active.");
     }
+
+    @PostMapping("/app")
+    public ResponseEntity<Void> addAllowedApps(@RequestBody TimeDetoxDto.App request) {
+        service.addAllowedApps(request);
+        return ResponseEntity.ok().build();
+    }
 }

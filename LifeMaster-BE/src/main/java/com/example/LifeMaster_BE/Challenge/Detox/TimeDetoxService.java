@@ -2,6 +2,7 @@ package com.example.LifeMaster_BE.Challenge.Detox;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -20,6 +21,8 @@ public class TimeDetoxService {
     private RandomPhraseProvider randomPhraseProvider;
 
     private String currentRandomPhrase;
+    @Autowired
+    private TimeDetoxRepository timeDetoxRepository;
 
     public TimeDetoxEntity createSchedule(TimeDetoxEntity schedule) {
         return repository.save(schedule);
@@ -124,6 +127,18 @@ public class TimeDetoxService {
 
         // 격주인지 여부를 계산 (주 차이가 짝수이면 격주 주기에 포함됨)
         return weeksDifference % 2 == 0;
+    }
+
+    @Transactional
+    public void addAllowedApps(TimeDetoxDto.App request) {
+        TimeDetoxEntity detox = timeDetoxRepository.findById(request.getDetoxId())
+                .orElseThrow(() -> new RuntimeException("Detox not found"));
+
+        List<String> currentApps = detox.getLockedApps();
+        currentApps.addAll(request.getAllowedApps());
+        detox.setLockedApps(currentApps);
+
+        timeDetoxRepository.save(detox);
     }
 
     // 내부 클래스: 잠긴 상태와 앱 목록 반환 구조체
