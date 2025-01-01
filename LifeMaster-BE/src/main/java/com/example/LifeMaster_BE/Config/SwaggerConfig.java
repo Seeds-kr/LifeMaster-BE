@@ -1,16 +1,14 @@
 package com.example.LifeMaster_BE.Config;
 
-import io.swagger.v3.oas.models.ExternalDocumentation;
-import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.tags.Tag;
 import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
 
 //swagger ui 그룹화 설정(최신 버전에는 그룹화가 강제)
 @Configuration
-public class SwaggerConfig {
+public class SwaggerConfig implements WebMvcConfigurer {
 
     //Challenge Api
     @Bean
@@ -73,13 +71,12 @@ public class SwaggerConfig {
     }
 
     @Bean
-    public OpenAPI customOpenAPI() {
-        return new OpenAPI()
-                .info(new Info().title("LifeMaster Detox API")
-                        .version("v1")
-                        .description("APIs for managing detox schedules"))
-                .externalDocs(new ExternalDocumentation()
-                        .description("Detox API Documentation")
-                        .url("https://example.com/docs"));
+    public GroupedOpenApi googleLoginApi() {
+        return GroupedOpenApi.builder()
+                .group("google-login")
+                .pathsToMatch("/googleLogin/**")
+                .build();
     }
+
+
 }

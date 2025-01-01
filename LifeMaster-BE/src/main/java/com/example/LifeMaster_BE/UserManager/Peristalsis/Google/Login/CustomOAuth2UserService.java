@@ -1,0 +1,182 @@
+package com.example.LifeMaster_BE.UserManager.Peristalsis.Google.Login;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.*;
+import org.springframework.security.oauth2.client.registration.ClientRegistration;
+import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
+import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
+import org.springframework.security.oauth2.core.AuthorizationGrantType;
+import org.springframework.security.oauth2.core.OAuth2AccessToken;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
+
+import java.time.Instant;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
+
+@Service
+public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {
+
+    @Autowired
+    private GoogleOAuthProperties googleOAuthProperties;
+    private final GoogleUsersRepository googleUsersRepository;
+    private final RestTemplate restTemplate = new RestTemplate();
+    private static final Logger logger = LoggerFactory.getLogger(CustomOAuth2UserService.class);
+
+    public CustomOAuth2UserService(GoogleUsersRepository googleUsersRepository) {
+        this.googleUsersRepository = googleUsersRepository;
+    }
+
+    @Override
+    public GoogleUsersEntity loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
+        RestTemplate restTemplate = new RestTemplate();
+        // 액세스 토큰 가져오기
+        String accessToken = userRequest.getAccessToken().getTokenValue();
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + accessToken); // Authorization 헤더에 Bearer 토큰 추가
+
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        System.out.println("this is header url: " + entity);
+
+        ResponseEntity<Map> response = restTemplate.exchange("https://www.googleapis.com/oauth2/v3/userinfo", HttpMethod.GET, entity, Map.class);
+
+        Map<String, Object> userAttributes = response.getBody(); // 사용자 정보
+        System.out.println("User Info: " + userAttributes);
+
+        // Map to GoogleUsers
+        String id = (String) userAttributes.get("sub");  // sub is the unique identifier
+        String name = (String) userAttributes.get("name");
+        String email = (String) userAttributes.get("email");
+        String picture = (String) userAttributes.get("picture");
+
+        GoogleUsersEntity googleUser = new GoogleUsersEntity(id, name, email, picture, "User");
+
+        return googleUser;
+    }
+
+    public GoogleOAuth2AuthenticationResponse handleOAuth2Authentication(String authorizationCode) {
+        ClientRegistration registration = ClientRegistration.withRegistrationId("google")
+                .clientId(googleOAuthProperties.getClientId())                 // Google 클라이언트 ID
+                .clientSecret(googleOAuthProperties.getClientSecret())         // Google 클라이언트 비밀
+                .redirectUri(googleOAuthProperties.getRedirectUri())           // 리다이렉트 URI
+                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)  // 인증 코드 그랜트 타입
+                .authorizationUri("https://accounts.google.com/o/oauth2/auth")  // 인증 URI
+                .tokenUri("https://oauth2.googleapis.com/token")        // 토큰 URI
+                .userInfoUri("https://www.googleapis.com/oauth2/v3/userinfo") // UserInfo Endpoint 추가
+                .userNameAttributeName("sub") // Google UserInfo에서 사용자 ID 필드 설정
+                .scope("openid", "profile", "email")      // OAuth2 스코프 설정
+                .build();
+
+        CustomOAuth2AccessToken accessToken = getAccessToken(authorizationCode, registration);
+
+        GoogleUsersEntity oAuth2User = loadUser(new OAuth2UserRequest(registration, accessToken));
+
+        //OAuthAttributes attributes = OAuthAttributes.of("google", "sub", oAuth2User.getAttributes());
+        GoogleUsersEntity user = saveOrUpdate(oAuth2User);
+
+        return new GoogleOAuth2AuthenticationResponse(user, accessToken);
+    }
+
+
+    public CustomOAuth2AccessToken getAccessToken(String authorizationCode, ClientRegistration registration) {
+        RestTemplate restTemplate = new RestTemplate();
+
+        // Google의 토큰 요청 URL은 registration 객체에서 가져옵니다.
+        String tokenUrl = registration.getProviderDetails().getTokenUri();
+
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        params.add("code", authorizationCode);                                // 인증 코드
+        params.add("client_id", registration.getClientId());                  // 클라이언트 ID
+        params.add("client_secret", registration.getClientSecret());          // 클라이언트 비밀
+        params.add("redirect_uri", registration.getRedirectUri());            // 리다이렉트 URI
+        params.add("grant_type", registration.getAuthorizationGrantType().getValue()); // 그랜트 타입 (authorization_code)
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
+
+        // 요청 URL 및 파라미터 출력 (디버깅 용도)
+        System.out.println("registration:" +registration);
+        System.out.println("Request URL: " + tokenUrl);
+        System.out.println("Request Params: " + params.toSingleValueMap());
+        System.out.println("Requset:" + request);
+
+        // 토큰 요청
+        ResponseEntity<Map> response = restTemplate.postForEntity(tokenUrl, request, Map.class);
+
+        // 응답에서 액세스 토큰과 리프레시 토큰 추출
+        Map<String, Object> responseBody = response.getBody();
+        if (responseBody == null || !responseBody.containsKey("access_token")) {
+            throw new IllegalStateException("Invalid token response from Google");
+        }
+
+        String accessTokenValue = (String) responseBody.get("access_token");
+        String refreshTokenValue = (String) responseBody.get("refresh_token"); // 리프레시 토큰
+        Set<String> refreshTokenSet = Collections.singleton(refreshTokenValue);
+
+        // OAuth2AccessToken 생성
+        return new CustomOAuth2AccessToken(
+                OAuth2AccessToken.TokenType.BEARER,
+                accessTokenValue, // 액세스 토큰
+                Instant.now(), // 발급 시간
+                Instant.now().plusSeconds((Integer) responseBody.get("expires_in")), // 만료 시간
+                refreshTokenSet // 리프레시 토큰
+        );
+    }
+
+    public CustomOAuth2AccessToken refreshAccessToken(String refreshToken) {
+        RestTemplate restTemplate = new RestTemplate();
+
+        String tokenUrl = "https://oauth2.googleapis.com/token";
+
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        params.add("client_id", googleOAuthProperties.getClientId());  // 클라이언트 ID
+        params.add("client_secret", googleOAuthProperties.getClientSecret());  // 클라이언트 비밀
+        params.add("refresh_token", refreshToken);  // 리프레시 토큰
+        params.add("grant_type", "refresh_token");  // 그랜트 타입: refresh_token
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
+
+        // 구글의 토큰 서버에 refresh 토큰을 보내서 새로운 액세스 토큰을 받음
+        ResponseEntity<Map> response = restTemplate.postForEntity(tokenUrl, request, Map.class);
+
+        Map<String, Object> responseBody = response.getBody();
+        if (responseBody == null || !responseBody.containsKey("access_token")) {
+            throw new IllegalStateException("Failed to refresh access token.");
+        }
+
+        String accessTokenValue = (String) responseBody.get("access_token");
+        String refreshTokenValue = (String) responseBody.get("refresh_token"); // 리프레시 토큰
+        Set<String> refreshTokenSet = Collections.singleton(refreshTokenValue);
+
+        return new CustomOAuth2AccessToken(
+                OAuth2AccessToken.TokenType.BEARER,
+                accessTokenValue,
+                Instant.now(),
+                Instant.now().plusSeconds((Integer) responseBody.get("expires_in")),  // 새로운 액세스 토큰의 만료 시간
+                refreshTokenSet  // 새로운 리프레시 토큰 (있다면)
+        );
+    }
+
+    // userRepository.save(user)에서 오류 해결
+    private GoogleUsersEntity saveOrUpdate(GoogleUsersEntity usersEntity) {
+        GoogleUsersEntity user = (GoogleUsersEntity) googleUsersRepository.findByEmail(usersEntity.getEmail())
+                .map(entity -> entity.update(usersEntity.getName(), usersEntity.getPicture()))
+                .orElse(usersEntity);
+
+        return googleUsersRepository.save(user); // Save method should return GoogleUsers, not Object.
+    }
+
+}

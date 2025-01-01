@@ -1,57 +1,44 @@
 package com.example.LifeMaster_BE.UserManager.Peristalsis.Google;
-/*
+
+import com.example.LifeMaster_BE.UserManager.Peristalsis.Google.Login.CustomOAuth2UserService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpStatus;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.client.web.OAuth2LoginAuthenticationFilter;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.stereotype.Component;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.ControllerAdvice;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseStatus;
-
-import java.io.IOException;
-
+@RequiredArgsConstructor
+@EnableWebSecurity
 @Configuration
 public class SecurityConfig {
 
+    private final CustomOAuth2UserService oAuth2MemberService;
+
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, CustomAuthenticationSuccessHandler successHandler) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable) // CSRF 비활성화
-                .authorizeRequests(auth -> auth
-                        .requestMatchers("/", "/home", "/swagger-ui/**", "/v3/api-docs/**","/api-docs/**", "/error").permitAll() // Swagger UI 접근 허용
-                        .anyRequest().authenticated() // 그 외 요청은 인증 필요
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .csrf(csrf -> csrf.disable()) // CSRF 보호 비활성화
+                .cors(Customizer.withDefaults()) // CORS 설정 기본값 사용
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("googleLogin/private/**").authenticated() // /private/** 경로는 인증 필요
+                        .anyRequest().permitAll() // 나머지 요청은 모두 허용
+                )
+                .exceptionHandling(e -> e
+                        .accessDeniedPage("/error") // 접근 거부 시 /error 페이지로 리다이렉트
                 )
                 .oauth2Login(oauth2 -> oauth2
-                        .loginPage("/login") // 커스텀 로그인 페이지
-                        .authorizationEndpoint(authorizationEndpoint ->
-                                authorizationEndpoint.baseUri("/oauth2/authorization")) // OAuth2 인증 엔드포인트 설정
-                        .successHandler(successHandler) // 로그인 성공 핸들러
+                        .loginPage("/googleLogin/loginForm") // 로그인 페이지 설정
+                        .defaultSuccessUrl("/privatePage", true) // 로그인 성공 시 이동할 페이지 설정
+                        .failureUrl("/error") // 실패 시 이동할 URL 설정
+                        .userInfoEndpoint(userInfo -> userInfo
+                               .userService(oAuth2MemberService) // 사용자 정보 처리 서비스
+                        )
                 );
-
         return http.build();
     }
-
-    // 로그인 성공 후 처리를 담당하는 핸들러
-    @Component
-    public static class CustomAuthenticationSuccessHandler implements AuthenticationSuccessHandler {
-
-        @Override
-        public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
-            // 로그인 성공 후 사용자에게 대시보드로 리디렉션
-            response.sendRedirect("/dashboard");
-        }
-    }
 }
-
- */
-
