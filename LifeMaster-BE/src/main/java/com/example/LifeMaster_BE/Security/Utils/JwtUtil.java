@@ -1,5 +1,6 @@
-package com.example.LifeMaster_BE.UserManager.Email.Utils;
+package com.example.LifeMaster_BE.Security.Utils;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -15,15 +16,17 @@ public class JwtUtil {
     private final SecretKey SECRETE_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
     private final long EXPIRATION_TIME = 1000 * 60 * 60; // 1시간
 
-    public String generateToken(String username){
+    // jwt 생성
+    public String generateToken(String email){
         return Jwts.builder()
-                .setSubject(username)
+                .setSubject(email)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
                 .signWith(SECRETE_KEY)
                 .compact();
     }
 
+    // JWT에서 사용자 email 추출.
     public String extractUsername(String token){
         return Jwts.parserBuilder()
                 .setSigningKey(SECRETE_KEY)
@@ -33,13 +36,32 @@ public class JwtUtil {
                 .getSubject();
     }
 
+    // 외부에서 호출할 토큰 검증 매서드
+    public boolean isTokenValid(String token){
+        return isTokenSignatureValid(token) && isTokenNotExpired(token);
+    }
 
-    public boolean validateToken(String token){
+    // JWT 서명 및 무결성 검사
+    private boolean isTokenSignatureValid(String token){
         try{
             Jwts.parserBuilder().setSigningKey(SECRETE_KEY).build().parseClaimsJws(token);
             return true;
         }catch (JwtException | IllegalArgumentException e){
             return false;
         }
+    }
+
+    // JWT 만료 여부 검증
+    private boolean isTokenNotExpired(String token){
+        return !extractClaims(token).getExpiration().before(new Date());
+    }
+
+    // JWT payload 반환
+    private Claims extractClaims(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(SECRETE_KEY)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
     }
 }
