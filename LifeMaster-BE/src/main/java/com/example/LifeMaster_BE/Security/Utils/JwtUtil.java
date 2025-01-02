@@ -27,7 +27,7 @@ public class JwtUtil {
     }
 
     // JWT에서 사용자 email 추출.
-    public String extractUsername(String token){
+    public String extractEmail(String token){
         return Jwts.parserBuilder()
                 .setSigningKey(SECRETE_KEY)
                 .build()
