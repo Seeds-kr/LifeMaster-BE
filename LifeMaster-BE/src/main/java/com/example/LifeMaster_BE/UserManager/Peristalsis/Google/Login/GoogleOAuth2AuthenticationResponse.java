@@ -1,5 +1,6 @@
 package com.example.LifeMaster_BE.UserManager.Peristalsis.Google.Login;
 
+import com.example.LifeMaster_BE.UserManager.Peristalsis.CustomOAuth2AccessToken;
 import lombok.Getter;
 
 @Getter

@@ -1,4 +1,4 @@
-package com.example.LifeMaster_BE.UserManager.Peristalsis.Google.Login;
+package com.example.LifeMaster_BE.UserManager.Peristalsis;
 
 import lombok.Getter;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;

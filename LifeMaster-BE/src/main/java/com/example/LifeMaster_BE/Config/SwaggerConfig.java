@@ -78,5 +78,13 @@ public class SwaggerConfig implements WebMvcConfigurer {
                 .build();
     }
 
+    @Bean
+    public GroupedOpenApi naverLoginApi() {
+        return GroupedOpenApi.builder()
+                .group("naver-login")
+                .pathsToMatch("/naverLogin/**")
+                .build();
+    }
+
 
 }

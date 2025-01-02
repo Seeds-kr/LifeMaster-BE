@@ -1,6 +1,5 @@
-package com.example.LifeMaster_BE.UserManager.Peristalsis.Google;
+package com.example.LifeMaster_BE.UserManager.Peristalsis;
 
-import com.example.LifeMaster_BE.UserManager.Peristalsis.Google.Login.CustomOAuth2UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
