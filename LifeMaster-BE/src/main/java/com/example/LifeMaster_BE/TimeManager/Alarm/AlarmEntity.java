@@ -47,4 +47,5 @@ public class AlarmEntity {
     @Column(nullable = false)
     private boolean alarmStatus;
 
+
 }
