@@ -19,18 +19,20 @@ public class GoogleUsersEntity implements OAuth2User {
     private String picture;
     private String role;  // role 필드 추가
 
+    private String identifier; // 구글/네이버 개인 식별용 ID
+
     // 기본 생성자
     public GoogleUsersEntity() {
     }
 
     // 생성자에서 role을 포함시킴
-    public GoogleUsersEntity(String id,String name, String email, String picture, String role) {
+    public GoogleUsersEntity(String name, String email, String picture, String role, String identifier) {
         this.name = name;
         this.email = email;
         this.picture = picture;
         this.role = role;  // 역할 설정
+        this.identifier = identifier;  // 개인 식별자 설정
     }
-
 
     @Override
     public Map<String, Object> getAttributes() {
@@ -88,6 +90,14 @@ public class GoogleUsersEntity implements OAuth2User {
         this.role = role;
     }
 
+    public String getIdentifier() {
+        return identifier;
+    }
+
+    public void setIdentifier(String identifier) {
+        this.identifier = identifier;
+    }
+
     // update 메서드에서 role 추가
     public GoogleUsersEntity update(String name, String picture) {
         this.name = name;
@@ -97,6 +107,6 @@ public class GoogleUsersEntity implements OAuth2User {
 
     // toEntity 메서드에서 role을 포함하여 엔티티를 반환
     public GoogleUsersEntity toEntity() {
-        return new GoogleUsersEntity(this.id.toString(), this.name, this.email, this.picture, "User");
+        return new GoogleUsersEntity(this.name, this.email, this.picture, "User", this.identifier);
     }
 }

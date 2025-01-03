@@ -22,10 +22,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.Instant;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {
@@ -52,12 +49,10 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
-        //System.out.println("this is header url: " + entity);
 
         ResponseEntity<Map> response = restTemplate.exchange("https://www.googleapis.com/oauth2/v3/userinfo", HttpMethod.GET, entity, Map.class);
 
         Map<String, Object> userAttributes = response.getBody(); // 사용자 정보
-        //System.out.println("User Info: " + userAttributes);
 
         // Map to GoogleUsers
         String id = (String) userAttributes.get("sub");  // sub is the unique identifier
@@ -65,7 +60,16 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         String email = (String) userAttributes.get("email");
         String picture = (String) userAttributes.get("picture");
 
-        GoogleUsersEntity googleUser = new GoogleUsersEntity(id, name, email, picture, "User");
+        GoogleUsersEntity googleUser;
+        Optional<GoogleUsersEntity> optionalUser = googleUsersRepository.findByIdentifier(id);
+
+        if (optionalUser.isPresent()) {
+            // 기존 유저 정보 업데이트
+            googleUser = optionalUser.get().update(name, picture);
+        } else {
+            // 새 유저 생성
+            googleUser = new GoogleUsersEntity(name, email, picture, "User", id);
+        }
 
         return googleUser;
     }
@@ -93,7 +97,16 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         String email = (String) responseMap.get("email");
         String picture = (String) responseMap.get("profile_image");
 
-        GoogleUsersEntity naverUser = new GoogleUsersEntity(id, name, email, picture, "User");
+        GoogleUsersEntity naverUser;
+        Optional<GoogleUsersEntity> optionalUser = googleUsersRepository.findByIdentifier(id);
+
+        if (optionalUser.isPresent()) {
+            // 기존 유저 정보 업데이트
+            naverUser = optionalUser.get().update(name, picture);
+        } else {
+            // 새 유저 생성
+            naverUser = new GoogleUsersEntity(name, email, picture, "User", id);
+        }
 
         return naverUser;
     }
@@ -116,7 +129,6 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 
         GoogleUsersEntity oAuth2User = loadGoogleUser(new OAuth2UserRequest(registration, accessToken));
 
-        //OAuthAttributes attributes = OAuthAttributes.of("google", "sub", oAuth2User.getAttributes());
         GoogleUsersEntity user = saveOrUpdate(oAuth2User);
 
         return new GoogleOAuth2AuthenticationResponse(user, accessToken);
@@ -141,7 +153,6 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 
         GoogleUsersEntity oAuth2User = loadNaverUser(new OAuth2UserRequest(registration, accessToken));
 
-        //OAuthAttributes attributes = OAuthAttributes.of("google", "sub", oAuth2User.getAttributes());
         GoogleUsersEntity user = saveOrUpdate(oAuth2User);
 
         return new GoogleOAuth2AuthenticationResponse(user, accessToken);
@@ -213,10 +224,6 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
-
-        // 요청 URL 및 파라미터 출력 (디버깅 용도)
-        System.out.println("Request URL: " + tokenUrl);
-        System.out.println("Request Params: " + params.toSingleValueMap());
 
         // 토큰 요청
         ResponseEntity<Map> response = restTemplate.postForEntity(tokenUrl, request, Map.class);
