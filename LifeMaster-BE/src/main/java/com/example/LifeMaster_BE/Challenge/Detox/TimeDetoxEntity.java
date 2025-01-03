@@ -2,6 +2,8 @@ package com.example.LifeMaster_BE.Challenge.Detox;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
+
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 
@@ -27,6 +29,8 @@ public class TimeDetoxEntity {
     @Column(name = "app_name")
     @Schema(description = "잠금 대상 앱 목록", example = "[\"YouTube\", \"Instagram\", \"Facebook\"]")
     private List<String> lockedApps; // 잠금 대상 앱 목록
+
+    private LocalDate createdDate; // 스케줄 생성 날짜 추가
 
     // Getters and Setters
     public Long getId() {
@@ -65,6 +69,9 @@ public class TimeDetoxEntity {
         return endTime;
     }
 
+    public LocalDate getCreatedDate() {
+        return createdDate;
+    }
     public void setEndTime(LocalTime endTime) {
         this.endTime = endTime;
     }
@@ -83,5 +90,9 @@ public class TimeDetoxEntity {
 
     public void setLockedApps(List<String> lockedApps) {
         this.lockedApps = lockedApps;
+    }
+    @PrePersist
+    protected void onCreate() {
+        this.createdDate = LocalDate.now(); // 엔티티 생성 시 현재 날짜를 자동으로 설정
     }
 }

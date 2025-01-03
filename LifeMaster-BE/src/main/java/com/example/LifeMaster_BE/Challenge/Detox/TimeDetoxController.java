@@ -21,6 +21,53 @@ public class TimeDetoxController {
     private TimeDetoxService service;
 
     @Operation(
+            summary = "디톡스 활성화/비활성화 전환",
+            description = """
+                    특정 디톡스 ID를 기반으로 활성화/비활성화를 전환합니다.
+                    - 비활성 상태에서는 활성화로 전환됩니다.
+                    - 활성 상태에서 현재 시간이 스케줄에 포함되지 않으면 비활성화됩니다.
+                    """,
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "상태 전환 성공",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = TimeDetoxEntity.class))),
+                    @ApiResponse(responseCode = "404", description = "해당 ID의 스케줄을 찾을 수 없음")
+            })
+    @PatchMapping("/{id}/toggle-activation")
+    public ResponseEntity<?> toggleActivation(@PathVariable(name = "id") Long id) {
+        try {
+            LocalDateTime now = LocalDateTime.now();
+            String currentDay = now.getDayOfWeek().name();
+            LocalTime currentTime = now.toLocalTime();
+
+            TimeDetoxEntity updatedSchedule = service.toggleActivation(id, currentDay, currentTime);
+            return ResponseEntity.ok(updatedSchedule);
+        } catch (IllegalStateException e) {
+            // 비활성화 불가 사유 반환
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @Operation(
+            summary = "앱 잠금 상태 및 잠긴 앱 목록 확인",
+            description = "현재 날짜와 시간을 기준으로 앱 잠금 여부와 잠긴 앱 목록을 반환합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "잠금 상태 및 목록 반환 성공",
+                            content = @Content(mediaType = "application/json")),
+                    @ApiResponse(responseCode = "400", description = "잘못된 입력 데이터")
+            })
+    @GetMapping("/lock-status")
+    public ResponseEntity<TimeDetoxService.LockedAppDetails> isAppLockedWithDetails() {
+        // 현재 날짜와 시간 가져오기
+        LocalDateTime now = LocalDateTime.now();
+        String day = now.getDayOfWeek().name(); // 요일 (MONDAY 등)
+        LocalTime currentTime = now.toLocalTime(); // 현재 시간 (HH:mm:ss)
+
+        // 서비스 호출
+        TimeDetoxService.LockedAppDetails details = service.isAppLockedWithDetails(day, currentTime);
+        return ResponseEntity.ok(details);
+    }
+
+    @Operation(
             summary = "새로운 디톡스 일정 생성",
             description = "새로운 디톡스 일정을 데이터베이스에 추가합니다.",
             requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
@@ -44,7 +91,7 @@ public class TimeDetoxController {
                     )
             ),
             responses = {
-                    @ApiResponse(responseCode = "200", description = "일정이 성공적으로 생성됨",
+                    @ApiResponse(responseCode = "200", description = "일정 생성 성공",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = TimeDetoxEntity.class))),
                     @ApiResponse(responseCode = "400", description = "잘못된 입력 데이터")
             })
@@ -79,7 +126,7 @@ public class TimeDetoxController {
     }
 
     @Operation(
-            summary = "특정 디톡스 일정 수정",
+            summary = "특정 디톡스 일정 수정 (활성/비활성 제외)",
             description = "기존 디톡스 일정의 세부 정보를 수정합니다.",
             requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "수정된 일정 세부 정보",
@@ -94,7 +141,6 @@ public class TimeDetoxController {
                                         "day": "TUESDAY",
                                         "startTime": "09:00:00",
                                         "endTime": "17:00:00",
-                                        "isActive": false,
                                         "lockedApps": ["Twitter", "Netflix"]
                                     }
                                     """
@@ -125,26 +171,22 @@ public class TimeDetoxController {
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(
-            summary = "앱 잠금 상태 확인",
-            description = "현재 날짜와 시간을 기준으로 앱 잠금 여부를 확인합니다.",
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "잠금 상태 반환",
-                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = Boolean.class))),
-                    @ApiResponse(responseCode = "400", description = "잘못된 입력 데이터")
-            })
-    @GetMapping("/lock-status")
-    public ResponseEntity<Boolean> isAppLocked() {
-        // 현재 날짜와 시간을 가져옴
-        LocalDateTime now = LocalDateTime.now();
+    @Operation(summary = "비상 탈출 문장 생성",
+            description = "디톡스 비상 탈출에 필요한 문장을 생성합니다.")
+    @GetMapping("/generate-phrase")
+    public ResponseEntity<String> generateRandomPhrase() {
+        String phrase = service.generateRandomPhrase();
+        return ResponseEntity.ok(phrase);
+    }
 
-        // 요일 (MONDAY, TUESDAY 등)을 가져옴
-        String day = now.getDayOfWeek().name();
-
-        // 시간 (HH:mm:ss)을 가져옴
-        LocalTime currentTime = now.toLocalTime();
-
-        // 서비스에서 잠금 상태 확인
-        return ResponseEntity.ok(service.isAppLocked(day, currentTime));
+    @Operation(summary = "비상 탈출 문장 검증",
+            description = "비상 탈출 문장을 검증하고, 실행 중인 디톡스를 종료합니다.")
+    @PostMapping("/verify-phrase")
+    public ResponseEntity<String> verifyPhraseAndEndDetox(@RequestBody String inputPhrase) {
+        boolean result = service.verifyPhraseAndEndDetox(inputPhrase);
+        if (result) {
+            return ResponseEntity.ok("Detox has been successfully ended.");
+        }
+        return ResponseEntity.badRequest().body("Incorrect phrase. Detox remains active.");
     }
 }
