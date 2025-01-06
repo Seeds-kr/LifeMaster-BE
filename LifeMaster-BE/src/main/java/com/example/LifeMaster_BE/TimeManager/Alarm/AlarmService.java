@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.lang.reflect.Field;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
@@ -67,13 +68,21 @@ public class AlarmService {
     }
 
     //알람 활성화 메소드
-    public String activateAlarm(Long alarmId, String currentDay, LocalDateTime currentTime) {
+    public String activateAlarm(Long alarmId) {
         // 알람 ID로 알람 조회
         AlarmEntity alarm = alarmRepository.findById(alarmId)
                 .orElseThrow(() -> new EntityNotFoundException("Alarm with ID " + alarmId + " not found"));
 
-        // 요일 및 시간 일치 확인
-        boolean isDayMatch = switch (currentDay.toLowerCase()) {
+        // 현재 시스템 시간 가져오기
+        LocalDateTime now = LocalDateTime.now();
+        String currentDay = now.getDayOfWeek().name().toLowerCase(); // 현재 요일 (소문자로 변환)
+        LocalTime currentTime = now.toLocalTime().truncatedTo(ChronoUnit.MINUTES); // 초와 나노초 제거
+
+        // 알람 시간도 분 단위로 변환
+        LocalTime alarmTime = alarm.getAlarmTime().toLocalTime().truncatedTo(ChronoUnit.MINUTES);
+
+        // 요일 일치 여부 확인
+        boolean isDayMatch = switch (currentDay) {
             case "monday" -> alarm.isAlarmMon();
             case "tuesday" -> alarm.isAlarmTue();
             case "wednesday" -> alarm.isAlarmWed();
@@ -84,7 +93,8 @@ public class AlarmService {
             default -> false;
         };
 
-        if (isDayMatch && alarm.getAlarmTime().toLocalTime().equals(currentTime.toLocalTime())) {
+        // 요일 및 시간 일치 여부 확인
+        if (isDayMatch && alarmTime.equals(currentTime)) {
             // 알람 활성화
             alarm.setAlarmStatus(true);
             alarmRepository.save(alarm);
@@ -92,6 +102,79 @@ public class AlarmService {
             return "Alarm activated successfully.";
         } else {
             return "Alarm does not match the current day or time.";
+        }
+    }
+
+    //전체 알람 활성화 메소드
+    public String activateMatchingAlarms() {
+        // 현재 시스템 시간 가져오기
+        LocalDateTime now = LocalDateTime.now();
+        String currentDay = now.getDayOfWeek().name().toLowerCase(); // 현재 요일 (소문자로 변환)
+        LocalTime currentTime = now.toLocalTime().truncatedTo(ChronoUnit.MINUTES); // 현재 시간 (분 단위로 변환)
+
+        // 모든 알람 가져오기
+        List<AlarmEntity> alarms = alarmRepository.findAll();
+
+        // 활성화된 알람 카운트
+        int activatedCount = 0;
+
+        for (AlarmEntity alarm : alarms) {
+            // 알람 시간도 분 단위로 변환
+            LocalTime alarmTime = alarm.getAlarmTime().toLocalTime().truncatedTo(ChronoUnit.MINUTES);
+
+            // 요일 일치 여부 확인
+            boolean isDayMatch = switch (currentDay) {
+                case "monday" -> alarm.isAlarmMon();
+                case "tuesday" -> alarm.isAlarmTue();
+                case "wednesday" -> alarm.isAlarmWed();
+                case "thursday" -> alarm.isAlarmThu();
+                case "friday" -> alarm.isAlarmFri();
+                case "saturday" -> alarm.isAlarmSat();
+                case "sunday" -> alarm.isAlarmSun();
+                default -> false;
+            };
+
+            // 요일 및 시간 일치 여부 확인
+            if (isDayMatch && alarmTime.equals(currentTime)) {
+                // 알람 활성화
+                alarm.setAlarmStatus(true);
+                alarmRepository.save(alarm);
+                activatedCount++;
+                log.info("Alarm {} activated.", alarm.getId());
+            }
+        }
+
+        // 결과 반환
+        if (activatedCount > 0) {
+            return activatedCount + " alarms activated successfully.";
+        } else {
+            return "No alarms matched the current day or time.";
+        }
+    }
+
+    public String deactivateActivatedAlarms() {
+        // 모든 알람 가져오기
+        List<AlarmEntity> alarms = alarmRepository.findAll();
+
+        // 비활성화된 알람 카운트
+        int deactivatedCount = 0;
+
+        for (AlarmEntity alarm : alarms) {
+            // 활성화 상태인지 확인
+            if (alarm.isAlarmStatus()) {
+                // 비활성화 처리
+                alarm.setAlarmStatus(false);
+                alarmRepository.save(alarm);
+                deactivatedCount++;
+                log.info("Alarm {} deactivated.", alarm.getId());
+            }
+        }
+
+        // 결과 반환
+        if (deactivatedCount > 0) {
+            return deactivatedCount + " alarms deactivated successfully.";
+        } else {
+            return "No active alarms to deactivate.";
         }
     }
 
