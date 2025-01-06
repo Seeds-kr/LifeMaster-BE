@@ -1,5 +1,7 @@
 package com.example.LifeMaster_BE.UserManager.Peristalsis;
 
+import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
+import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import com.example.LifeMaster_BE.UserManager.Peristalsis.Google.Login.GoogleOAuth2AuthenticationResponse;
 import com.example.LifeMaster_BE.UserManager.Peristalsis.Google.Login.GoogleOAuthProperties;
 import com.example.LifeMaster_BE.UserManager.Peristalsis.Google.Login.GoogleUsersEntity;
@@ -25,18 +27,22 @@ import java.time.Instant;
 import java.util.*;
 
 @Service
-public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {
+public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {//네이버/구글 로그인 기능 관련 서비스
 
     @Autowired
     private GoogleOAuthProperties googleOAuthProperties;
     @Autowired
     private NaverOAuthProperties naverOAuthProperties;
     private final GoogleUsersRepository googleUsersRepository;
+
+
+    private final MemberRepository memberRepository;
     private final RestTemplate restTemplate = new RestTemplate();
     private static final Logger logger = LoggerFactory.getLogger(CustomOAuth2UserService.class);
 
-    public CustomOAuth2UserService(GoogleUsersRepository googleUsersRepository) {
+    public CustomOAuth2UserService(GoogleUsersRepository googleUsersRepository, MemberRepository memberRepository) {
         this.googleUsersRepository = googleUsersRepository;
+        this.memberRepository = memberRepository;
     }
 
 
@@ -130,6 +136,8 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         GoogleUsersEntity oAuth2User = loadGoogleUser(new OAuth2UserRequest(registration, accessToken));
 
         GoogleUsersEntity user = saveOrUpdate(oAuth2User);
+        MemberEntity member = new MemberEntity(user.getEmail(),user.getIdentifier());
+        saveOrUpdateMember(member);
 
         return new GoogleOAuth2AuthenticationResponse(user, accessToken);
     }
@@ -154,6 +162,8 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         GoogleUsersEntity oAuth2User = loadNaverUser(new OAuth2UserRequest(registration, accessToken));
 
         GoogleUsersEntity user = saveOrUpdate(oAuth2User);
+        MemberEntity member = new MemberEntity(user.getEmail(),user.getIdentifier());
+        saveOrUpdateMember(member);
 
         return new GoogleOAuth2AuthenticationResponse(user, accessToken);
     }
@@ -337,6 +347,15 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
                 .orElse(usersEntity);
 
         return googleUsersRepository.save(user); // Save method should return GoogleUsers, not Object.
+    }
+
+    private MemberEntity saveOrUpdateMember(MemberEntity usersEntity) {
+        MemberEntity user = (MemberEntity) memberRepository.findByEmail(usersEntity.getEmail())
+                .map(entity -> entity.update(usersEntity.getName(), usersEntity.getPicture()))
+                .orElse(usersEntity);
+        user.login(true);
+
+        return memberRepository.save(user); // Save method should return GoogleUsers, not Object.
     }
 
     @Override

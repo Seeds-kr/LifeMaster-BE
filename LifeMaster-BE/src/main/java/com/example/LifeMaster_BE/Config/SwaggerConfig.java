@@ -86,5 +86,22 @@ public class SwaggerConfig implements WebMvcConfigurer {
                 .build();
     }
 
+    @Bean
+    public GroupedOpenApi userApi() {
+        return GroupedOpenApi.builder()
+                .group("user")
+                .pathsToMatch("/user/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi passwordApi() {
+        return GroupedOpenApi.builder()
+                .group("password")
+                .pathsToMatch("/api/auth/**")
+                .build();
+    }
+
+
 
 }
