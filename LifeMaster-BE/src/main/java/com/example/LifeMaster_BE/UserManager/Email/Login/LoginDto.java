@@ -2,8 +2,10 @@ package com.example.LifeMaster_BE.UserManager.Email.Login;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
+@NoArgsConstructor
 @AllArgsConstructor
 public class LoginDto {
     private String email;

@@ -26,13 +26,13 @@ public class SpringSecurityConfig {
     // 시큐리티 설정(API 경로 지정, filter 지정)
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception{
-        return http.csrf(csrf -> csrf.disable())
+        return http
+                .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .csrf(csrf -> csrf.disable()) // CSRF 보호 비활성화
                 .cors(Customizer.withDefaults()) // CORS 설정 기본값 사용
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/user/login","/swagger-ui/**").permitAll() // 인증 로직이 필요 없는 url 설정
+                        .requestMatchers("/user/login","/swagger-ui/**", "/user/register").permitAll() // 인증 로직이 필요 없는 url 설정
                         .requestMatchers("/private/**").authenticated()//인증 로직이 필요한 url 설정
                         .anyRequest().permitAll()//기본 인증 설정
                 )

@@ -14,7 +14,7 @@ public class MemberEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY) // MySQL 호환 전략
     private Long id;
 
-    @Column(nullable = false, unique = true) // 이메일 중복 방지
+    @Column(name = "email", nullable = false, unique = true) // 이메일 중복 방지
     private String email;
 
     @Column(nullable = false)
@@ -25,13 +25,13 @@ public class MemberEntity {
     @Column(name = "image_url") // 컬럼 이름 명시
     private String imageUrl;
 
-    //@Enumerated(EnumType.STRING)
+    @Enumerated(EnumType.STRING)
     @Column(name = "login_type") // 컬럼 이름 명시
     private LoginType loginType;
 
-    //@Enumerated(EnumType.STRING)
-    @Column(name = "login_role") // 컬럼 이름 명시
-    private LoginRole loginRole;
+//    @Enumerated(EnumType.STRING)
+//    @Column(name = "login_role") // 컬럼 이름 명시
+//    private LoginRole loginRole;
 
     @Column(name = "login_status") // 컬럼 이름 명시
     private boolean loginStatus;
