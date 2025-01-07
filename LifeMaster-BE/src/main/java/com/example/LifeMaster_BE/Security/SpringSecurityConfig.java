@@ -23,6 +23,7 @@ public class SpringSecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomOAuth2UserService oAuth2MemberService;
 
+
     // 시큐리티 설정(API 경로 지정, filter 지정)
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception{
