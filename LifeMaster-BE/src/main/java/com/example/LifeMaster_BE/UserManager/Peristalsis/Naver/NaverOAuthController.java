@@ -1,5 +1,6 @@
 package com.example.LifeMaster_BE.UserManager.Peristalsis.Naver;
 
+import com.example.LifeMaster_BE.Security.Utils.JwtUtil;
 import com.example.LifeMaster_BE.UserManager.Peristalsis.CustomOAuth2AccessToken;
 import com.example.LifeMaster_BE.UserManager.Peristalsis.CustomOAuth2UserService;
 import com.example.LifeMaster_BE.UserManager.Peristalsis.Google.Login.GoogleOAuth2AuthenticationResponse;
@@ -9,6 +10,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -22,11 +24,16 @@ public class NaverOAuthController {
 
     private final CustomOAuth2UserService customOAuth2UserService;
 
+    private final AuthenticationManager authenticationManager;
+    private final JwtUtil jwtUtil;
+
     @Autowired
     private NaverOAuthProperties naverOAuthProperties;
 
-    public NaverOAuthController(CustomOAuth2UserService customOAuth2UserService) {
+    public NaverOAuthController(CustomOAuth2UserService customOAuth2UserService, AuthenticationManager authenticationManager, JwtUtil jwtUtil) {
         this.customOAuth2UserService = customOAuth2UserService;
+        this.authenticationManager = authenticationManager;
+        this.jwtUtil = jwtUtil;
     }
 
     @Operation(summary = "공개 페이지", description = "로그인 없이 접근할 수 있는 공개 페이지")
@@ -60,6 +67,13 @@ public class NaverOAuthController {
         // 유저와 토큰 가져오기
         GoogleUsersEntity user = response.getUser();
         CustomOAuth2AccessToken token = response.getToken();
+        /*
+        Authentication authenticate = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(user.getEmail(), user.getAttributes())
+        );
+        String loginToken = jwtUtil.generateToken(authenticate.getName());
+
+         */
 
         // JSON 형태로 유저 정보와 토큰 반환
         Map<String, Object> responseMap = Map.of(
@@ -70,6 +84,7 @@ public class NaverOAuthController {
                         "picture", user.getPicture()
                 ),
                 "token", token
+                //"loginToken", loginToken
         );
 
         return ResponseEntity.ok(responseMap);
