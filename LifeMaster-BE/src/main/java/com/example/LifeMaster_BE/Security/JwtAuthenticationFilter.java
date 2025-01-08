@@ -44,11 +44,4 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         filterChain.doFilter(request, response);
     }
-
-    @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
-        String path = request.getRequestURI();
-        // 인증 제외 경로 설정
-        return path.equals("/user/login") || path.equals("/user/register") || path.startsWith("/swagger-ui");
-    }
 }
