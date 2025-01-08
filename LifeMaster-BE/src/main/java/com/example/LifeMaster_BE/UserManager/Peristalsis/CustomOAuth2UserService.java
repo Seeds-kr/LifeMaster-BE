@@ -216,12 +216,6 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
 
-        // 요청 URL 및 파라미터 출력 (디버깅 용도)
-        System.out.println("registration:" +registration);
-        System.out.println("Request URL: " + tokenUrl);
-        System.out.println("Request Params: " + params.toSingleValueMap());
-        System.out.println("Requset:" + request);
-
         // 토큰 요청
         ResponseEntity<Map> response = restTemplate.postForEntity(tokenUrl, request, Map.class);
 
