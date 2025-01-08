@@ -27,8 +27,6 @@ public class LoginController {
         String email = loginDto.getEmail();
         String password = loginDto.getPassword();
 
-        MemberEntity member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("User not fount" + email));
         Authentication authenticate = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(email, password)
         );
