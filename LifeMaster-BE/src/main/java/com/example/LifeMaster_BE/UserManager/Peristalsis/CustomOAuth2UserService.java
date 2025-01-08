@@ -1,5 +1,6 @@
 package com.example.LifeMaster_BE.UserManager.Peristalsis;
 
+import com.example.LifeMaster_BE.Security.Utils.JwtUtil;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import com.example.LifeMaster_BE.UserManager.Peristalsis.Google.Login.GoogleOAuth2AuthenticationResponse;
@@ -10,7 +11,12 @@ import com.example.LifeMaster_BE.UserManager.Peristalsis.Naver.NaverOAuthPropert
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.*;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
@@ -34,14 +40,17 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
     @Autowired
     private NaverOAuthProperties naverOAuthProperties;
     private final GoogleUsersRepository googleUsersRepository;
-
+    private final AuthenticationManager authenticationManager;
+    private final JwtUtil jwtUtil;
 
     private final MemberRepository memberRepository;
     private final RestTemplate restTemplate = new RestTemplate();
     private static final Logger logger = LoggerFactory.getLogger(CustomOAuth2UserService.class);
 
-    public CustomOAuth2UserService(GoogleUsersRepository googleUsersRepository, MemberRepository memberRepository) {
+    public CustomOAuth2UserService(GoogleUsersRepository googleUsersRepository, @Lazy AuthenticationManager authenticationManager, JwtUtil jwtUtil, MemberRepository memberRepository) {
         this.googleUsersRepository = googleUsersRepository;
+        this.authenticationManager = authenticationManager;
+        this.jwtUtil = jwtUtil;
         this.memberRepository = memberRepository;
     }
 
@@ -135,11 +144,21 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 
         GoogleUsersEntity oAuth2User = loadGoogleUser(new OAuth2UserRequest(registration, accessToken));
 
+
         GoogleUsersEntity user = saveOrUpdate(oAuth2User);
         MemberEntity member = new MemberEntity(user.getEmail(),user.getIdentifier());
+
+        BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder();
+        member.setPassword(bCryptPasswordEncoder.encode(oAuth2User.getIdentifier()));
+
         saveOrUpdateMember(member);
 
-        return new GoogleOAuth2AuthenticationResponse(user, accessToken);
+        Authentication authenticate = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(member.getEmail(), user.getIdentifier())
+        );
+        String token = jwtUtil.generateToken(authenticate.getName());
+
+        return new GoogleOAuth2AuthenticationResponse(user, accessToken, token);
     }
 
     public GoogleOAuth2AuthenticationResponse handleOAuth2AuthenticationNaver(String authorizationCode) {
@@ -161,11 +180,21 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 
         GoogleUsersEntity oAuth2User = loadNaverUser(new OAuth2UserRequest(registration, accessToken));
 
+
         GoogleUsersEntity user = saveOrUpdate(oAuth2User);
         MemberEntity member = new MemberEntity(user.getEmail(),user.getIdentifier());
+
+        BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder();
+        member.setPassword(bCryptPasswordEncoder.encode(oAuth2User.getIdentifier()));
+
         saveOrUpdateMember(member);
 
-        return new GoogleOAuth2AuthenticationResponse(user, accessToken);
+        Authentication authenticate = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(member.getEmail(), user.getIdentifier())
+        );
+        String token = jwtUtil.generateToken(authenticate.getName());
+
+        return new GoogleOAuth2AuthenticationResponse(user, accessToken, token);
     }
 
 
@@ -186,12 +215,6 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
-
-        // 요청 URL 및 파라미터 출력 (디버깅 용도)
-        System.out.println("registration:" +registration);
-        System.out.println("Request URL: " + tokenUrl);
-        System.out.println("Request Params: " + params.toSingleValueMap());
-        System.out.println("Requset:" + request);
 
         // 토큰 요청
         ResponseEntity<Map> response = restTemplate.postForEntity(tokenUrl, request, Map.class);

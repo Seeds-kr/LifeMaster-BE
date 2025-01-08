@@ -42,6 +42,9 @@ public class MemberEntity {
     public MemberEntity(String email, String password) {
         this.email = email;
         this.password = password;
+        this.imageUrl = "url";
+        this.loginStatus = true;
+        this.nickname = "nick";
     }
 
     public String getName() {

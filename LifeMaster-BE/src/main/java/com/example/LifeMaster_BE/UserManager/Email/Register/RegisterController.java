@@ -30,6 +30,8 @@ public class RegisterController {
         String nickName = registerWithNicknameDto.getNickName();
         MultipartFile image = registerWithNicknameDto.getImage();
 
+        System.out.println("nickName:" + nickName);
+
         registerService.registerMemberWithNickname(nickName, image);
         return ResponseEntity.ok("saved successfully");
     }
