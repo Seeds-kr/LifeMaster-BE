@@ -64,13 +64,7 @@ public class GoogleOAuthController {
         // 유저와 토큰 가져오기
         GoogleUsersEntity user = response.getUser();
         CustomOAuth2AccessToken token = response.getToken();
-        /*
-        Authentication authenticate = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(user.getEmail(), user.getAttributes())
-        );
-        String loginToken = jwtUtil.generateToken(authenticate.getName());
-
-         */
+        String jwtToken = response.getJwtToken();
 
         // JSON 형태로 유저 정보와 토큰 반환
         Map<String, Object> responseMap = Map.of(
@@ -80,8 +74,8 @@ public class GoogleOAuthController {
                         "email", user.getEmail(),
                         "picture", user.getPicture()
                 ),
-                "token", token
-                //"loginToken", loginToken
+                "token", token,
+                "jwtToken", jwtToken
         );
 
         return ResponseEntity.ok(responseMap);

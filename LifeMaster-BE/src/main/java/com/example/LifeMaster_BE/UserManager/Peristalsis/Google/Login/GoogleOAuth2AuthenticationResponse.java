@@ -7,10 +7,12 @@ import lombok.Getter;
 public class GoogleOAuth2AuthenticationResponse {
     private final GoogleUsersEntity user;
     private final CustomOAuth2AccessToken token; // OAuth2AccessToken 타입으로 수정
+    private final String jwtToken;
 
-    public GoogleOAuth2AuthenticationResponse(GoogleUsersEntity user, CustomOAuth2AccessToken token) {
+    public GoogleOAuth2AuthenticationResponse(GoogleUsersEntity user, CustomOAuth2AccessToken token, String jwtToken) {
         this.user = user;
         this.token = token;
+        this.jwtToken = jwtToken;
     }
 
 }
