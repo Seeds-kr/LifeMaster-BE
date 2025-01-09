@@ -4,7 +4,7 @@ import com.example.LifeMaster_BE.Security.Utils.JwtUtil;
 import com.example.LifeMaster_BE.UserManager.Peristalsis.CustomOAuth2AccessToken;
 import com.example.LifeMaster_BE.UserManager.Peristalsis.CustomOAuth2UserService;
 import com.example.LifeMaster_BE.UserManager.Peristalsis.Google.Login.GoogleOAuth2AuthenticationResponse;
-import com.example.LifeMaster_BE.UserManager.Peristalsis.Google.Login.GoogleUsersEntity;
+import com.example.LifeMaster_BE.UserManager.Peristalsis.OAuthUsersEntity;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -65,7 +65,7 @@ public class NaverOAuthController {
         GoogleOAuth2AuthenticationResponse response = customOAuth2UserService.handleOAuth2AuthenticationNaver(authorizationCode);
 
         // 유저와 토큰 가져오기
-        GoogleUsersEntity user = response.getUser();
+        OAuthUsersEntity user = response.getUser();
         CustomOAuth2AccessToken token = response.getToken();
         String jwtToken = response.getJwtToken();
 
