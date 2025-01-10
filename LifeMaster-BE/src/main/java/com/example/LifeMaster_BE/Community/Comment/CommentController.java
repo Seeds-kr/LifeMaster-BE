@@ -1,5 +1,6 @@
 package com.example.LifeMaster_BE.Community.Comment;
 
+import com.example.LifeMaster_BE.Community.Comment.Dto.AllCommentsDto;
 import com.example.LifeMaster_BE.Community.Comment.Dto.CommentDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -7,6 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Slf4j
 @Controller
@@ -16,6 +19,19 @@ public class CommentController {
 
     private final CommentService commentService;
 
+    @GetMapping
+    public ResponseEntity<List<AllCommentsDto>> getAllComments() {
+        List<CommentEntity> comments = commentService.getAllComments();
+
+        List<AllCommentsDto> allCommentsDTOs = comments.stream()
+                .map(comment -> new AllCommentsDto(
+                        "RandomMember",
+                        comment.getComment(),
+                        comment.getCommentDate()
+                )).toList();
+
+        return ResponseEntity.ok(allCommentsDTOs);
+    }
     @PostMapping
     public ResponseEntity<CommentEntity> newComment(@RequestBody CommentDto commentDto){
         String comment = commentDto.getComment();

@@ -6,6 +6,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Slf4j
 @Service
 @Transactional
@@ -14,6 +16,9 @@ public class CommentService {
 
     private final CommentRepository commentRepository;
 
+    public List<CommentEntity> getAllComments(){
+        return commentRepository.findAll();
+    }
     public CommentEntity createComment(String comment) {
         CommentEntity commentEntity = new CommentEntity(comment);
         return commentRepository.save(commentEntity);
