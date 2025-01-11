@@ -41,7 +41,7 @@ public class CommentService {
 
         return comments.stream()
                 .map(comment -> new AllCommentsDto(
-                        memberId,
+                        "Comment 작성한 사람(comment.getMember.getEmail?)",
                         comment.getComment(),
                         comment.getCommentDate(),
                         likedCommentIds.contains(comment.getId())

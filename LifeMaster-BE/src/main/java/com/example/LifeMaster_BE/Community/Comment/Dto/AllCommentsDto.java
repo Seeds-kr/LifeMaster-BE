@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class AllCommentsDto {
 
-    private Long memberId;
+    private String author;
     private String comment;
     private LocalDateTime commentDate;
     private boolean liked;
