@@ -2,10 +2,15 @@ package com.example.LifeMaster_BE.Community.Comment;
 
 import com.example.LifeMaster_BE.Community.Comment.Dto.AllCommentsDto;
 import com.example.LifeMaster_BE.Community.Comment.Dto.CommentDto;
+import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
+import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,20 +23,19 @@ import java.util.List;
 public class CommentController {
 
     private final CommentService commentService;
+    private final MemberRepository memberRepository;
 
     @GetMapping
-    public ResponseEntity<List<AllCommentsDto>> getAllComments() {
-        List<CommentEntity> comments = commentService.getAllComments();
+    public ResponseEntity<List<AllCommentsDto>> getAllComments(@AuthenticationPrincipal User user) {
 
-        List<AllCommentsDto> allCommentsDTOs = comments.stream()
-                .map(comment -> new AllCommentsDto(
-                        "RandomMember",
-                        comment.getComment(),
-                        comment.getCommentDate()
-                )).toList();
+        String email = user.getUsername();
+        MemberEntity member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new EntityNotFoundException(email));
 
-        return ResponseEntity.ok(allCommentsDTOs);
+        List<AllCommentsDto> allComments = commentService.getAllComments(member.getId());
+        return ResponseEntity.ok(allComments);
     }
+
     @PostMapping
     public ResponseEntity<CommentEntity> newComment(@RequestBody CommentDto commentDto){
         String comment = commentDto.getComment();

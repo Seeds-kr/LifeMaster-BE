@@ -16,19 +16,19 @@ public class LikeService {
 
     private final LikeRepository likeRepository;
     private final CommentRepository commentRepository;
-    public boolean toggleLike(Long userId, Long commentId){
 
-        Optional<LikeEntity> existingLike = likeRepository.findByUserIdAndCommentId(userId, commentId);
+    public boolean toggleLike(Long memberID, Long commentId){
 
+        Optional<LikeEntity> existingLike = likeRepository.findByMemberIdAndCommentId(memberID, commentId);
 
         if(existingLike.isPresent()){
-            likeRepository.deleteByUserIdAndCommentId(userId, commentId);
+            likeRepository.deleteByMemberIdAndCommentId(memberID, commentId);
             return false;
         } else {
             CommentEntity comment = commentRepository.findById(commentId)
                     .orElseThrow(() -> new EntityNotFoundException("Comment Not found"));
 
-            LikeEntity newLike = new LikeEntity(userId, comment);
+            LikeEntity newLike = new LikeEntity(memberID, comment);
 
             likeRepository.save(newLike);
             return true;
