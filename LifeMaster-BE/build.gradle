@@ -38,6 +38,7 @@ dependencies {
 	implementation 'org.springframework.security:spring-security-core:5.8.0'
 	implementation 'org.springframework.cloud:spring-cloud-starter-aws:2.2.6.RELEASE'
 	// implementation 'org.springframework.security:spring-security-web:6.3.4'
+	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
 }
 
 tasks.withType(JavaCompile) {
