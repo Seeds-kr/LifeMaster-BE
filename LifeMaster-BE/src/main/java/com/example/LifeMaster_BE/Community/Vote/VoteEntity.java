@@ -1,5 +1,8 @@
 package com.example.LifeMaster_BE.Community.Vote;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -17,17 +20,22 @@ public class VoteEntity {
         @GeneratedValue(strategy = GenerationType.IDENTITY)
         private Long id;
 
+        @Column(nullable = false, unique = true)
         private String title;
 
         private LocalDateTime endDate;
 
         @OneToMany(mappedBy = "poll", cascade = CascadeType.ALL)
+        @JsonManagedReference // 직렬화에서 이 방향만 포함
         private List<PollOption> options = new ArrayList<>();
     }
 
     @Entity
     @Getter
     @Setter
+    @Table(
+            uniqueConstraints = @UniqueConstraint(columnNames = {"poll_id", "content"}) // pollId와 content의 조합에 대해 유니크 제약 추가
+    )
     public static class PollOption {
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -35,6 +43,7 @@ public class VoteEntity {
 
         @ManyToOne
         @JoinColumn(name = "poll_id")
+        @JsonBackReference // 직렬화에서 제외
         private Poll poll;
 
         private String content;
@@ -52,6 +61,7 @@ public class VoteEntity {
 
         @ManyToOne
         @JoinColumn(name = "poll_id")
+        @JsonIgnore // 순환 참조 방지
         private Poll poll;
 
         private String userId;
