@@ -52,6 +52,17 @@ public class VoteController {
             return ResponseEntity.ok(results);
         }
 
+        @Operation(summary = "투표 상세 정보 조회", description = "투표 ID를 받아 제목, 만료 여부, 투표 항목 및 투표 결과를 반환합니다.")
+        @ApiResponses(value = {
+                @ApiResponse(responseCode = "200", description = "성공적으로 조회"),
+                @ApiResponse(responseCode = "404", description = "투표를 찾을 수 없음", content = @Content)
+        })
+        @GetMapping("/{pollId}/details")
+        public ResponseEntity<Map<String, Object>> getPollDetails(@PathVariable("pollId") Long pollId) {
+            Map<String, Object> pollDetails = voteService.getPollDetails(pollId);
+            return ResponseEntity.ok(pollDetails);
+        }
+
         // 투표 주제, 항목 수정
         @Operation(summary = "투표 제목 수정", description = "투표 제목을 수정합니다.")
         @PutMapping("/{pollId}/title")
@@ -67,12 +78,50 @@ public class VoteController {
             return ResponseEntity.ok(updatedOption);
         }
 
+        @Operation(summary = "투표 항목 추가", description = "기존 투표에 새로운 항목을 추가합니다.")
+        @ApiResponses(value = {
+                @ApiResponse(responseCode = "200", description = "항목 추가 성공",
+                        content = @Content(mediaType = "application/json", schema = @Schema(implementation = VoteEntity.PollOption.class))),
+                @ApiResponse(responseCode = "400", description = "잘못된 요청 데이터", content = @Content),
+                @ApiResponse(responseCode = "404", description = "투표가 존재하지 않음", content = @Content)
+        })
+        @PostMapping("/{pollId}/options")
+        public ResponseEntity<VoteEntity.PollOption> addPollOption(
+                @PathVariable("pollId") Long pollId,
+                @RequestBody VoteDTO.PollOptionRequest request) {
+
+            // 요청에서 새 항목 내용 가져오기
+            String content = request.getContent();
+            if (content == null || content.isBlank()) {
+                throw new IllegalArgumentException("항목 내용은 필수입니다.");
+            }
+
+            // 서비스 호출
+            VoteEntity.PollOption newOption = voteService.addPollOption(pollId, content);
+            return ResponseEntity.ok(newOption);
+        }
+
         // 투표 삭제
         @Operation(summary = "투표 삭제", description = "지정된 투표를 삭제합니다.")
         @DeleteMapping("/{pollId}")
         public ResponseEntity<Void> deletePoll(@PathVariable("pollId") Long pollId) {
             voteService.deletePoll(pollId);
             return ResponseEntity.noContent().build();
+        }
+
+        @Operation(summary = "투표 항목 삭제", description = "특정 투표의 항목을 삭제합니다.")
+        @ApiResponses(value = {
+                @ApiResponse(responseCode = "200", description = "항목 삭제 성공"),
+                @ApiResponse(responseCode = "400", description = "잘못된 요청 데이터", content = @Content),
+                @ApiResponse(responseCode = "404", description = "항목을 찾을 수 없음", content = @Content)
+        })
+        @DeleteMapping("/{pollId}/options/{optionId}")
+        public ResponseEntity<Void> deletePollOption(
+                @PathVariable("pollId") Long pollId,
+                @PathVariable("optionId") Long optionId) {
+
+            voteService.deletePollOption(pollId, optionId);
+            return ResponseEntity.ok().build();
         }
 
         // 유효 기간이 지난 투표 삭제

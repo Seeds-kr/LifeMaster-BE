@@ -88,6 +88,35 @@ public class VoteService {
         ));
     }
 
+    public Map<String, Object> getPollDetails(Long pollId) {
+        // 1. 투표 ID로 투표 정보 조회
+        VoteEntity.Poll poll = pollRepository.findById(pollId)
+                .orElseThrow(() -> new IllegalArgumentException("투표를 찾을 수 없습니다."));
+
+        // 2. 만료 여부 확인
+        boolean isExpired = poll.getEndDate().isBefore(LocalDateTime.now());
+
+        // 3. 투표 항목 및 결과 계산
+        List<VoteEntity.PollOption> options = pollOptionRepository.findByPollId(pollId);
+        int totalVotes = options.stream().mapToInt(VoteEntity.PollOption::getVotes).sum();
+
+        List<Map<String, Object>> optionDetails = options.stream().map(option -> {
+            Map<String, Object> optionData = new HashMap<>();
+            optionData.put("content", option.getContent());
+            optionData.put("votes", option.getVotes());
+            optionData.put("votePercentage", totalVotes > 0 ? (option.getVotes() * 100.0 / totalVotes) : 0);
+            return optionData;
+        }).collect(Collectors.toList());
+
+        // 4. 결과 데이터 구성
+        Map<String, Object> pollDetails = new HashMap<>();
+        pollDetails.put("title", poll.getTitle());
+        pollDetails.put("isExpired", isExpired);
+        pollDetails.put("options", optionDetails);
+
+        return pollDetails;
+    }
+
     public VoteEntity.Poll updatePollTitle(Long pollId, String title) {
         VoteEntity.Poll poll = pollRepository.findById(pollId)
                 .orElseThrow(() -> new IllegalArgumentException("투표를 찾을 수 없습니다."));
@@ -107,6 +136,27 @@ public class VoteService {
         return pollOptionRepository.save(option);
     }
 
+    public VoteEntity.PollOption addPollOption(Long pollId, String content) {
+        // 1. 주어진 pollId로 투표를 조회
+        VoteEntity.Poll poll = pollRepository.findById(pollId)
+                .orElseThrow(() -> new IllegalArgumentException("투표가 존재하지 않습니다."));
+
+        // 2. 동일한 내용의 항목이 이미 존재하는지 확인
+        boolean isDuplicate = poll.getOptions().stream()
+                .anyMatch(option -> option.getContent().equalsIgnoreCase(content));
+        if (isDuplicate) {
+            throw new IllegalArgumentException("동일한 내용의 항목이 이미 존재합니다.");
+        }
+
+        // 3. 새 투표 항목 생성 및 저장
+        VoteEntity.PollOption newOption = new VoteEntity.PollOption();
+        newOption.setPoll(poll);
+        newOption.setContent(content);
+        newOption.setVotes(0);
+
+        return pollOptionRepository.save(newOption);
+    }
+
     public void deletePoll(Long pollId) {
         VoteEntity.Poll poll = pollRepository.findById(pollId)
                 .orElseThrow(() -> new IllegalArgumentException("투표를 찾을 수 없습니다."));
@@ -122,6 +172,23 @@ public class VoteService {
         LocalDateTime now = LocalDateTime.now();
         List<VoteEntity.Poll> expiredPolls = pollRepository.findByEndDateBefore(now);
         pollRepository.deleteAll(expiredPolls);
+    }
+
+    public void deletePollOption(Long pollId, Long optionId) {
+        // 1. 해당 pollId가 유효한지 확인
+        VoteEntity.Poll poll = pollRepository.findById(pollId)
+                .orElseThrow(() -> new IllegalArgumentException("투표를 찾을 수 없습니다."));
+
+        // 2. 해당 optionId가 유효하고, poll에 속해 있는지 확인
+        VoteEntity.PollOption option = pollOptionRepository.findById(optionId)
+                .orElseThrow(() -> new IllegalArgumentException("투표 옵션을 찾을 수 없습니다."));
+
+        if (!option.getPoll().getId().equals(pollId)) {
+            throw new IllegalArgumentException("해당 투표 옵션은 올바른 투표에 속하지 않습니다.");
+        }
+
+        // 3. 삭제
+        pollOptionRepository.delete(option);
     }
 
     public List<Map<String, Object>> getAllPollsWithStatus() {
