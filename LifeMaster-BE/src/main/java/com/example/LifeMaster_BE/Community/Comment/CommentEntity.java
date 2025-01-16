@@ -2,7 +2,6 @@ package com.example.LifeMaster_BE.Community.Comment;
 
 import com.example.LifeMaster_BE.Community.Comment.Like.LikeEntity;
 import jakarta.persistence.*;
-import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
@@ -25,7 +24,7 @@ public class CommentEntity {
     @Column(length = 50)
     private String comment;
 
-    @OneToMany(mappedBy = "commentEntity")
+    @OneToMany(mappedBy = "comment")
     private List<LikeEntity> likes = new ArrayList<>();
     // 작성자 연결
 
