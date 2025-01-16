@@ -3,6 +3,7 @@ package com.example.LifeMaster_BE.UserManager.Peristalsis.Google.Login;
 import com.example.LifeMaster_BE.Security.Utils.JwtUtil;
 import com.example.LifeMaster_BE.UserManager.Peristalsis.CustomOAuth2AccessToken;
 import com.example.LifeMaster_BE.UserManager.Peristalsis.CustomOAuth2UserService;
+import com.example.LifeMaster_BE.UserManager.Peristalsis.OAuthUsersEntity;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -59,10 +60,10 @@ public class GoogleOAuthController {
             @RequestParam("code") String authorizationCode,
             Model model) {
 
-        GoogleOAuth2AuthenticationResponse response = customOAuth2UserService.handleOAuth2Authentication(authorizationCode);
+        GoogleOAuth2AuthenticationResponse response = customOAuth2UserService.handleOAuth2AuthenticationGoogle(authorizationCode);
 
         // 유저와 토큰 가져오기
-        GoogleUsersEntity user = response.getUser();
+        OAuthUsersEntity user = response.getUser();
         CustomOAuth2AccessToken token = response.getToken();
         String jwtToken = response.getJwtToken();
 
@@ -113,7 +114,7 @@ public class GoogleOAuthController {
             @RequestParam("refreshToken") String refreshToken) {
 
         // 리프레시 토큰을 사용하여 새로운 액세스 토큰 요청
-        CustomOAuth2AccessToken newToken = customOAuth2UserService.refreshAccessToken(refreshToken);
+        CustomOAuth2AccessToken newToken = customOAuth2UserService.refreshAccessTokenGoogle(refreshToken);
 
         // 새로운 액세스 토큰과 리프레시 토큰을 반환
         Map<String, Object> responseMap = Map.of(

@@ -5,8 +5,6 @@ import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import com.example.LifeMaster_BE.UserManager.Peristalsis.Google.Login.GoogleOAuth2AuthenticationResponse;
 import com.example.LifeMaster_BE.UserManager.Peristalsis.Google.Login.GoogleOAuthProperties;
-import com.example.LifeMaster_BE.UserManager.Peristalsis.Google.Login.GoogleUsersEntity;
-import com.example.LifeMaster_BE.UserManager.Peristalsis.Google.Login.GoogleUsersRepository;
 import com.example.LifeMaster_BE.UserManager.Peristalsis.Naver.NaverOAuthProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +37,7 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
     private GoogleOAuthProperties googleOAuthProperties;
     @Autowired
     private NaverOAuthProperties naverOAuthProperties;
-    private final GoogleUsersRepository googleUsersRepository;
+    private final OAuthUsersRepository OAuthUsersRepository;
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
 
@@ -47,15 +45,16 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
     private final RestTemplate restTemplate = new RestTemplate();
     private static final Logger logger = LoggerFactory.getLogger(CustomOAuth2UserService.class);
 
-    public CustomOAuth2UserService(GoogleUsersRepository googleUsersRepository, @Lazy AuthenticationManager authenticationManager, JwtUtil jwtUtil, MemberRepository memberRepository) {
-        this.googleUsersRepository = googleUsersRepository;
+    public CustomOAuth2UserService(OAuthUsersRepository OAuthUsersRepository, @Lazy AuthenticationManager authenticationManager, JwtUtil jwtUtil, MemberRepository memberRepository) {
+        this.OAuthUsersRepository = OAuthUsersRepository;
         this.authenticationManager = authenticationManager;
         this.jwtUtil = jwtUtil;
         this.memberRepository = memberRepository;
     }
 
 
-    public GoogleUsersEntity loadGoogleUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
+    //구글 유저 정보 가져오는 메소드
+    public OAuthUsersEntity loadGoogleUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
         RestTemplate restTemplate = new RestTemplate();
         // 액세스 토큰 가져오기
         String accessToken = userRequest.getAccessToken().getTokenValue();
@@ -75,21 +74,22 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         String email = (String) userAttributes.get("email");
         String picture = (String) userAttributes.get("picture");
 
-        GoogleUsersEntity googleUser;
-        Optional<GoogleUsersEntity> optionalUser = googleUsersRepository.findByIdentifier(id);
+        OAuthUsersEntity googleUser;
+        Optional<OAuthUsersEntity> optionalUser = OAuthUsersRepository.findByIdentifier(id);
 
         if (optionalUser.isPresent()) {
             // 기존 유저 정보 업데이트
             googleUser = optionalUser.get().update(name, picture);
         } else {
             // 새 유저 생성
-            googleUser = new GoogleUsersEntity(name, email, picture, "User", id);
+            googleUser = new OAuthUsersEntity(name, email, picture, "User", id);
         }
 
         return googleUser;
     }
 
-    public GoogleUsersEntity loadNaverUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
+    //네이버 유저 정보 가져오는 메소드
+    public OAuthUsersEntity loadNaverUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
         String accessToken = userRequest.getAccessToken().getTokenValue(); // 액세스 토큰 가져오기
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Bearer " + accessToken); // Authorization 헤더에 Bearer 토큰 추가
@@ -112,22 +112,22 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         String email = (String) responseMap.get("email");
         String picture = (String) responseMap.get("profile_image");
 
-        GoogleUsersEntity naverUser;
-        Optional<GoogleUsersEntity> optionalUser = googleUsersRepository.findByIdentifier(id);
+        OAuthUsersEntity naverUser;
+        Optional<OAuthUsersEntity> optionalUser = OAuthUsersRepository.findByIdentifier(id);
 
         if (optionalUser.isPresent()) {
             // 기존 유저 정보 업데이트
             naverUser = optionalUser.get().update(name, picture);
         } else {
             // 새 유저 생성
-            naverUser = new GoogleUsersEntity(name, email, picture, "User", id);
+            naverUser = new OAuthUsersEntity(name, email, picture, "User", id);
         }
 
         return naverUser;
     }
 
-
-    public GoogleOAuth2AuthenticationResponse handleOAuth2Authentication(String authorizationCode) {
+    //구글 연동 인증 처리하는 메소드
+    public GoogleOAuth2AuthenticationResponse handleOAuth2AuthenticationGoogle(String authorizationCode) {
         ClientRegistration registration = ClientRegistration.withRegistrationId("google")
                 .clientId(googleOAuthProperties.getClientId())                 // Google 클라이언트 ID
                 .clientSecret(googleOAuthProperties.getClientSecret())         // Google 클라이언트 비밀
@@ -140,12 +140,12 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
                 .scope("openid", "profile", "email")      // OAuth2 스코프 설정
                 .build();
 
-        CustomOAuth2AccessToken accessToken = getAccessToken(authorizationCode, registration);
+        CustomOAuth2AccessToken accessToken = getAccessTokenGoogle(authorizationCode, registration);
 
-        GoogleUsersEntity oAuth2User = loadGoogleUser(new OAuth2UserRequest(registration, accessToken));
+        OAuthUsersEntity oAuth2User = loadGoogleUser(new OAuth2UserRequest(registration, accessToken));
 
 
-        GoogleUsersEntity user = saveOrUpdate(oAuth2User);
+        OAuthUsersEntity user = saveOrUpdate(oAuth2User);
         MemberEntity member = new MemberEntity(user.getEmail(),user.getIdentifier());
 
         BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder();
@@ -161,6 +161,7 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         return new GoogleOAuth2AuthenticationResponse(user, accessToken, token);
     }
 
+    //네이버 연동 인증 처리하는 메소드
     public GoogleOAuth2AuthenticationResponse handleOAuth2AuthenticationNaver(String authorizationCode) {
         String state = UUID.randomUUID().toString(); // 고유한 상태 값 생성
 
@@ -178,10 +179,10 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 
         CustomOAuth2AccessToken accessToken = getAccessTokenFromNaver(authorizationCode, state, registration);
 
-        GoogleUsersEntity oAuth2User = loadNaverUser(new OAuth2UserRequest(registration, accessToken));
+        OAuthUsersEntity oAuth2User = loadNaverUser(new OAuth2UserRequest(registration, accessToken));
 
 
-        GoogleUsersEntity user = saveOrUpdate(oAuth2User);
+        OAuthUsersEntity user = saveOrUpdate(oAuth2User);
         MemberEntity member = new MemberEntity(user.getEmail(),user.getIdentifier());
 
         BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder();
@@ -197,8 +198,8 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         return new GoogleOAuth2AuthenticationResponse(user, accessToken, token);
     }
 
-
-    public CustomOAuth2AccessToken getAccessToken(String authorizationCode, ClientRegistration registration) {
+    //구글 연동 인증 토큰 가져오는 메소드
+    public CustomOAuth2AccessToken getAccessTokenGoogle(String authorizationCode, ClientRegistration registration) {
         RestTemplate restTemplate = new RestTemplate();
 
         // Google의 토큰 요청 URL은 registration 객체에서 가져옵니다.
@@ -239,6 +240,7 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         );
     }
 
+    //네이버 연동 인증 토큰 가져오는 메소드
     public CustomOAuth2AccessToken getAccessTokenFromNaver(String authorizationCode, String state, ClientRegistration registration) {
         RestTemplate restTemplate = new RestTemplate();
 
@@ -284,8 +286,8 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         );
     }
 
-
-    public CustomOAuth2AccessToken refreshAccessToken(String refreshToken) {
+    //리프래시 토큰으로 토큰 새로 가져오는 코드 (구글)
+    public CustomOAuth2AccessToken refreshAccessTokenGoogle(String refreshToken) {
         RestTemplate restTemplate = new RestTemplate();
 
         String tokenUrl = "https://oauth2.googleapis.com/token";
@@ -322,6 +324,7 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         );
     }
 
+    //리프래시 토큰으로 토큰 새로 가져오는 코드 (네이버)
     public CustomOAuth2AccessToken refreshAccessTokenNaver(String refreshToken) {
         RestTemplate restTemplate = new RestTemplate();
 
@@ -363,13 +366,13 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         );
     }
 
-    // userRepository.save(user)에서 오류 해결
-    private GoogleUsersEntity saveOrUpdate(GoogleUsersEntity usersEntity) {
-        GoogleUsersEntity user = (GoogleUsersEntity) googleUsersRepository.findByEmail(usersEntity.getEmail())
+    //유저 정보 저장/갱신
+    private OAuthUsersEntity saveOrUpdate(OAuthUsersEntity usersEntity) {
+        OAuthUsersEntity user = (OAuthUsersEntity) OAuthUsersRepository.findByEmail(usersEntity.getEmail())
                 .map(entity -> entity.update(usersEntity.getName(), usersEntity.getPicture()))
                 .orElse(usersEntity);
 
-        return googleUsersRepository.save(user); // Save method should return GoogleUsers, not Object.
+        return OAuthUsersRepository.save(user); // Save method should return GoogleUsers, not Object.
     }
 
     private MemberEntity saveOrUpdateMember(MemberEntity usersEntity) {
