@@ -1,6 +1,5 @@
 package com.example.LifeMaster_BE.Community.Comment.Like;
 
-import com.example.LifeMaster_BE.Security.CustomUserDetailService;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -19,9 +18,9 @@ import java.util.Map;
 @RestController
 @RequestMapping("/comment/like")
 @RequiredArgsConstructor
-public class LikeController {
+public class CommentLikeController {
 
-    private final LikeService likeService;
+    private final CommentLikeService likeService;
     private final MemberRepository memberRepository;
 
     @PostMapping("{commentId}")

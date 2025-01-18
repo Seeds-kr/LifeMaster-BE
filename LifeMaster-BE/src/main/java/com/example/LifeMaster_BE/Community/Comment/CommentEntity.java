@@ -1,6 +1,6 @@
 package com.example.LifeMaster_BE.Community.Comment;
 
-import com.example.LifeMaster_BE.Community.Comment.Like.LikeEntity;
+import com.example.LifeMaster_BE.Community.Comment.Like.CommentLikeEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -25,7 +25,7 @@ public class CommentEntity {
     private String comment;
 
     @OneToMany(mappedBy = "comment")
-    private List<LikeEntity> likes = new ArrayList<>();
+    private List<CommentLikeEntity> likes = new ArrayList<>();
     // 작성자 연결
 
     // 게시글 연결
