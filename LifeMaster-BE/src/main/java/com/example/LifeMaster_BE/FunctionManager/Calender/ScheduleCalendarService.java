@@ -6,12 +6,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 @Service("scheduleCalendarService")
 public class ScheduleCalendarService {
@@ -32,7 +32,7 @@ public class ScheduleCalendarService {
     }
 
     // 특정 날짜 조회
-    public List<ScheduleCalendarEntity> findByDate(String date) {
+    public Optional<ScheduleCalendarEntity> findByDate(String date) {
         return calendarRepository.findByDate(date);
     }
 
@@ -59,41 +59,49 @@ public class ScheduleCalendarService {
     }
 
     public ScheduleCalendarEntity createCalendarEntity(ScheduleCalendarEntity calendarEntity) {
+        // 날짜 중복 검사
+        Optional<ScheduleCalendarEntity> existingEntry = calendarRepository.findByDate(calendarEntity.getDate());
+        if (existingEntry.isPresent()) {
+            // 날짜가 중복되면 예외를 던지거나 적절한 처리를 할 수 있습니다.
+            throw new IllegalArgumentException("Calendar entry for the given date already exists.");
+        }
+
+        // 새로운 CalendarEntity 생성
         ScheduleCalendarEntity entry = new ScheduleCalendarEntity();
         String day = getDayOfWeek(calendarEntity.getDate());
         entry.setDay(day);
-        //날짜가 있으면 해당 날짜로, 아니면 오늘 날짜로 할당
+
+        // 날짜가 있으면 해당 날짜로, 아니면 오늘 날짜로 할당
         entry.setDate(Objects.requireNonNullElseGet(calendarEntity.getDate(), ScheduleCalendarService::getTodayDate));
         entry.setEvents(calendarEntity.getEvents());
-        entry.setToDoList(calendarEntity.getToDoList());
+        entry.setTodos(calendarEntity.getTodos());
+
+        // 새로운 엔티티 저장
         return calendarRepository.save(entry);
     }
 
     // 특정 날짜에 항목 추가 또는 업데이트
     public ScheduleCalendarEntity addOrUpdateEvent(String date, String event) {
-        List<ScheduleCalendarEntity> entries = calendarRepository.findByDate(date);
+        Optional<ScheduleCalendarEntity> entries = calendarRepository.findByDate(date);
         ScheduleCalendarEntity entry;
         if (entries.isEmpty()) {
             entry = new ScheduleCalendarEntity();
             entry.setDate(date);
         } else {
-            entry = entries.get(0);
+            entry = entries.get();
         }
         entry.getEvents().add(event);
         return calendarRepository.save(entry);
     }
 
-    // 날짜 전체 삭제
     public boolean deleteEventByDate(String date) {
-        List<ScheduleCalendarEntity> entries = calendarRepository.findByDate(date);
-        if (!entries.isEmpty()) {
-            ScheduleCalendarEntity entry = entries.get(0);
-            calendarRepository.delete(entry);
-            List<TodoEntity> todoEntries = todoRepository.findByDate(date);
-            if (!entries.isEmpty()) {
-                TodoEntity todoEntry = todoEntries.get(0);
-                todoRepository.delete(todoEntry);
-            }
+        Optional<ScheduleCalendarEntity> entries = calendarRepository.findByDate(date);
+        if (entries.isPresent()) {
+            ScheduleCalendarEntity entry = entries.get();
+
+            // CascadeType.ALL로 설정되어 있으므로, 캘린더를 삭제할 때 관련된 TodoEntity도 함께 삭제됩니다.
+            calendarRepository.delete(entry);  // 캘린더 삭제
+
             return true;
         }
         return false;
@@ -101,9 +109,9 @@ public class ScheduleCalendarService {
 
     // 특정 항목 삭제
     public ScheduleCalendarEntity deleteSpecificEvent(String date, String event) {
-        List<ScheduleCalendarEntity> entries = calendarRepository.findByDate(date);
+        Optional<ScheduleCalendarEntity> entries = calendarRepository.findByDate(date);
         if (!entries.isEmpty()) {
-            ScheduleCalendarEntity entry = entries.get(0);
+            ScheduleCalendarEntity entry = entries.get();
             entry.getEvents().remove(event);
             return calendarRepository.save(entry);
         }
