@@ -1,5 +1,6 @@
 package com.example.LifeMaster_BE.Group;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -9,7 +10,6 @@ import java.util.List;
 @Setter
 @Getter
 @Entity
-@Table(name = "group_entity")
 public class GroupEntity {
 
     @Id
@@ -23,6 +23,10 @@ public class GroupEntity {
 
     @Lob
     private String description; // 그룹 설명
+
+    @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    private List<GoalEntity> goals; // 그룹에 속한 목표들
 
     @ElementCollection
     @CollectionTable(name = "group_statistics", joinColumns = @JoinColumn(name = "group_id"))
@@ -40,5 +44,11 @@ public class GroupEntity {
         this.description = description;
         this.statistics = statistics;
         this.password = password;
+    }
+
+    // 추가된 목표를 그룹에 추가하는 메소드
+    public void addGoal(GoalEntity goal) {
+        this.goals.add(goal);
+        goal.setGroup(this); // 목표가 그룹을 참조하게 설정
     }
 }
