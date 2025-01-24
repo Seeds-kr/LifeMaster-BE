@@ -13,6 +13,7 @@ public class GoalDTO {
     private String name;
     private String goalCondition;
     private int value;
+    private int duration;
     private Long groupId;
 
     // Getters and Setters

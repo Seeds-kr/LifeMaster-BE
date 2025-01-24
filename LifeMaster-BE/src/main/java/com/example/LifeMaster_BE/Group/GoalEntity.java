@@ -15,7 +15,8 @@ public class GoalEntity {
     private Long id;
 
     private String name; // 목표 이름 (수면 시간, 공부 시간 등)
-    private String goal_condition; // 목표 조건 (예: N회 이상, N분 이상)
+    private String goal_condition; // 목표 기준 (예: 시간, 횟수)
+    private int duration; // 목표 기한 (하루,일주일,한달 (단위 일))
     private int value; // 목표값 (예: 7시간, 50회 등)
 
     @ManyToOne
@@ -30,6 +31,7 @@ public class GoalEntity {
         this.name = goalDTO.getName();
         this.goal_condition = goalDTO.getGoalCondition();
         this.value = goalDTO.getValue();
+        this.duration = goalDTO.getDuration();
         this.group = group;
     }
 
