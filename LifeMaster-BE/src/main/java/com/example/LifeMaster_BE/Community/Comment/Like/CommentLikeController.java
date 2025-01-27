@@ -23,9 +23,10 @@ public class CommentLikeController {
     private final CommentLikeService likeService;
     private final MemberRepository memberRepository;
 
-    @PostMapping("{commentId}")
-    public ResponseEntity<Map<String, Boolean>> like(@PathVariable long commentId,
+    @PostMapping("/{commentId}")
+    public ResponseEntity<Map<String, Boolean>> like(@PathVariable Long commentId,
                                                      @AuthenticationPrincipal User user) {
+
         String email = user.getUsername();
         MemberEntity member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new EntityNotFoundException(email));
