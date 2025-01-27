@@ -16,13 +16,13 @@ public class PostLikeEntity {
     private Long id;
 
     @Column(name = "member_id", nullable = false)
-    private String memberId;
+    private Long memberId;
 
     @ManyToOne
     @JoinColumn(name = "post_id", nullable = false)
     private PostEntity post;
 
-    public PostLikeEntity(String memberId, PostEntity post) {
+    public PostLikeEntity(Long memberId, PostEntity post) {
         this.memberId = memberId;
         this.post = post;
     }
