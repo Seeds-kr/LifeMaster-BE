@@ -1,5 +1,6 @@
 package com.example.LifeMaster_BE.Community.Post;
 
+import com.example.LifeMaster_BE.Community.Comment.CommentEntity;
 import com.example.LifeMaster_BE.Community.Post.Like.PostLikeEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import jakarta.persistence.*;
@@ -31,18 +32,22 @@ public class PostEntity {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @OneToMany(mappedBy = "post")
-    private List<PostLikeEntity> likes = new ArrayList<>();
-
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
     private MemberEntity member;
 
-    public PostEntity(String title, String content, String file, PostType type) {
+    @OneToMany(mappedBy = "post")
+    private List<PostLikeEntity> likes = new ArrayList<>();
+
+    @OneToMany(mappedBy = "post")
+    private List<CommentEntity> comments = new ArrayList<>();
+
+    public PostEntity(String title, String content, String file, PostType type, MemberEntity member) {
         this.title = title;
         this.content = content;
         this.file = file;
         this.type = type;
+        this.member = member;
     }
 
     public void updatePost(String title, String content, String fileUrl) {

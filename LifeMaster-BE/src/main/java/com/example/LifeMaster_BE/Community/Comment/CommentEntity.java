@@ -1,6 +1,7 @@
 package com.example.LifeMaster_BE.Community.Comment;
 
 import com.example.LifeMaster_BE.Community.Comment.Like.CommentLikeEntity;
+import com.example.LifeMaster_BE.Community.Post.PostEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,14 +25,18 @@ public class CommentEntity {
     @Column(length = 50)
     private String comment;
 
-    @OneToMany(mappedBy = "comment")
-    private List<CommentLikeEntity> likes = new ArrayList<>();
-    // 작성자 연결
-
-    // 게시글 연결
-
     @CreatedDate
     private LocalDateTime commentDate;
+
+    @OneToMany(mappedBy = "comment")
+    private List<CommentLikeEntity> likes = new ArrayList<>();
+
+    // 게시글 연결
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "post_id")
+    private PostEntity post;
+
+    // 작성자 연결
 
     public void updateComment(String newComment) {
         if (newComment == null || newComment.isBlank()){
