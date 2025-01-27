@@ -41,7 +41,7 @@ public class MemberEntity {
     private boolean loginStatus;
 
     // 게시글
-    @OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
     private List<PostEntity> posts = new ArrayList<>();
 
     public MemberEntity() {
