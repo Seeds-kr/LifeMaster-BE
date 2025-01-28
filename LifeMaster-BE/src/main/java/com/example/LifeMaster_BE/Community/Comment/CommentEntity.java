@@ -45,7 +45,8 @@ public class CommentEntity {
 
         this.comment = newComment;
     }
-    public CommentEntity(String comment) {
+    public CommentEntity(String comment, PostEntity post) {
         this.comment = comment;
+        this.post = post;
     }
 }

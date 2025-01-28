@@ -18,7 +18,7 @@ import java.util.List;
 
 @Slf4j
 @Controller
-@RequestMapping("/comment")
+@RequestMapping("/posts/{postId}/comments")
 @RequiredArgsConstructor
 public class CommentController {
 
@@ -26,32 +26,34 @@ public class CommentController {
     private final MemberRepository memberRepository;
 
     @GetMapping
-    public ResponseEntity<List<AllCommentsDto>> getAllComments(@AuthenticationPrincipal User user) {
+    public ResponseEntity<List<AllCommentsDto>> getAllComments(@PathVariable Long postId, @AuthenticationPrincipal User user) {
 
         String email = user.getUsername();
         MemberEntity member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new EntityNotFoundException(email));
 
-        List<AllCommentsDto> allComments = commentService.getAllComments(member.getId());
+        List<AllCommentsDto> allComments = commentService.getAllComments(member.getId(), postId);
         return ResponseEntity.ok(allComments);
     }
 
     @PostMapping
-    public ResponseEntity<CommentEntity> newComment(@RequestBody CommentDto commentDto){
+    public ResponseEntity<CommentEntity> newComment(@PathVariable Long postId, @RequestBody CommentDto commentDto){
         String comment = commentDto.getComment();
-        CommentEntity createdComment = commentService.createComment(comment);
+        CommentEntity createdComment = commentService.createComment(postId, comment);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(createdComment);
     }
 
     @PatchMapping("/{commentId}")
-    public void updateComment(@PathVariable Long commentId,
+    public void updateComment(@PathVariable Long postId,
+                              @PathVariable Long commentId,
                               @RequestBody CommentDto commentDto){
-        commentService.updateComment(commentId, commentDto.getComment());
+        commentService.updateComment(commentId, postId, commentDto.getComment());
     }
 
     @DeleteMapping("/{commentId}")
-    public void deleteComment(@PathVariable Long commentId){
-        commentService.deleteComment(commentId);
+    public void deleteComment(@PathVariable Long postId,
+                              @PathVariable Long commentId){
+        commentService.deleteComment(postId, commentId);
     }
 }

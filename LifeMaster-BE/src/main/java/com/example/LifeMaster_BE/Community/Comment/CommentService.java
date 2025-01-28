@@ -3,6 +3,8 @@ package com.example.LifeMaster_BE.Community.Comment;
 import com.example.LifeMaster_BE.Community.Comment.Dto.AllCommentsDto;
 import com.example.LifeMaster_BE.Community.Comment.Like.CommentLikeEntity;
 import com.example.LifeMaster_BE.Community.Comment.Like.CommentLikeRepository;
+import com.example.LifeMaster_BE.Community.Post.PostEntity;
+import com.example.LifeMaster_BE.Community.Post.PostRepository;
 import jakarta.persistence.EntityNotFoundException;
 
 import lombok.RequiredArgsConstructor;
@@ -22,10 +24,11 @@ public class CommentService {
 
     private final CommentRepository commentRepository;
     private final CommentLikeRepository likeRepository;
+    private final PostRepository postRepository;
 
-    public List<AllCommentsDto> getAllComments(Long memberId){
+    public List<AllCommentsDto> getAllComments(Long memberId, Long postId){
         // 전체 댓글 가져오기
-        List<CommentEntity> comments = commentRepository.findAll();
+        List<CommentEntity> comments = commentRepository.findByPostId(postId);
 
         // 댓글 id만 List로 추출
         List<Long> commentIds = comments.stream()
@@ -49,20 +52,23 @@ public class CommentService {
                 ))
                 .toList();
     }
-    public CommentEntity createComment(String comment) {
-        CommentEntity commentEntity = new CommentEntity(comment);
+    public CommentEntity createComment(Long postId, String comment) {
+        PostEntity post = postRepository.findById(postId)
+                .orElseThrow(() -> new EntityNotFoundException("post not found"));
+
+        CommentEntity commentEntity = new CommentEntity(comment, post);
         return commentRepository.save(commentEntity);
     }
 
-    public void updateComment(Long commentId, String comment){
-        CommentEntity commentEntity = commentRepository.findById(commentId)
+    public void updateComment(Long commentId, Long postId, String comment){
+        CommentEntity commentEntity = commentRepository.findByIdAndPostId(commentId, postId)
                 .orElseThrow(() -> new EntityNotFoundException("comment not found"));
 
         commentEntity.updateComment(comment);
         commentRepository.save(commentEntity);
     }
 
-    public void deleteComment(Long commentId){
-        commentRepository.deleteById(commentId);
+    public void deleteComment(Long commentId, Long postId){
+        commentRepository.deleteByIdAndPostId(commentId, postId);
     }
 }
