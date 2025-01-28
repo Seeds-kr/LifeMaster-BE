@@ -1,6 +1,5 @@
 package com.example.LifeMaster_BE.Community.Post;
 
-import com.example.LifeMaster_BE.Community.Comment.CommentEntity;
 import com.example.LifeMaster_BE.Community.Post.Dto.AllPostsDto;
 import com.example.LifeMaster_BE.Community.Post.Like.PostLikeEntity;
 import com.example.LifeMaster_BE.Community.Post.Like.PostLikeRepository;
@@ -47,8 +46,10 @@ public class PostService {
     }
 
     public PostEntity getPost(Long postId){
-        return postRepository.findById(postId)
+        PostEntity post = postRepository.findById(postId)
                 .orElseThrow(() -> new EntityNotFoundException("Post not found"));
+        post.increaseViewCount();
+        return post;
     }
 
     public PostEntity createPost(String title, String content, String fileUrl,
