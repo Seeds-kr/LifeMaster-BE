@@ -12,14 +12,14 @@ import java.util.Optional;
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class LikeService {
+public class CommentLikeService {
 
-    private final LikeRepository likeRepository;
+    private final CommentLikeRepository likeRepository;
     private final CommentRepository commentRepository;
 
     public boolean toggleLike(Long memberID, Long commentId){
 
-        Optional<LikeEntity> existingLike = likeRepository.findByMemberIdAndCommentId(memberID, commentId);
+        Optional<CommentLikeEntity> existingLike = likeRepository.findByMemberIdAndCommentId(memberID, commentId);
 
         if(existingLike.isPresent()){
             likeRepository.deleteByMemberIdAndCommentId(memberID, commentId);
@@ -28,7 +28,7 @@ public class LikeService {
             CommentEntity comment = commentRepository.findById(commentId)
                     .orElseThrow(() -> new EntityNotFoundException("Comment Not found"));
 
-            LikeEntity newLike = new LikeEntity(memberID, comment);
+            CommentLikeEntity newLike = new CommentLikeEntity(memberID, comment);
 
             likeRepository.save(newLike);
             return true;

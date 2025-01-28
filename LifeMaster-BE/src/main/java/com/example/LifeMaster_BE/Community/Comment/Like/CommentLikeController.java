@@ -1,6 +1,5 @@
 package com.example.LifeMaster_BE.Community.Comment.Like;
 
-import com.example.LifeMaster_BE.Security.CustomUserDetailService;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -17,16 +16,17 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/comment/like")
+@RequestMapping("/comments/like")
 @RequiredArgsConstructor
-public class LikeController {
+public class CommentLikeController {
 
-    private final LikeService likeService;
+    private final CommentLikeService likeService;
     private final MemberRepository memberRepository;
 
-    @PostMapping("{commentId}")
-    public ResponseEntity<Map<String, Boolean>> like(@PathVariable long commentId,
+    @PostMapping("/{commentId}")
+    public ResponseEntity<Map<String, Boolean>> like(@PathVariable Long commentId,
                                                      @AuthenticationPrincipal User user) {
+
         String email = user.getUsername();
         MemberEntity member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new EntityNotFoundException(email));

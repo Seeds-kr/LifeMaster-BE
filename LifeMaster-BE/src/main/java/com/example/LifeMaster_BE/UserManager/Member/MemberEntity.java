@@ -1,8 +1,12 @@
 package com.example.LifeMaster_BE.UserManager.Member;
 
+import com.example.LifeMaster_BE.Community.Post.PostEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -35,6 +39,10 @@ public class MemberEntity {
 
     @Column(name = "login_status") // 컬럼 이름 명시
     private boolean loginStatus;
+
+    // 게시글
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
+    private List<PostEntity> posts = new ArrayList<>();
 
     public MemberEntity() {
     }
