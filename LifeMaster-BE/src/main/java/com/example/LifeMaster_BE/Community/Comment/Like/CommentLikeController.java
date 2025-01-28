@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/comment/like")
+@RequestMapping("/comments/like")
 @RequiredArgsConstructor
 public class CommentLikeController {
 
