@@ -110,6 +110,22 @@ public class SwaggerConfig implements WebMvcConfigurer {
                 .build();
     }
 
+    @Bean
+    public GroupedOpenApi commentLikeApi() {
+        return GroupedOpenApi.builder()
+                .group("comment-like")
+                .pathsToMatch("/comments/like/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi postLikeApi() {
+        return GroupedOpenApi.builder()
+                .group("post-like")
+                .pathsToMatch("/posts/like/**")
+                .build();
+    }
+
 
 
 }

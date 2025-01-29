@@ -2,6 +2,7 @@ package com.example.LifeMaster_BE.Community.Comment.Like;
 
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
+import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -23,9 +24,12 @@ public class CommentLikeController {
     private final CommentLikeService likeService;
     private final MemberRepository memberRepository;
 
+//    @Parameter(description = "댓글 ID", required = true) // Swagger 설명 추가
     @PostMapping("/{commentId}")
-    public ResponseEntity<Map<String, Boolean>> like(@PathVariable Long commentId,
-                                                     @AuthenticationPrincipal User user) {
+    public ResponseEntity<Map<String, Boolean>> like(
+            @Parameter(description = "댓글 ID", required = true)
+            @PathVariable("commentId") Long commentId,
+            @AuthenticationPrincipal User user) {
 
         String email = user.getUsername();
         MemberEntity member = memberRepository.findByEmail(email)
