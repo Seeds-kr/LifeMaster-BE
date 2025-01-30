@@ -111,6 +111,14 @@ public class SwaggerConfig implements WebMvcConfigurer {
     }
 
     @Bean
+    public GroupedOpenApi postApi() {
+        return GroupedOpenApi.builder()
+                .group("post-comment")
+                .pathsToMatch("/posts/**")
+                .build();
+    }
+
+    @Bean
     public GroupedOpenApi commentLikeApi() {
         return GroupedOpenApi.builder()
                 .group("comment-like")
@@ -119,10 +127,10 @@ public class SwaggerConfig implements WebMvcConfigurer {
     }
 
     @Bean
-    public GroupedOpenApi postLikeApi() {
+    public GroupedOpenApi emailSendApi() {
         return GroupedOpenApi.builder()
-                .group("post-like")
-                .pathsToMatch("/posts/like/**")
+                .group("email-send")
+                .pathsToMatch("/auth/**")
                 .build();
     }
 
