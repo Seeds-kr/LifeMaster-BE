@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/group")
@@ -19,7 +20,7 @@ public class GroupController {
 
     private final GroupService groupService;
 
-    public GroupController(GroupService groupService) {
+    public GroupController(GroupService groupService, GoalProgressService goalProgressService) {
         this.groupService = groupService;
     }
 
@@ -91,7 +92,7 @@ public class GroupController {
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "Add a goal to a group", description = "목표 이름/기준(예: 시간, 횟수)/기한(하루,일주일,한달 (단위 일))/목표값(예: 7시간, 50회 등) 입력")
+    @Operation(summary = "Add a goal to a group", description = "목표 이름/기준(goalCondition)(time/count)/기한(duration)(daily/weekly/monthly)/목표값(value)(예: 7시간, 50회 등) 입력")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Goal added successfully"),
             @ApiResponse(responseCode = "404", description = "Group not found")
@@ -178,5 +179,10 @@ public class GroupController {
 
         GroupEntity updatedGroup = groupService.removeStatisticFromGroup(groupId, statistic);
         return ResponseEntity.ok(updatedGroup);
+    }
+
+    @GetMapping("/{groupId}/goals/progress")
+    public List<Map<String, Object>> getGroupGoalProgress(@PathVariable("groupId") Long groupId) {
+        return groupService.getGroupGoalProgress(groupId);
     }
 }

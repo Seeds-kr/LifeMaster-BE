@@ -5,21 +5,21 @@ import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class GroupService {
 
     private final GroupRepository groupRepository;
     private final GoalRepository goalRepository;
+    private final GoalProgressRepository goalProgressRepository;
 
     private final MemberRepository memberRepository;
 
-    public GroupService(GroupRepository groupRepository, GoalRepository goalRepository, MemberRepository memberRepository) {
+    public GroupService(GroupRepository groupRepository, GoalRepository goalRepository, GoalProgressRepository goalProgressRepository, MemberRepository memberRepository) {
         this.groupRepository = groupRepository;
         this.goalRepository = goalRepository;
+        this.goalProgressRepository = goalProgressRepository;
         this.memberRepository = memberRepository;
     }
 
@@ -99,6 +99,11 @@ public class GroupService {
         // 그룹의 멤버 목록에서 creator를 제거
         group.getMembers().remove(creator);
 
+        // 그룹의 목표 진행 상황 (GoalProgressEntity) 삭제
+        List<GoalProgressEntity> goalProgressList = goalProgressRepository.findByGroup(group);
+        goalProgressRepository.deleteAll(goalProgressList); // 해당 그룹의 모든 진행 상황 삭제
+
+
         // 그룹을 삭제
         groupRepository.delete(group);
     }
@@ -109,6 +114,16 @@ public class GroupService {
         Optional<GroupEntity> groupOptional = groupRepository.findById(groupId);
         if (groupOptional.isPresent()) {
             GroupEntity group = groupOptional.get();
+
+            // duration이 유효한 값인지 확인 (daily, weekly, monthly)
+            if (!isValidDuration(goal.getDuration())) {
+                throw new RuntimeException("Invalid duration value. Must be daily, weekly, or monthly.");
+            }
+
+            // goalCondition이 유효한 값인지 확인 (time, count)
+            if (!isValidGoalCondition(goal.getGoal_condition())) {
+                throw new RuntimeException("Invalid goal condition. Must be time or count.");
+            }
 
             // 이미 목표가 그룹에 존재하는지 체크 (중복 추가 방지)
             boolean goalExists = group.getGoals().stream()
@@ -133,6 +148,17 @@ public class GroupService {
         }
     }
 
+    // duration이 유효한 값인지 확인하는 메소드
+    private boolean isValidDuration(String duration) {
+        return "daily".equalsIgnoreCase(duration) || "weekly".equalsIgnoreCase(duration) || "monthly".equalsIgnoreCase(duration);
+    }
+
+    // goalCondition이 유효한 값인지 확인하는 메소드
+    private boolean isValidGoalCondition(String goalCondition) {
+        return "time".equalsIgnoreCase(goalCondition) || "count".equalsIgnoreCase(goalCondition);
+    }
+
+
     public GroupEntity findById(Long groupId) {
         // groupRepository에서 그룹을 찾아 옵니다.
         Optional<GroupEntity> groupOptional = groupRepository.findById(groupId);
@@ -154,6 +180,10 @@ public class GroupService {
         if (!goal.getGroup().getId().equals(groupId)) {
             throw new RuntimeException("Goal does not belong to the specified group.");
         }
+
+        // 목표와 관련된 진행 상황 (GoalProgressEntity) 삭제
+        List<GoalProgressEntity> goalProgressList = goalProgressRepository.findByGoal(goal);
+        goalProgressRepository.deleteAll(goalProgressList); // 해당 목표의 모든 진행 상황 삭제
 
         // 목표 삭제
         goalRepository.delete(goal);
@@ -234,5 +264,61 @@ public class GroupService {
 
         // 그룹 저장
         return groupRepository.save(group);
+    }
+
+    public List<Map<String, Object>> getGroupGoalProgress(Long groupId) {
+        Optional<GroupEntity> groupOptional = groupRepository.findById(groupId);
+        if (groupOptional.isEmpty()) {
+            throw new RuntimeException("Group not found with id: " + groupId);
+        }
+
+        GroupEntity group = groupOptional.get();
+        List<GoalEntity> goals = group.getGoals();
+
+        List<String> allUsers = group.getMembers() // group.getMembers()로 변경
+                .stream()
+                .map(MemberEntity::getEmail) // MemberEntity에서 이메일 추출
+                .sorted()
+                .toList();
+
+        List<Map<String, Object>> goalProgressList = new ArrayList<>();
+
+        for (GoalEntity goal : goals) {
+            List<GoalProgressEntity> progressList = goalProgressRepository.findByGoal(goal);
+
+            Map<String, Object> goalData = new HashMap<>();
+            goalData.put("goalName", goal.getName());
+            goalData.put("goalCreationTime", goal.getCreatedAt());
+            goalData.put("goalDuration", goal.getDuration());
+            goalData.put("goalValue", goal.getValue());
+            goalData.put("goalCondition", goal.getGoal_condition());
+
+            // 유저별 진행 정보 계산
+            List<Map<String, Object>> userProgressList = new ArrayList<>();
+
+            for (String userEmail : allUsers) { // 🔹 그룹 유저 전원 포함
+                List<GoalProgressEntity> userProgresses = progressList.stream()
+                        .filter(progress -> progress.getUserEmail().equals(userEmail))
+                        .toList();
+
+                int totalProgress = userProgresses.stream()
+                        .mapToInt(GoalProgressEntity::getProgressValue)
+                        .sum();
+
+                double progressPercentage = (totalProgress / (double) goal.getValue()) * 100;
+
+                Map<String, Object> userProgressData = new HashMap<>();
+                userProgressData.put("userEmail", userEmail);
+                userProgressData.put("progressPercentage", String.format("%.1f%%", progressPercentage));
+                userProgressData.put("progressValue", totalProgress);
+
+                userProgressList.add(userProgressData);
+            }
+
+            goalData.put("userProgress", userProgressList);
+            goalProgressList.add(goalData);
+        }
+
+        return goalProgressList;
     }
 }

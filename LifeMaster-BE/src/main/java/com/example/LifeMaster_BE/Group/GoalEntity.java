@@ -4,6 +4,9 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Setter
@@ -15,14 +18,17 @@ public class GoalEntity {
     private Long id;
 
     private String name; // 목표 이름 (수면 시간, 공부 시간 등)
-    private String goal_condition; // 목표 기준 (예: 시간, 횟수)
-    private int duration; // 목표 기한 (하루,일주일,한달 (단위 일))
+    private String goal_condition; // 목표 기준 (time/count)
+    private String duration; // 목표 기한 (daily/weekly/monthly)
     private int value; // 목표값 (예: 7시간, 50회 등)
 
     @ManyToOne
     @JoinColumn(name = "group_id", nullable = false, foreignKey = @ForeignKey(name = "FK_GROUP_ID"))
     @JsonBackReference
     private GroupEntity group; // GroupEntity 참조
+
+    @CreationTimestamp
+    private LocalDateTime createdAt; // 목표 생성 시간
 
     // 생성자, getter, setter
     public GoalEntity() {}
