@@ -1,5 +1,6 @@
-package com.example.LifeMaster_BE.Group;
+package com.example.LifeMaster_BE.Group.Goal;
 
+import com.example.LifeMaster_BE.Group.GroupEntity;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -46,3 +47,4 @@ public class GoalEntity {
         this.goal_condition = goalCondition;
     }
 }
+

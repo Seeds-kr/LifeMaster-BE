@@ -1,5 +1,8 @@
 package com.example.LifeMaster_BE.Group;
 
+import com.example.LifeMaster_BE.Group.Goal.GoalDTO;
+import com.example.LifeMaster_BE.Group.Goal.GoalEntity;
+import com.example.LifeMaster_BE.Group.GoalProgress.GoalProgressService;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -184,5 +187,23 @@ public class GroupController {
     @GetMapping("/{groupId}/goals/progress")
     public List<Map<String, Object>> getGroupGoalProgress(@PathVariable("groupId") Long groupId) {
         return groupService.getGroupGoalProgress(groupId);
+    }
+
+    // ✅ 초대 코드 생성 API
+    @Operation(summary = "초대 코드 생성", description = "그룹 ID/그룹 비밀번호 기반 초대 코드 생성")
+    @GetMapping("/{groupId}/invite")
+    public ResponseEntity<String> generateInviteCode(@PathVariable("groupId") Long groupId) {
+        String inviteCode = groupService.generateInviteCode(groupId);
+        return ResponseEntity.ok(inviteCode);
+    }
+
+    // ✅ 초대 코드로 그룹 가입 API
+    @Operation(summary = "초대 코드로 그룹 가입", description = "초대 코드로 그룹 가입")
+    @PostMapping("/join")
+    public ResponseEntity<String> joinGroupWithInviteCode(
+            @RequestParam("userId") Long userId,
+            @RequestParam("inviteCode") String inviteCode) {
+        String response = groupService.joinGroupWithInviteCode(userId, inviteCode);
+        return ResponseEntity.ok(response);
     }
 }

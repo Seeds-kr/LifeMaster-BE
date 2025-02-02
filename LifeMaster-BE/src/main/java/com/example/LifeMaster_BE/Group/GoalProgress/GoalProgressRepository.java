@@ -1,5 +1,7 @@
-package com.example.LifeMaster_BE.Group;
+package com.example.LifeMaster_BE.Group.GoalProgress;
 
+import com.example.LifeMaster_BE.Group.Goal.GoalEntity;
+import com.example.LifeMaster_BE.Group.GroupEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.time.LocalDateTime;
 import java.util.List;

@@ -1,4 +1,4 @@
-package com.example.LifeMaster_BE.Group;
+package com.example.LifeMaster_BE.Group.Goal;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

@@ -1,9 +1,14 @@
 package com.example.LifeMaster_BE.Group;
 
+import com.example.LifeMaster_BE.Group.Goal.GoalEntity;
+import com.example.LifeMaster_BE.Group.Goal.GoalRepository;
+import com.example.LifeMaster_BE.Group.GoalProgress.GoalProgressEntity;
+import com.example.LifeMaster_BE.Group.GoalProgress.GoalProgressRepository;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.*;
 
@@ -15,12 +20,14 @@ public class GroupService {
     private final GoalProgressRepository goalProgressRepository;
 
     private final MemberRepository memberRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public GroupService(GroupRepository groupRepository, GoalRepository goalRepository, GoalProgressRepository goalProgressRepository, MemberRepository memberRepository) {
+    public GroupService(GroupRepository groupRepository, GoalRepository goalRepository, GoalProgressRepository goalProgressRepository, MemberRepository memberRepository, PasswordEncoder passwordEncoder) {
         this.groupRepository = groupRepository;
         this.goalRepository = goalRepository;
         this.goalProgressRepository = goalProgressRepository;
         this.memberRepository = memberRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     // Create a group
@@ -320,5 +327,42 @@ public class GroupService {
         }
 
         return goalProgressList;
+    }
+
+    // ✅ 초대 코드 생성 (그룹 ID + 해싱된 비밀번호 조합)
+    public String generateInviteCode(Long groupId) {
+        GroupEntity group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new IllegalArgumentException("Group not found with ID: " + groupId));
+
+        return groupId + "-" + passwordEncoder.encode(group.getPassword());
+    }
+
+    // ✅ 초대 코드로 그룹 가입
+    @Transactional
+    public String joinGroupWithInviteCode(Long userId, String inviteCode) {
+        String[] parts = inviteCode.split("-");
+        if (parts.length != 2) {
+            throw new IllegalArgumentException("Invalid invite code format.");
+        }
+
+        Long groupId = Long.parseLong(parts[0]);
+        String hashedPassword = parts[1];
+
+        GroupEntity group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new IllegalArgumentException("Group not found with ID: " + groupId));
+
+        if (!passwordEncoder.matches(group.getPassword(), hashedPassword)) {
+            throw new IllegalArgumentException("Invalid invite code.");
+        }
+
+        MemberEntity member = memberRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
+
+        // 사용자를 그룹에 추가
+        group.getMembers().add(member);
+        member.getGroups().add(group);
+
+        groupRepository.save(group);
+        return "User successfully joined the group.";
     }
 }
