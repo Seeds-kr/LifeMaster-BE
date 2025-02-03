@@ -54,6 +54,7 @@ public class SpringSecurityConfig {
                 .build();
     }
 
+
     // AuthenticationManage 빈 등록
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception{

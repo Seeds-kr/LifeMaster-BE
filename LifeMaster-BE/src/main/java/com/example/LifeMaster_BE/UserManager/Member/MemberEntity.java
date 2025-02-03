@@ -1,10 +1,14 @@
 package com.example.LifeMaster_BE.UserManager.Member;
 
+import com.example.LifeMaster_BE.Group.GroupEntity;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.example.LifeMaster_BE.Community.Post.PostEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,6 +44,16 @@ public class MemberEntity {
     @Column(name = "login_status") // 컬럼 이름 명시
     private boolean loginStatus;
 
+// Many-to-Many 관계 추가
+    @ManyToMany
+    @JsonIgnore
+    @JoinTable(
+            name = "member_group", // 중간 테이블 이름
+            joinColumns = @JoinColumn(name = "member_id"), // 현재 엔티티를 참조하는 외래 키
+            inverseJoinColumns = @JoinColumn(name = "group_id") // 상대 엔티티를 참조하는 외래 키
+    )
+    private Set<GroupEntity> groups = new HashSet<>(); // 그룹 목록
+    
     // 게시글
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
     private List<PostEntity> posts = new ArrayList<>();
