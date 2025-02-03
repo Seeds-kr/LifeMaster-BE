@@ -73,4 +73,10 @@ public class PostController {
     public void deletePost(@PathVariable Long postId){
         postService.deletePost(postId);
     }
+
+    // 인기글 조회 (Redis에서 가져오기)
+    @GetMapping("/popular")
+    public List<PostEntity> getPopularPosts() {
+        return postService.getPopularPosts();
+    }
 }
