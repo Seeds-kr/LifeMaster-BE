@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @Tag(name = "Schedule Calendar API", description = "캘린더 관리 API")
 @RestController("scheduleCalendarController")
@@ -26,7 +27,7 @@ public class ScheduleCalendarController {
 
     @Operation(summary = "특정 날짜 조회", description = "입력한 날짜(YYYYMMDD)에 저장된 엔트리를 조회합니다.")
     @GetMapping("/{date}")
-    public List<ScheduleCalendarEntity> getEntriesByDate(@PathVariable(name = "date") String date) {
+    public Optional<ScheduleCalendarEntity> getEntriesByDate(@PathVariable(name = "date") String date) {
         return calendarService.findByDate(date);
     }
 
@@ -46,10 +47,14 @@ public class ScheduleCalendarController {
         return ResponseEntity.ok(entry);
     }
 
-    @Operation(summary = "캘린더 엔티티 생성",
-            description = "캘린더 엔티티를 생성합니다. 날짜 형식은 YYYYMMDD이며, TODO 리스트는 기본값으로 NULL로 설정됩니다.")
+    @Operation(
+            summary = "캘린더 엔티티 생성",
+            description = "캘린더 엔티티를 생성합니다. 날짜 형식은 YYYYMMDD이며, TODO 리스트는 기본값으로 NULL로 설정됩니다."
+    )
     @PostMapping("/create")
-    public ResponseEntity<ScheduleCalendarEntity> createDay(@RequestBody ScheduleCalendarEntity calendarEntity) {
+    public ResponseEntity<ScheduleCalendarEntity> createDay(@RequestParam("date") String date) {
+        ScheduleCalendarEntity calendarEntity = new ScheduleCalendarEntity();
+        calendarEntity.setDate(date); // 날짜만 설정
         ScheduleCalendarEntity entry = calendarService.createCalendarEntity(calendarEntity);
         return ResponseEntity.ok(entry);
     }

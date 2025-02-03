@@ -8,8 +8,8 @@ import lombok.NoArgsConstructor;
 @Getter
 @Entity
 @NoArgsConstructor
-@Table(name = "likes", uniqueConstraints = @UniqueConstraint(columnNames = {"member_id", "comment_id"}))
-public class LikeEntity {
+@Table(name = "comment_likes", uniqueConstraints = @UniqueConstraint(columnNames = {"member_id", "comment_id"}))
+public class CommentLikeEntity {
 
     @Id
     @GeneratedValue
@@ -22,7 +22,7 @@ public class LikeEntity {
     @JoinColumn(name = "comment_id", nullable = false)
     private CommentEntity comment;
 
-    public LikeEntity(Long memberId, CommentEntity comment) {
+    public CommentLikeEntity(Long memberId, CommentEntity comment) {
         this.memberId = memberId;
         this.comment = comment;
     }

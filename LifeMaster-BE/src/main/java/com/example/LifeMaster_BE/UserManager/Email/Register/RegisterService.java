@@ -24,9 +24,8 @@ public class RegisterService {
 
     public MemberEntity registerMember(String email, String password, String passwordConfirm) {
 
-        if(!confirmPassword(password, passwordConfirm)){
-            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다");
-        }
+        checkBeforeRegister(email, password, passwordConfirm);
+
         String encodedPassword = encodePassword(password);
         MemberEntity memberEntity = new MemberEntity(email, encodedPassword);
         return memberRepository.save(memberEntity);
@@ -50,6 +49,20 @@ public class RegisterService {
                 throw new RuntimeException("File upload failed", e); // 런타임 예외로 변환
             }
         }
+    }
+
+    private void checkBeforeRegister(String email, String password, String confirmPassword){
+
+        if(!checkEmailDuplicate(email)) {
+            throw new IllegalArgumentException("이미 사용중인 닉네임입니다.");
+        }
+        if(!confirmPassword(password, confirmPassword)){
+            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다");
+        }
+    }
+
+    private boolean checkEmailDuplicate(String email){
+        return memberRepository.existsByEmail(email);
     }
 
     private boolean confirmPassword(String password, String confirmPassword){
