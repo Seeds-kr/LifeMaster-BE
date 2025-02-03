@@ -2,6 +2,7 @@ package com.example.LifeMaster_BE.Group.GoalProgress;
 
 import com.example.LifeMaster_BE.Group.Goal.GoalEntity;
 import com.example.LifeMaster_BE.Group.Goal.GoalRepository;
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,6 +20,7 @@ public class GoalProgressController {
         this.goalRepository = goalRepository;
     }
 
+    @Operation(summary = "목표별 진행률", description = "목표별 진행률")
     @GetMapping("/{goalId}")
     public double getGoalProgress(@PathVariable("goalId") Long goalId) {
         Optional<GoalEntity> goal = goalRepository.findById(goalId);
@@ -28,6 +30,7 @@ public class GoalProgressController {
         return goalProgressService.calculateProgress(goal.get());
     }
 
+    @Operation(summary = "사용자별 목표 진행률", description = "사용자별 목표 진행률")
     @GetMapping("/{goalId}/user")
     public double getUserGoalProgress(@PathVariable("goalId") Long goalId, @RequestParam("userEmail") String userEmail) {
         Optional<GoalEntity> goal = goalRepository.findById(goalId);
@@ -37,6 +40,7 @@ public class GoalProgressController {
         return goalProgressService.calculateUserProgress(goal.get(), userEmail);
     }
 
+    @Operation(summary = "목표 수행", description = "사용자가 해당하는 목표(공부하기/푸쉬업하기 등)에 특정 값(시간/횟수)를 추가합니다")
     @PostMapping("/add")
     public ResponseEntity<GoalProgressEntity> addGoalProgress(
             @RequestParam("groupId") Long groupId,
@@ -51,6 +55,7 @@ public class GoalProgressController {
     /**
      * 목표 진행 기록 삭제
      */
+    @Operation(summary = "목표 진행 기록 삭제", description = "목표 진행 기록 삭제")
     @DeleteMapping("/delete/{progressId}")
     public ResponseEntity<String> deleteGoalProgress(@PathVariable("progressId") Long progressId) {
         goalProgressService.deleteGoalProgress(progressId);
@@ -60,6 +65,7 @@ public class GoalProgressController {
     /**
      * 전체 목표 진행 기록 조회
      */
+    @Operation(summary = "전체 목표 진행 기록 조회", description = "전체 목표 진행 기록 조회")
     @GetMapping("/all")
     public ResponseEntity<List<GoalProgressEntity>> getAllGoalProgress() {
         List<GoalProgressEntity> progressList = goalProgressService.getAllGoalProgress();
@@ -69,6 +75,7 @@ public class GoalProgressController {
     /**
      * 사용자 이메일별 목표 진행 기록 조회
      */
+    @Operation(summary = "사용자 이메일별 목표 진행 기록 조회", description = "사용자 이메일별 목표 진행 기록 조회")
     @GetMapping("/user")
     public ResponseEntity<List<GoalProgressEntity>> getGoalProgressByUserEmail(@RequestParam("userEmail") String userEmail) {
         List<GoalProgressEntity> progressList = goalProgressService.getGoalProgressByUserEmail(userEmail);

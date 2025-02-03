@@ -191,6 +191,7 @@ public class GroupController {
         return ResponseEntity.ok(updatedGroup);
     }
 
+    @Operation(summary = "그룹 목표별 진행률", description = "그룹 목표별 진행률")
     @GetMapping("/{groupId}/goals/progress")
     public List<Map<String, Object>> getGroupGoalProgress(@PathVariable("groupId") Long groupId) {
         return groupService.getGroupGoalProgress(groupId);
