@@ -6,6 +6,8 @@ import com.example.LifeMaster_BE.Group.GoalProgress.GoalProgressEntity;
 import com.example.LifeMaster_BE.Group.GoalProgress.GoalProgressRepository;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
+import com.example.LifeMaster_BE.Group.GroupExit.GroupExitHistoryService;
+import com.example.LifeMaster_BE.Group.GoalProgress.GoalProgressService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,12 +24,17 @@ public class GroupService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public GroupService(GroupRepository groupRepository, GoalRepository goalRepository, GoalProgressRepository goalProgressRepository, MemberRepository memberRepository, PasswordEncoder passwordEncoder) {
+    private final GroupExitHistoryService groupExitHistoryService;
+    private final GoalProgressService goalProgressService;
+
+    public GroupService(GroupRepository groupRepository, GoalRepository goalRepository, GoalProgressRepository goalProgressRepository, MemberRepository memberRepository, PasswordEncoder passwordEncoder, GroupExitHistoryService groupExitHistoryService, GoalProgressService goalProgressService) {
         this.groupRepository = groupRepository;
         this.goalRepository = goalRepository;
         this.goalProgressRepository = goalProgressRepository;
         this.memberRepository = memberRepository;
         this.passwordEncoder = passwordEncoder;
+        this.groupExitHistoryService = groupExitHistoryService;
+        this.goalProgressService = goalProgressService;
     }
 
     // Create a group
@@ -327,6 +334,40 @@ public class GroupService {
         }
 
         return goalProgressList;
+    }
+
+    @Transactional
+    public void removeUserFromGroup(Long groupId, Long memberId) {
+        GroupEntity group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new IllegalArgumentException("Group not found with ID: " + groupId));
+        MemberEntity member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + memberId));
+
+        if (!group.getMembers().contains(member)) {
+            throw new IllegalArgumentException("User is not a member of this group.");
+        }
+
+        // 탈퇴 기록 저장
+        groupExitHistoryService.recordGroupExit(groupId, memberId);
+
+        // 그룹에서 멤버 제거
+        group.getMembers().remove(member);
+        member.getGroups().remove(group);
+
+        if (group.getMembers().isEmpty()) {
+            goalProgressService.deleteByGroupId(groupId);
+            deleteByGroupId(groupId);
+            groupExitHistoryService.deleteByGroupId(groupId);
+            // 그룹에 남아있는 멤버가 없으면 그룹 삭제
+            groupRepository.delete(group);
+        } else {
+            // 멤버가 남아 있으면 변경사항 저장
+            groupRepository.save(group);
+        }
+    }
+
+    public void deleteByGroupId(Long groupId) {
+        goalRepository.deleteByGroupId(groupId);
     }
 
     // ✅ 초대 코드 생성 (그룹 ID + 해싱된 비밀번호 조합)

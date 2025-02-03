@@ -107,4 +107,8 @@ public class GoalProgressService {
     public List<GoalProgressEntity> getGoalProgressByUserEmail(String userEmail) {
         return goalProgressRepository.findByUserEmail(userEmail);
     }
+
+    public void deleteByGroupId(Long groupId) {
+        goalProgressRepository.deleteByGroupId(groupId);
+    }
 }

@@ -16,5 +16,7 @@ public interface GoalProgressRepository extends JpaRepository<GoalProgressEntity
     List<GoalProgressEntity> findByGoal(GoalEntity goal);
 
     List<GoalProgressEntity> findByGroup(GroupEntity group);
+
+    void deleteByGroupId(Long groupId);
 }
 

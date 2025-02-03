@@ -142,9 +142,16 @@ public class GroupController {
     @PostMapping("/{groupId}/addUser/{userId}")
     public ResponseEntity<String> addUserToGroup(
             @Parameter(description = "ID of the group") @PathVariable("groupId") Long groupId,
-            @Parameter(description = "ID of the user") @PathVariable("userId") Long userId) {
-        String response = groupService.addUserToGroup(groupId, userId);
+            @Parameter(description = "ID of the user") @PathVariable("userId") Long memberId) {
+        String response = groupService.addUserToGroup(groupId, memberId);
         return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Delete a user to a group", description = "Deletes a specific user to a group.")
+    @DeleteMapping("/{groupId}/user/{userId}")
+    public ResponseEntity<String> removeUserFromGroup(@PathVariable("groupId") Long groupId, @PathVariable("userId") Long userId) {
+        groupService.removeUserFromGroup(groupId, userId);
+        return ResponseEntity.ok("User removed from group successfully.");
     }
 
     // 목표 ID를 그룹의 통계에 추가하는 API
