@@ -35,11 +35,26 @@ dependencies {
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	implementation 'jakarta.servlet:jakarta.servlet-api:5.0.0'
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0'
-	implementation 'org.springframework.security:spring-security-core:5.8.0'
 	implementation 'org.springframework.cloud:spring-cloud-starter-aws:2.2.6.RELEASE'
 	// implementation 'org.springframework.security:spring-security-web:6.3.4'
+	implementation 'org.springframework.boot:spring-boot-starter-mail'
 	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.security:spring-security-core'
+	implementation 'org.springframework.cloud:spring-cloud-starter-aws:2.2.6.RELEASE'
+	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client' // 최신 버전 유지
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5' // JSON 처리
+	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client' // 최신 클라이언트 라이브러리
+	implementation 'org.springframework.security:spring-security-oauth2-core:6.1.0' // 최신 버전 확인
+	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+	implementation 'org.apache.tomcat.embed:tomcat-embed-core:10.1.31'
+	implementation 'jakarta.servlet:jakarta.servlet-api:5.0.0'
 }
+
 
 tasks.withType(JavaCompile) {
 	options.compilerArgs += "-parameters"

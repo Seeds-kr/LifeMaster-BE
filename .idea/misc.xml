@@ -4,7 +4,11 @@
   <component name="FrameworkDetectionExcludesConfiguration">
     <file type="web" url="file://$PROJECT_DIR$/LifeMaster-BE" />
   </component>
+<<<<<<< HEAD
   <component name="ProjectRootManager" version="2" languageLevel="JDK_21" project-jdk-name="openjdk-21" project-jdk-type="JavaSDK">
+=======
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_21_PREVIEW" project-jdk-name="openjdk-21" project-jdk-type="JavaSDK">
+>>>>>>> 1cc26477fc87bc03a5258bdaf1a1457b43c8d7d2
     <output url="file://$PROJECT_DIR$/out" />
   </component>
 </project>
