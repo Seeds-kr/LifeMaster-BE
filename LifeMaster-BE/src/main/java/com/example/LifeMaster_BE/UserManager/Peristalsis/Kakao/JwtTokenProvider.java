@@ -1,4 +1,4 @@
-package com.example.LifeMaster_BE.Auth.Kakao;
+package com.example.LifeMaster_BE.UserManager.Peristalsis.Kakao;
 
 import io.jsonwebtoken.*;
 import lombok.RequiredArgsConstructor;

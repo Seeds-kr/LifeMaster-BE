@@ -1,4 +1,4 @@
-package com.example.LifeMaster_BE.Auth.Kakao;
+package com.example.LifeMaster_BE.UserManager.Peristalsis.Kakao;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;

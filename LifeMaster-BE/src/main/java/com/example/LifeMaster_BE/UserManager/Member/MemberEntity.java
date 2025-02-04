@@ -3,7 +3,9 @@ package com.example.LifeMaster_BE.UserManager.Member;
 import com.example.LifeMaster_BE.Group.GroupEntity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.example.LifeMaster_BE.Community.Post.PostEntity;
+import io.swagger.v3.oas.annotations.info.Contact;
 import jakarta.persistence.*;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -15,6 +17,7 @@ import java.util.List;
 @Entity
 @Getter
 @Setter
+@Builder
 @Table(name = "member_entity")  // 테이블 이름을 단순화하여 충돌 방지
 public class MemberEntity {
 
@@ -44,6 +47,9 @@ public class MemberEntity {
     @Column(name = "login_status") // 컬럼 이름 명시
     private boolean loginStatus;
 
+    @Column
+    private LoginRole loginRole = LoginRole.USER;
+
 // Many-to-Many 관계 추가
     @ManyToMany
     @JsonIgnore
@@ -68,6 +74,8 @@ public class MemberEntity {
         this.loginStatus = true;
         this.nickname = "nick";
     }
+
+
 
     public String getName() {
         return this.nickname;

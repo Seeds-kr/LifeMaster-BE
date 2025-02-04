@@ -1,11 +1,10 @@
-package com.example.LifeMaster_BE.Auth.Kakao;
+package com.example.LifeMaster_BE.UserManager.Peristalsis.Kakao;
 
 import com.example.LifeMaster_BE.UserManager.Member.LoginRole;
 import com.example.LifeMaster_BE.UserManager.Member.LoginType;
-import com.example.LifeMaster_BE.UserManager.User;
-import com.example.LifeMaster_BE.UserManager.UserRepository;
+import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
+import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,7 +20,7 @@ import io.jsonwebtoken.Jwts;
 public class AuthController {
 
     private final KakaoOAuthService kakaoOAuthService;
-    private final UserRepository userRepository;
+    private final MemberRepository userRepository;
     private final JwtTokenProvider jwtTokenProvider;
 
 
@@ -37,12 +36,12 @@ public class AuthController {
         String profileUrl = (String) ((Map<String, Object>) kakaoUserInfo.get("properties")).get("profile_image");
 
         // 3. DB에서 사용자 조회 (이메일 기반)
-        User user = userRepository.findByEmail(email).orElseGet(() -> {
+        MemberEntity user = userRepository.findByEmail(email).orElseGet(() -> {
             // 사용자 없으면 새로 저장
-            User newUser = User.builder()
+            MemberEntity newUser = MemberEntity.builder()
                     .email(email)
-                    .nickName(nickname)
-                    .profileUrl(profileUrl)
+                    .nickname(nickname)
+                    .imageUrl(profileUrl)
                     .loginType(LoginType.KAKAO)
                     .loginRole(LoginRole.USER) // 기본 권한
                     .build();
@@ -50,7 +49,7 @@ public class AuthController {
         });
 
         // 4. 액세스 토큰과 리프레시 토큰 생성
-        String accessTokenGenerated = jwtTokenProvider.createAccessToken(user.getUserId());
+        String accessTokenGenerated = jwtTokenProvider.createAccessToken(user.getId());
         String refreshTokenGenerated = jwtTokenProvider.createRefreshToken();
 
         // 5. 리프레시 토큰을 안전한 저장소에 보관 (예: 데이터베이스)
