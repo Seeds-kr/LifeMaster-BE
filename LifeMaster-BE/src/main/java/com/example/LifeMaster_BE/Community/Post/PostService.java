@@ -56,6 +56,7 @@ public class PostService {
                 .orElseThrow(() -> new EntityNotFoundException("Post not found"));
         post.increaseViewCount();
         getPostCount(postId);
+        postRepository.save(post); // 변경 감지를 위한 저장
         return post;
     }
 
@@ -106,7 +107,7 @@ public class PostService {
 
         if (cachedPosts == null) { // Redis에 없으면 갱신
             updatePopularPosts();
-            return (List<PostEntity>) redisTemplate.opsForValue().get(POPULAR_POSTS_KEY);
+            cachedPosts = (List<PostEntity>) redisTemplate.opsForValue().get(POPULAR_POSTS_KEY);
         }
         return cachedPosts;
     }
