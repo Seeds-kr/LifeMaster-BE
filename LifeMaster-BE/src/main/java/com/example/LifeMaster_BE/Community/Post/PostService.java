@@ -1,0 +1,114 @@
+package com.example.LifeMaster_BE.Community.Post;
+
+import com.example.LifeMaster_BE.Community.Post.Dto.AllPostsDto;
+import com.example.LifeMaster_BE.Community.Post.Like.PostLikeEntity;
+import com.example.LifeMaster_BE.Community.Post.Like.PostLikeRepository;
+import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
+import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class PostService {
+
+    private final PostRepository postRepository;
+    private final PostLikeRepository likeRepository;
+    private final RedisTemplate<String, Object> redisTemplate;
+
+    private static final String POPULAR_POSTS_KEY = "popularPosts"; // 인기글 캐싱 키
+
+    public List<AllPostsDto> getAllPosts(Long memberId, PostType type) {
+        List<PostEntity> posts = postRepository.findByType(type);
+
+        List<Long> postIds = posts.stream()
+                .map(PostEntity::getId)
+                .toList();
+
+        List<PostLikeEntity> userLikes = likeRepository.findByMemberIdAndPostIdIn(memberId, postIds);
+
+        Set<Long> likedPostIds = userLikes.stream()
+                .map(like -> like.getPost().getId())
+                .collect(Collectors.toSet());
+
+        return posts.stream()
+                .map(post -> new AllPostsDto(
+                        post.getTitle(),
+                        post.getMember().getNickname(),
+                        post.getViewCount(),
+                        post.getCreatedAt(),
+                        likedPostIds.contains(post.getId())
+                ))
+                .toList();
+    }
+
+    public PostEntity getPost(Long postId){
+        PostEntity post = postRepository.findById(postId)
+                .orElseThrow(() -> new EntityNotFoundException("Post not found"));
+        post.increaseViewCount();
+        getPostCount(postId);
+        postRepository.save(post); // 변경 감지를 위한 저장
+        return post;
+    }
+
+    public PostEntity createPost(String title, String content, String fileUrl,
+                                 PostType type, MemberEntity member) {
+        PostEntity postEntity = new PostEntity(title, content, fileUrl, type, member);
+        return postRepository.save(postEntity);
+    }
+
+    public void updatePost(Long postId, String title, String content, String fileUrl, Long memberId){
+        PostEntity postEntity = postRepository.findByIdAndMemberId(postId, memberId)
+                .orElseThrow(() -> new RuntimeException("수정 권한이 없습니다."));
+
+        postEntity.updatePost(title, content, fileUrl);
+        postRepository.save(postEntity);
+    }
+
+    public void deletePost(Long postId){
+        postRepository.deleteById(postId);
+    }
+
+    // 게시글 조회 시 조회수 증가 (DB 반영)
+    @Transactional
+    public PostEntity getPostCount(Long postId) {
+        PostEntity post = postRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 게시글이 존재하지 않습니다."));
+        postRepository.increaseViewCount(postId); // 조회수 증가
+        return post;
+    }
+
+    // 인기글 갱신 (Redis에 저장)
+    public void updatePopularPosts() {
+        List<PostEntity> popularPosts = postRepository.findTop2ByOrderByViewCountDesc();
+
+        // Redis에 인기글 저장 (TTL 10분 설정)
+        redisTemplate.opsForValue().set(POPULAR_POSTS_KEY, popularPosts, 10, TimeUnit.MINUTES);
+    }
+
+    // 10분마다 인기글 갱신
+    @Scheduled(fixedRate = 600000) // 10분마다 실행
+    public void refreshPopularPosts() {
+        updatePopularPosts();
+    }
+
+    // 캐싱된 인기글 가져오기
+    public List<PostEntity> getPopularPosts() {
+        List<PostEntity> cachedPosts = (List<PostEntity>) redisTemplate.opsForValue().get(POPULAR_POSTS_KEY);
+
+        if (cachedPosts == null) { // Redis에 없으면 갱신
+            updatePopularPosts();
+            cachedPosts = (List<PostEntity>) redisTemplate.opsForValue().get(POPULAR_POSTS_KEY);
+        }
+        return cachedPosts;
+    }
+}
