@@ -3,11 +3,8 @@ package com.example.LifeMaster_BE.UserManager.Member;
 import com.example.LifeMaster_BE.Group.GroupEntity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.example.LifeMaster_BE.Community.Post.PostEntity;
-import io.swagger.v3.oas.annotations.info.Contact;
 import jakarta.persistence.*;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -18,6 +15,8 @@ import java.util.List;
 @Getter
 @Setter
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 @Table(name = "member_entity")  // 테이블 이름을 단순화하여 충돌 방지
 public class MemberEntity {
 
@@ -40,13 +39,10 @@ public class MemberEntity {
     @Column(name = "login_type") // 컬럼 이름 명시
     private LoginType loginType;
 
-//    @Enumerated(EnumType.STRING)
-//    @Column(name = "login_role") // 컬럼 이름 명시
-//    private LoginRole loginRole;
-
     @Column(name = "login_status") // 컬럼 이름 명시
     private boolean loginStatus;
 
+    @Enumerated(EnumType.STRING)
     @Column
     private LoginRole loginRole = LoginRole.USER;
 
@@ -64,8 +60,6 @@ public class MemberEntity {
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
     private List<PostEntity> posts = new ArrayList<>();
 
-    public MemberEntity() {
-    }
 
     public MemberEntity(String email, String password) {
         this.email = email;
@@ -74,8 +68,6 @@ public class MemberEntity {
         this.loginStatus = true;
         this.nickname = "nick";
     }
-
-
 
     public String getName() {
         return this.nickname;
