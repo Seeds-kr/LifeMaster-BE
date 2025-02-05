@@ -6,11 +6,14 @@ import com.example.LifeMaster_BE.Community.Post.Like.PostLikeRepository;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
@@ -20,6 +23,9 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final PostLikeRepository likeRepository;
+    private final RedisTemplate<String, Object> redisTemplate;
+
+    private static final String POPULAR_POSTS_KEY = "popularPosts"; // 인기글 캐싱 키
 
     public List<AllPostsDto> getAllPosts(Long memberId, PostType type) {
         List<PostEntity> posts = postRepository.findByType(type);
@@ -49,6 +55,8 @@ public class PostService {
         PostEntity post = postRepository.findById(postId)
                 .orElseThrow(() -> new EntityNotFoundException("Post not found"));
         post.increaseViewCount();
+        getPostCount(postId);
+        postRepository.save(post); // 변경 감지를 위한 저장
         return post;
     }
 
@@ -68,5 +76,39 @@ public class PostService {
 
     public void deletePost(Long postId){
         postRepository.deleteById(postId);
+    }
+
+    // 게시글 조회 시 조회수 증가 (DB 반영)
+    @Transactional
+    public PostEntity getPostCount(Long postId) {
+        PostEntity post = postRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 게시글이 존재하지 않습니다."));
+        postRepository.increaseViewCount(postId); // 조회수 증가
+        return post;
+    }
+
+    // 인기글 갱신 (Redis에 저장)
+    public void updatePopularPosts() {
+        List<PostEntity> popularPosts = postRepository.findTop2ByOrderByViewCountDesc();
+
+        // Redis에 인기글 저장 (TTL 10분 설정)
+        redisTemplate.opsForValue().set(POPULAR_POSTS_KEY, popularPosts, 10, TimeUnit.MINUTES);
+    }
+
+    // 10분마다 인기글 갱신
+    @Scheduled(fixedRate = 600000) // 10분마다 실행
+    public void refreshPopularPosts() {
+        updatePopularPosts();
+    }
+
+    // 캐싱된 인기글 가져오기
+    public List<PostEntity> getPopularPosts() {
+        List<PostEntity> cachedPosts = (List<PostEntity>) redisTemplate.opsForValue().get(POPULAR_POSTS_KEY);
+
+        if (cachedPosts == null) { // Redis에 없으면 갱신
+            updatePopularPosts();
+            cachedPosts = (List<PostEntity>) redisTemplate.opsForValue().get(POPULAR_POSTS_KEY);
+        }
+        return cachedPosts;
     }
 }

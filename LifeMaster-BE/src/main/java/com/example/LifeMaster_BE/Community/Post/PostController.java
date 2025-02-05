@@ -4,6 +4,7 @@ import com.example.LifeMaster_BE.Community.Post.Dto.AllPostsDto;
 import com.example.LifeMaster_BE.Community.Post.Dto.PostDto;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -22,6 +23,7 @@ public class PostController {
     private final PostService postService;
     private final MemberRepository memberRepository;
 
+    @Operation(summary = "게시글 전체 조회", description = "특정 유형(type)의 게시글 목록을 조회합니다.")
     @GetMapping
     public ResponseEntity<List<AllPostsDto>> getAllPosts(@RequestParam("type") PostType type, @AuthenticationPrincipal User user) {
 
@@ -33,6 +35,7 @@ public class PostController {
         return ResponseEntity.ok(allPosts);
     }
 
+    @Operation(summary = "게시글 작성", description = "새로운 게시글을 작성합니다.")
     @PostMapping
     public ResponseEntity<PostEntity> newPost(@RequestBody PostDto postDto, @AuthenticationPrincipal User user) {
         String email = user.getUsername();
@@ -50,12 +53,14 @@ public class PostController {
         return ResponseEntity.status(HttpStatus.CREATED).body(post);
     }
 
+    @Operation(summary = "게시글 조회", description = "게시글 ID를 통해 단일 게시글을 조회합니다.")
     @GetMapping("/{postId}")
     public ResponseEntity<PostEntity> getPost(@PathVariable Long postId){
         PostEntity post = postService.getPost(postId);
         return ResponseEntity.ok(post);
     }
 
+    @Operation(summary = "게시글 수정", description = "게시글 ID를 통해 특정 게시글을 수정합니다.")
     @PatchMapping("/{postId}")
     public void updatePost(@PathVariable Long postId,
                            @RequestBody PostDto postDto, @AuthenticationPrincipal User user){
@@ -69,8 +74,16 @@ public class PostController {
         postService.updatePost(postId, title, content, fileUrl, member.getId());
     }
 
+    @Operation(summary = "게시글 삭제", description = "게시글 ID를 통해 특정 게시글을 삭제합니다.")
     @DeleteMapping("/{postId}")
     public void deletePost(@PathVariable Long postId){
         postService.deletePost(postId);
+    }
+
+    // 인기글 조회 (Redis에서 가져오기)
+    @Operation(summary = "인기 게시글 조회", description = "Redis에서 인기 게시글 목록을 가져옵니다.")
+    @GetMapping("/popular")
+    public List<PostEntity> getPopularPosts() {
+        return postService.getPopularPosts();
     }
 }
