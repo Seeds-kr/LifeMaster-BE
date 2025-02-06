@@ -1,14 +1,10 @@
 package com.example.LifeMaster_BE.Community.Post.Like;
 
 import com.example.LifeMaster_BE.Security.CustomUserDetails;
-import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
-import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import io.swagger.v3.oas.annotations.Parameter;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
