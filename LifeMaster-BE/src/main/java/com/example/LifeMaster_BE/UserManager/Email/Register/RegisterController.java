@@ -34,12 +34,13 @@ public class RegisterController {
 
     @PostMapping("/nickname")
     public ResponseEntity<String> registerNickname(@ModelAttribute RegisterWithNicknameDto registerWithNicknameDto) {
+        Long id = registerWithNicknameDto.getId();
         String nickName = registerWithNicknameDto.getNickName();
         MultipartFile image = registerWithNicknameDto.getImage();
 
         System.out.println("nickName:" + nickName);
 
-        registerService.registerMemberWithNickname(nickName, image);
+        registerService.registerMemberWithNickname(id, nickName, image);
         return ResponseEntity.ok("saved successfully");
     }
 }
