@@ -1,5 +1,6 @@
 package com.example.LifeMaster_BE.UserManager.Member;
 
+import com.example.LifeMaster_BE.Community.Comment.CommentEntity;
 import com.example.LifeMaster_BE.Group.GroupEntity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.example.LifeMaster_BE.Community.Post.PostEntity;
@@ -60,6 +61,9 @@ public class MemberEntity {
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
     private List<PostEntity> posts = new ArrayList<>();
 
+    // 댓글
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
+    private List<CommentEntity> comments = new ArrayList<>();
 
     public MemberEntity(String email, String password) {
         this.email = email;

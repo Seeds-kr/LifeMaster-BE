@@ -2,16 +2,13 @@ package com.example.LifeMaster_BE.Community.Comment;
 
 import com.example.LifeMaster_BE.Community.Comment.Dto.AllCommentsDto;
 import com.example.LifeMaster_BE.Community.Comment.Dto.CommentDto;
-import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
-import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
+import com.example.LifeMaster_BE.Security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Parameter;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,19 +20,14 @@ import java.util.List;
 public class CommentController {
 
     private final CommentService commentService;
-    private final MemberRepository memberRepository;
 
     @GetMapping
     public ResponseEntity<List<AllCommentsDto>> getAllComments(
             @Parameter(description = "게시글 ID", required = true)
             @PathVariable(name = "postId") Long postId,
-            @AuthenticationPrincipal User user) {
+            @AuthenticationPrincipal CustomUserDetails user) {
 
-        String email = user.getUsername();
-        MemberEntity member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new EntityNotFoundException(email));
-
-        List<AllCommentsDto> allComments = commentService.getAllComments(member.getId(), postId);
+        List<AllCommentsDto> allComments = commentService.getAllComments(user.getId(), postId);
         return ResponseEntity.ok(allComments);
     }
 
@@ -43,9 +35,11 @@ public class CommentController {
     public ResponseEntity<CommentEntity> newComment(
             @Parameter(description = "게시글 ID", required = true)
             @PathVariable("postId") Long postId,
-            @RequestBody CommentDto commentDto){
+            @RequestBody CommentDto commentDto,
+            @AuthenticationPrincipal CustomUserDetails user) {
+
         String comment = commentDto.getComment();
-        CommentEntity createdComment = commentService.createComment(postId, comment);
+        CommentEntity createdComment = commentService.createComment(user.getId(), postId, comment);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(createdComment);
     }
