@@ -54,8 +54,9 @@ public class PostService {
     public PostEntity getPost(Long postId){
         PostEntity post = postRepository.findById(postId)
                 .orElseThrow(() -> new EntityNotFoundException("Post not found"));
-        post.increaseViewCount();
-        getPostCount(postId);
+
+        // 게시글 조회 시 조회수 증가 (DB 반영)
+        postRepository.increaseViewCount(postId);
         postRepository.save(post); // 변경 감지를 위한 저장
         return post;
     }
@@ -76,15 +77,6 @@ public class PostService {
 
     public void deletePost(Long postId){
         postRepository.deleteById(postId);
-    }
-
-    // 게시글 조회 시 조회수 증가 (DB 반영)
-    @Transactional
-    public PostEntity getPostCount(Long postId) {
-        PostEntity post = postRepository.findById(postId)
-                .orElseThrow(() -> new IllegalArgumentException("해당 게시글이 존재하지 않습니다."));
-        postRepository.increaseViewCount(postId); // 조회수 증가
-        return post;
     }
 
     // 인기글 갱신 (Redis에 저장)

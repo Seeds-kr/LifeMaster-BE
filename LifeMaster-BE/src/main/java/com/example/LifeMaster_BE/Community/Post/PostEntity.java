@@ -56,10 +56,6 @@ public class PostEntity {
         this.file = fileUrl;
     }
 
-    public void increaseViewCount() {
-        this.viewCount++;
-    }
-
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now(); // 현재 시간을 자동으로 설정
