@@ -42,6 +42,8 @@ public class PostEntity {
     @OneToMany(mappedBy = "post")
     private List<CommentEntity> comments = new ArrayList<>();
 
+    private int commentCount = 0;
+
     public PostEntity(String title, String content, String file, PostType type, MemberEntity member) {
         this.title = title;
         this.content = content;
@@ -54,6 +56,16 @@ public class PostEntity {
         this.title = title;
         this.content = content;
         this.file = fileUrl;
+    }
+
+    public void increaseCommentCount() {
+        this.commentCount++;
+    }
+
+    public void decreaseCommentCount() {
+        if (this.commentCount > 0) {
+            this.commentCount--;
+        }
     }
 
     @PrePersist

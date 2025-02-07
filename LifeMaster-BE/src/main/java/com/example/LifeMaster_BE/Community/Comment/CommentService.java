@@ -65,7 +65,10 @@ public class CommentService {
                 .orElseThrow(() -> new EntityNotFoundException("post not found"));
 
         CommentEntity commentEntity = new CommentEntity(comment, post, member);
-        return commentRepository.save(commentEntity);
+        commentRepository.save(commentEntity);
+        post.increaseCommentCount();
+
+        return commentEntity;
     }
 
     public void updateComment(Long commentId, Long postId, String comment){
@@ -76,7 +79,12 @@ public class CommentService {
         commentRepository.save(commentEntity);
     }
 
-    public void deleteComment(Long commentId, Long postId){
-        commentRepository.deleteByIdAndPostId(commentId, postId);
+    public void deleteComment(Long commentId){
+        CommentEntity comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new EntityNotFoundException("comment not found"));
+        PostEntity post = comment.getPost();
+        post.decreaseCommentCount();
+
+        commentRepository.delete(comment);
     }
 }

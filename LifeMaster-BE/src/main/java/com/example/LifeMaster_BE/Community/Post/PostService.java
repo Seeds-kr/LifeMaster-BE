@@ -45,6 +45,7 @@ public class PostService {
                         post.getTitle(),
                         post.getMember().getNickname(),
                         post.getViewCount(),
+                        post.getCommentCount(),
                         post.getCreatedAt(),
                         likedPostIds.contains(post.getId())
                 ))
