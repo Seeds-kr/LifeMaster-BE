@@ -28,8 +28,8 @@ public class PostLikeService {
             PostEntity post = postRepository.findById(postId)
                     .orElseThrow(() -> new EntityNotFoundException("Post Not found"));
 
-            PostLikeEntity newLike = new PostLikeEntity(memberId, post);
-
+            PostLikeEntity newLike = new PostLikeEntity(memberId);
+            post.addLike(newLike);
             likeRepository.save(newLike);
             return true;
         }

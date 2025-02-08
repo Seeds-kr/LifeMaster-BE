@@ -64,8 +64,11 @@ public class CommentService {
         PostEntity post = postRepository.findById(postId)
                 .orElseThrow(() -> new EntityNotFoundException("post not found"));
 
-        CommentEntity commentEntity = new CommentEntity(comment, post, member);
-        commentRepository.save(commentEntity);
+        CommentEntity commentEntity = new CommentEntity(comment, post);
+
+        member.addComment(commentEntity);
+        post.addComment(commentEntity);
+        commentRepository.save(commentEntity);      // 제거 가능 - 변경감지
         post.increaseCommentCount();
 
         return commentEntity;

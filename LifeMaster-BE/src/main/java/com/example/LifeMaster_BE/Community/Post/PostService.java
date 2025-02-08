@@ -4,6 +4,7 @@ import com.example.LifeMaster_BE.Community.Post.Dto.AllPostsDto;
 import com.example.LifeMaster_BE.Community.Post.Like.PostLikeEntity;
 import com.example.LifeMaster_BE.Community.Post.Like.PostLikeRepository;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
+import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -23,6 +24,7 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final PostLikeRepository likeRepository;
+    private final MemberRepository memberRepository;
     private final RedisTemplate<String, Object> redisTemplate;
 
     private static final String POPULAR_POSTS_KEY = "popularPosts"; // 인기글 캐싱 키
@@ -63,8 +65,13 @@ public class PostService {
     }
 
     public PostEntity createPost(String title, String content, String fileUrl,
-                                 PostType type, MemberEntity member) {
-        PostEntity postEntity = new PostEntity(title, content, fileUrl, type, member);
+                                 PostType type, Long memberId) {
+
+        MemberEntity member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new EntityNotFoundException("Member not found"));
+
+        PostEntity postEntity = new PostEntity(title, content, fileUrl, type);
+        member.addPost(postEntity);
         return postRepository.save(postEntity);
     }
 

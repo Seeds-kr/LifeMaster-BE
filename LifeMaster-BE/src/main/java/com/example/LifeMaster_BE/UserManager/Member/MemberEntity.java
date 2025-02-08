@@ -101,5 +101,29 @@ public class MemberEntity {
         this.loginStatus = bool;
         return this;
     }
+
+    // 게시글
+    public void addPost(PostEntity post) {
+        this.posts.add(post);
+        post.setMember(this);
+    }
+
+    // 댓글
+    public void addComment(CommentEntity comment) {
+        this.comments.add(comment);
+        comment.setMember(this);
+    }
+
+    // 5감사
+    public void addThank(ThankEntity thank) {
+        this.thanks.add(thank);
+        thank.setMember(this);
+    }
+
+    // 일기
+    public void addDiary(DiaryEntity diary) {
+        this.diaries.add(diary);
+        diary.setMember(this);
+    }
 }
 

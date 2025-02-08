@@ -3,10 +3,7 @@ package com.example.LifeMaster_BE.Community.Post;
 import com.example.LifeMaster_BE.Community.Post.Dto.AllPostsDto;
 import com.example.LifeMaster_BE.Community.Post.Dto.PostDto;
 import com.example.LifeMaster_BE.Security.CustomUserDetails;
-import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
-import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import io.swagger.v3.oas.annotations.Operation;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,7 +18,6 @@ import java.util.List;
 public class PostController {
 
     private final PostService postService;
-    private final MemberRepository memberRepository;
 
     @Operation(summary = "게시글 전체 조회", description = "특정 유형(type)의 게시글 목록을 조회합니다.")
     @GetMapping
@@ -36,17 +32,13 @@ public class PostController {
     @PostMapping
     public ResponseEntity<PostEntity> newPost(@RequestBody PostDto postDto,
                                               @AuthenticationPrincipal CustomUserDetails user) {
-        String email = user.getUsername();
+        Long memberId = user.getId();
         String title = postDto.getTitle();
         String content = postDto.getContent();
         String fileUrl = postDto.getFile();
         PostType type = postDto.getType();
 
-        MemberEntity member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new EntityNotFoundException(email));
-
-
-        PostEntity post = postService.createPost(title, content, fileUrl, type, member);
+        PostEntity post = postService.createPost(title, content, fileUrl, type, memberId);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(post);
     }
