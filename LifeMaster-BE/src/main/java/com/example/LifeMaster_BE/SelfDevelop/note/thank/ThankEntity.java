@@ -1,5 +1,6 @@
 package com.example.LifeMaster_BE.SelfDevelop.note.thank;
 
+import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.springframework.data.annotation.CreatedDate;
@@ -28,11 +29,8 @@ public class ThankEntity {
     private String thankFour;
     private String thankFive;
 
-    // 추후에 User 엔티티가 추가된다면
-    /*
     @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
-     */
+    @JoinColumn(name = "member_id")
+    private MemberEntity member;
 
 }

@@ -1,5 +1,6 @@
 package com.example.LifeMaster_BE.SelfDevelop.note.diary;
 
+import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -20,11 +21,10 @@ public class DiaryEntity {
     @Lob
     private String diaryContent;
 
-    // 추후에 User 엔티티가 추가된다면
-    /*
+    // Member
     @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
-     */
+    @JoinColumn(name = "member_id")
+    private MemberEntity member;
+
 
 }
