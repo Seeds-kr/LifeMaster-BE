@@ -60,19 +60,19 @@ public class MemberEntity {
     private Set<GroupEntity> groups = new HashSet<>(); // 그룹 목록
     
     // 게시글
-    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PostEntity> posts = new ArrayList<>();
 
     // 댓글
-    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CommentEntity> comments = new ArrayList<>();
 
     // 5감사
-    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ThankEntity> thanks = new ArrayList<>();
 
     // 일기
-    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DiaryEntity> diaries = new ArrayList<>();
 
     public MemberEntity(String email, String password) {
