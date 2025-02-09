@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Slf4j
 @RestController("selfDevelopCalendarController")
@@ -20,7 +20,7 @@ public class SelfDevelopCalendarController {
     // ISO 8601 형식(yyyy-MM-dd 또는 yyyy-MM-dd'T'HH:mm:ss) 아닌 경우
     // @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME
     @GetMapping
-    public EventDto getEvent(@RequestParam("date") LocalDateTime date){
+    public EventDto getEvent(@RequestParam("date") LocalDate date){
         return calendarService.getEventsByDate(date);
     }
 

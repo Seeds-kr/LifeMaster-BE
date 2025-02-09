@@ -38,6 +38,7 @@ public class DiaryController {
     @DeleteMapping("/{diary-id}")
     public ResponseEntity<Void> deleteDiary(
             @PathVariable("diary-id") Long diaryId){
+
         diaryService.deleteDiary(diaryId);
         return ResponseEntity.noContent().build();
     }

@@ -18,9 +18,9 @@ public class DiaryService {
     private final MemberRepository memberRepository;
 
     public DiaryEntity createDiary(DiaryEntity diary, Long memberId){
+
         MemberEntity member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new EntityNotFoundException("Member not found"));
-
         member.addDiary(diary);
         return diaryRepository.save(diary);
     }
