@@ -6,6 +6,7 @@ import lombok.Data;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -18,7 +19,7 @@ public class ThankEntity {
     private Long id;
 
 //    @CreatedDate
-    private LocalDateTime thankDate;
+    private LocalDate thankDate;
 
     @CreatedDate
     private LocalDateTime createdAt;
