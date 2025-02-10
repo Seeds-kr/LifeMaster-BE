@@ -4,6 +4,7 @@ import com.example.LifeMaster_BE.Community.Post.Dto.AllPostsDto;
 import com.example.LifeMaster_BE.Community.Post.Like.PostLikeEntity;
 import com.example.LifeMaster_BE.Community.Post.Like.PostLikeRepository;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
+import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -23,6 +24,7 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final PostLikeRepository likeRepository;
+    private final MemberRepository memberRepository;
     private final RedisTemplate<String, Object> redisTemplate;
 
     private static final String POPULAR_POSTS_KEY = "popularPosts"; // 인기글 캐싱 키
@@ -45,6 +47,7 @@ public class PostService {
                         post.getTitle(),
                         post.getMember().getNickname(),
                         post.getViewCount(),
+                        post.getCommentCount(),
                         post.getCreatedAt(),
                         likedPostIds.contains(post.getId())
                 ))
@@ -54,15 +57,21 @@ public class PostService {
     public PostEntity getPost(Long postId){
         PostEntity post = postRepository.findById(postId)
                 .orElseThrow(() -> new EntityNotFoundException("Post not found"));
-        post.increaseViewCount();
-        getPostCount(postId);
+
+        // 게시글 조회 시 조회수 증가 (DB 반영)
+        postRepository.increaseViewCount(postId);
         postRepository.save(post); // 변경 감지를 위한 저장
         return post;
     }
 
     public PostEntity createPost(String title, String content, String fileUrl,
-                                 PostType type, MemberEntity member) {
-        PostEntity postEntity = new PostEntity(title, content, fileUrl, type, member);
+                                 PostType type, Long memberId) {
+
+        MemberEntity member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new EntityNotFoundException("Member not found"));
+
+        PostEntity postEntity = new PostEntity(title, content, fileUrl, type);
+        member.addPost(postEntity);
         return postRepository.save(postEntity);
     }
 
@@ -76,15 +85,6 @@ public class PostService {
 
     public void deletePost(Long postId){
         postRepository.deleteById(postId);
-    }
-
-    // 게시글 조회 시 조회수 증가 (DB 반영)
-    @Transactional
-    public PostEntity getPostCount(Long postId) {
-        PostEntity post = postRepository.findById(postId)
-                .orElseThrow(() -> new IllegalArgumentException("해당 게시글이 존재하지 않습니다."));
-        postRepository.increaseViewCount(postId); // 조회수 증가
-        return post;
     }
 
     // 인기글 갱신 (Redis에 저장)

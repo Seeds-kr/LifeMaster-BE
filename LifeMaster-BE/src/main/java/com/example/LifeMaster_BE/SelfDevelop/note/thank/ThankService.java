@@ -1,5 +1,8 @@
 package com.example.LifeMaster_BE.SelfDevelop.note.thank;
 
+import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
+import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,8 +15,13 @@ import org.springframework.stereotype.Service;
 public class ThankService {
 
     private final ThankRepository thankRepository;
+    private final MemberRepository memberRepository;
 
-    public ThankEntity createThank(ThankEntity thank){
+    public ThankEntity createThank(ThankEntity thank, Long memberId){
+
+        MemberEntity member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new EntityNotFoundException("Member not found"));
+        member.addThank(thank);
         return thankRepository.save(thank);
     }
 

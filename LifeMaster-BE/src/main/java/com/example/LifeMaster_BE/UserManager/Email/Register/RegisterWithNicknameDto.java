@@ -6,6 +6,7 @@ import org.springframework.web.multipart.MultipartFile;
 @Getter
 public class RegisterWithNicknameDto {
 
+    private Long id;
     private String nickName;
     private MultipartFile image;
 }

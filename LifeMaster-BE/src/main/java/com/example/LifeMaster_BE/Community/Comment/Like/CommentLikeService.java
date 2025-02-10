@@ -17,19 +17,19 @@ public class CommentLikeService {
     private final CommentLikeRepository likeRepository;
     private final CommentRepository commentRepository;
 
-    public boolean toggleLike(Long memberID, Long commentId){
+    public boolean toggleLike(Long memberId, Long commentId){
 
-        Optional<CommentLikeEntity> existingLike = likeRepository.findByMemberIdAndCommentId(memberID, commentId);
+        Optional<CommentLikeEntity> existingLike = likeRepository.findByMemberIdAndCommentId(memberId, commentId);
 
         if(existingLike.isPresent()){
-            likeRepository.deleteByMemberIdAndCommentId(memberID, commentId);
+            likeRepository.deleteByMemberIdAndCommentId(memberId, commentId);
             return false;
         } else {
             CommentEntity comment = commentRepository.findById(commentId)
                     .orElseThrow(() -> new EntityNotFoundException("Comment Not found"));
 
-            CommentLikeEntity newLike = new CommentLikeEntity(memberID, comment);
-
+            CommentLikeEntity newLike = new CommentLikeEntity(memberId);
+            comment.addLike(newLike);
             likeRepository.save(newLike);
             return true;
         }

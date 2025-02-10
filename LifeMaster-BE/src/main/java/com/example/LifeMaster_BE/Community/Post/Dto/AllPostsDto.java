@@ -14,6 +14,7 @@ public class AllPostsDto {
     private String title;
     private String nickName;
     private int viewCount;
+    private int commentCount;
     private LocalDateTime createdAt;
     private boolean liked;
 

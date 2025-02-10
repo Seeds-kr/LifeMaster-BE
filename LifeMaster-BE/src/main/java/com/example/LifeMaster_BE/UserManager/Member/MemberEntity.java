@@ -1,6 +1,9 @@
 package com.example.LifeMaster_BE.UserManager.Member;
 
+import com.example.LifeMaster_BE.Community.Comment.CommentEntity;
 import com.example.LifeMaster_BE.Group.GroupEntity;
+import com.example.LifeMaster_BE.SelfDevelop.note.diary.DiaryEntity;
+import com.example.LifeMaster_BE.SelfDevelop.note.thank.ThankEntity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.example.LifeMaster_BE.Community.Post.PostEntity;
 import jakarta.persistence.*;
@@ -57,9 +60,20 @@ public class MemberEntity {
     private Set<GroupEntity> groups = new HashSet<>(); // 그룹 목록
     
     // 게시글
-    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PostEntity> posts = new ArrayList<>();
 
+    // 댓글
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CommentEntity> comments = new ArrayList<>();
+
+    // 5감사
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ThankEntity> thanks = new ArrayList<>();
+
+    // 일기
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<DiaryEntity> diaries = new ArrayList<>();
 
     public MemberEntity(String email, String password) {
         this.email = email;
@@ -86,6 +100,30 @@ public class MemberEntity {
     public MemberEntity login(boolean bool){
         this.loginStatus = bool;
         return this;
+    }
+
+    // 게시글
+    public void addPost(PostEntity post) {
+        this.posts.add(post);
+        post.setMember(this);
+    }
+
+    // 댓글
+    public void addComment(CommentEntity comment) {
+        this.comments.add(comment);
+        comment.setMember(this);
+    }
+
+    // 5감사
+    public void addThank(ThankEntity thank) {
+        this.thanks.add(thank);
+        thank.setMember(this);
+    }
+
+    // 일기
+    public void addDiary(DiaryEntity diary) {
+        this.diaries.add(diary);
+        diary.setMember(this);
     }
 }
 
