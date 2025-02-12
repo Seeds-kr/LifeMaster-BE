@@ -21,7 +21,6 @@ import java.util.Set;
 @Setter
 @Builder
 @AllArgsConstructor
-@NoArgsConstructor
 @Table(name = "member_entity")  // 테이블 이름을 단순화하여 충돌 방지
 public class MemberEntity {
 
@@ -157,7 +156,6 @@ public class MemberEntity {
         this.reports.add(report);
         report.setMember(this);
     }
-}
 
     // 요금제 변경 메서드
     public void updateSubscription(SubscriptionPlan plan, LocalDate lastPaymentDate, LocalDate expirationDate) {
@@ -167,3 +165,4 @@ public class MemberEntity {
         this.paymentStatus = PaymentStatus.PAID;
     }
 }
+
