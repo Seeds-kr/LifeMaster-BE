@@ -1,19 +1,20 @@
 package com.example.LifeMaster_BE.UserManager.Member;
 
+import com.example.LifeMaster_BE.Community.Post.PostEntity;
 import com.example.LifeMaster_BE.Community.Comment.CommentEntity;
 import com.example.LifeMaster_BE.Group.GroupEntity;
 import com.example.LifeMaster_BE.Report.ReportEntity;
 import com.example.LifeMaster_BE.SelfDevelop.note.diary.DiaryEntity;
 import com.example.LifeMaster_BE.SelfDevelop.note.thank.ThankEntity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.example.LifeMaster_BE.Community.Post.PostEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -46,11 +47,12 @@ public class MemberEntity {
     @Column(name = "login_status") // 컬럼 이름 명시
     private boolean loginStatus;
 
+    // Many-to-Many 관계 추가
     @Enumerated(EnumType.STRING)
     @Column
     private LoginRole loginRole = LoginRole.USER;
 
-// Many-to-Many 관계 추가
+    // Many-to-Many 관계 추가
     @ManyToMany
     @JsonIgnore
     @JoinTable(
@@ -59,11 +61,32 @@ public class MemberEntity {
             inverseJoinColumns = @JoinColumn(name = "group_id") // 상대 엔티티를 참조하는 외래 키
     )
     private Set<GroupEntity> groups = new HashSet<>(); // 그룹 목록
-    
+
     // 게시글
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PostEntity> posts = new ArrayList<>();
 
+    // ⭐ 요금제 관련 추가 ⭐
+    @Enumerated(EnumType.STRING)
+    @Column(name = "subscription_plan", nullable = false)
+    private SubscriptionPlan subscriptionPlan = SubscriptionPlan.FREE; // 기본 요금제: 무료
+
+    @Column(name = "last_payment_date")
+    private LocalDate lastPaymentDate; // 마지막 결제일
+
+    @Column(name = "expiration_date")
+    private LocalDate expirationDate; // 결제 만료일
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_status", nullable = false)
+    private PaymentStatus paymentStatus = PaymentStatus.UNPAID; // 기본 상태: 미결제
+
+    // 결제 내역
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
+    private List<PaymentEntity> payments = new ArrayList<>();
+
+    public MemberEntity() {
+    }
     // 댓글
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CommentEntity> comments = new ArrayList<>();
@@ -83,9 +106,7 @@ public class MemberEntity {
     public MemberEntity(String email, String password) {
         this.email = email;
         this.password = password;
-        this.imageUrl = "url";
         this.loginStatus = true;
-        this.nickname = "nick";
     }
 
     public String getName() {
@@ -138,3 +159,11 @@ public class MemberEntity {
     }
 }
 
+    // 요금제 변경 메서드
+    public void updateSubscription(SubscriptionPlan plan, LocalDate lastPaymentDate, LocalDate expirationDate) {
+        this.subscriptionPlan = plan;
+        this.lastPaymentDate = lastPaymentDate;
+        this.expirationDate = expirationDate;
+        this.paymentStatus = PaymentStatus.PAID;
+    }
+}
