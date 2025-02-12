@@ -2,6 +2,7 @@ package com.example.LifeMaster_BE.Community.Post;
 
 import com.example.LifeMaster_BE.Community.Comment.CommentEntity;
 import com.example.LifeMaster_BE.Community.Post.Like.PostLikeEntity;
+import com.example.LifeMaster_BE.Report.ReportEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -44,6 +45,9 @@ public class PostEntity {
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CommentEntity> comments = new ArrayList<>();
 
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ReportEntity> reports = new ArrayList<>();
+
     private int commentCount = 0;
 
     public PostEntity(String title, String content, String file, PostType type) {
@@ -78,6 +82,12 @@ public class PostEntity {
         this.likes.add(like);
         like.setPost(this);
     }
+
+    public void addReport(ReportEntity report) {
+        this.reports.add(report);
+        report.setPost(this);
+    }
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now(); // 현재 시간을 자동으로 설정

@@ -7,6 +7,7 @@ import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -30,7 +31,7 @@ public class PostService {
     private static final String POPULAR_POSTS_KEY = "popularPosts"; // 인기글 캐싱 키
 
     public List<AllPostsDto> getAllPosts(Long memberId, PostType type) {
-        List<PostEntity> posts = postRepository.findByType(type);
+        List<PostEntity> posts = postRepository.findByType(type, Sort.by(Sort.Direction.DESC, "createdAt"));
 
         List<Long> postIds = posts.stream()
                 .map(PostEntity::getId)

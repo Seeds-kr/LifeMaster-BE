@@ -2,6 +2,7 @@ package com.example.LifeMaster_BE.UserManager.Member;
 
 import com.example.LifeMaster_BE.Community.Comment.CommentEntity;
 import com.example.LifeMaster_BE.Group.GroupEntity;
+import com.example.LifeMaster_BE.Report.ReportEntity;
 import com.example.LifeMaster_BE.SelfDevelop.note.diary.DiaryEntity;
 import com.example.LifeMaster_BE.SelfDevelop.note.thank.ThankEntity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -75,6 +76,10 @@ public class MemberEntity {
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DiaryEntity> diaries = new ArrayList<>();
 
+    // 신고
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ReportEntity> reports = new ArrayList<>();
+
     public MemberEntity(String email, String password) {
         this.email = email;
         this.password = password;
@@ -124,6 +129,12 @@ public class MemberEntity {
     public void addDiary(DiaryEntity diary) {
         this.diaries.add(diary);
         diary.setMember(this);
+    }
+
+    // 신고
+    public void addReport(ReportEntity report) {
+        this.reports.add(report);
+        report.setMember(this);
     }
 }
 
