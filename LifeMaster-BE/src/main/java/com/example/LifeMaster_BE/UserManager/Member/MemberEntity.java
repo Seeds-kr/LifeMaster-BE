@@ -102,6 +102,11 @@ public class MemberEntity {
         return this;
     }
 
+    public void updateByMyPage(String email, String password){
+        this.email = email;
+        this.password = password;
+    }
+
     public MemberEntity login(boolean bool){
         this.loginStatus = bool;
         return this;
