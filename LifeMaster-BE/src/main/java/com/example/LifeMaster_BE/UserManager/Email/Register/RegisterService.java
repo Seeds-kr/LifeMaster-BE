@@ -53,7 +53,7 @@ public class RegisterService {
 
     private void checkBeforeRegister(String email, String password, String confirmPassword){
 
-        if(!checkEmailDuplicate(email)) {
+        if(checkEmailDuplicate(email)) {
             throw new IllegalArgumentException("이미 사용중인 닉네임입니다.");
         }
         if(!confirmPassword(password, confirmPassword)){
