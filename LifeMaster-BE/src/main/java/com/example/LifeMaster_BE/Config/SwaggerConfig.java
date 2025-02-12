@@ -149,5 +149,12 @@ public class SwaggerConfig implements WebMvcConfigurer {
                 .build();
     }
 
+    @Bean
+    public GroupedOpenApi myPageApi(){
+        return GroupedOpenApi.builder()
+                .group("my-page")
+                .pathsToMatch("/users/me")
+                .build();
+    }
 
 }
