@@ -7,7 +7,7 @@ import com.example.LifeMaster_BE.SelfDevelop.note.thank.ThankRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Service("selfDevelopCalendarService")
 @RequiredArgsConstructor
@@ -16,7 +16,7 @@ public class SelfDevelopCalendarService {
     private final DiaryRepository diaryRepository;
     private final ThankRepository thankRepository;
 
-    public EventDto getEventsByDate(LocalDateTime date){
+    public EventDto getEventsByDate(LocalDate date){
         DiaryEntity diary = diaryRepository.findByDiaryDate(date);
         ThankEntity thank = thankRepository.findByThankDate(date);
 

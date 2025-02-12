@@ -31,12 +31,12 @@ public class RegisterService {
         return memberRepository.save(memberEntity);
     }
 
-    public void registerMemberWithNickname(String nickname, MultipartFile image){
+    public void registerMemberWithNickname(Long id, String nickname, MultipartFile image){
         if(checkNicknameDuplicate(nickname)){
             throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
         }
 
-        MemberEntity memberEntity = memberRepository.findByNickname(nickname)
+        MemberEntity memberEntity = memberRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다"));
 
         memberEntity.setNickname(nickname);

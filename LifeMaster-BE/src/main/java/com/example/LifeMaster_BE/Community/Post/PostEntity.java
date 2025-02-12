@@ -2,10 +2,12 @@ package com.example.LifeMaster_BE.Community.Post;
 
 import com.example.LifeMaster_BE.Community.Comment.CommentEntity;
 import com.example.LifeMaster_BE.Community.Post.Like.PostLikeEntity;
+import com.example.LifeMaster_BE.Report.ReportEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -32,22 +34,27 @@ public class PostEntity {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @Setter
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
     private MemberEntity member;
 
-    @OneToMany(mappedBy = "post")
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PostLikeEntity> likes = new ArrayList<>();
 
-    @OneToMany(mappedBy = "post")
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CommentEntity> comments = new ArrayList<>();
 
-    public PostEntity(String title, String content, String file, PostType type, MemberEntity member) {
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ReportEntity> reports = new ArrayList<>();
+
+    private int commentCount = 0;
+
+    public PostEntity(String title, String content, String file, PostType type) {
         this.title = title;
         this.content = content;
         this.file = file;
         this.type = type;
-        this.member = member;
     }
 
     public void updatePost(String title, String content, String fileUrl) {
@@ -56,8 +63,29 @@ public class PostEntity {
         this.file = fileUrl;
     }
 
-    public void increaseViewCount() {
-        this.viewCount++;
+    public void increaseCommentCount() {
+        this.commentCount++;
+    }
+
+    public void decreaseCommentCount() {
+        if (this.commentCount > 0) {
+            this.commentCount--;
+        }
+    }
+
+    public void addComment(CommentEntity comment) {
+        this.comments.add(comment);
+        comment.setPost(this);
+    }
+
+    public void addLike(PostLikeEntity like) {
+        this.likes.add(like);
+        like.setPost(this);
+    }
+
+    public void addReport(ReportEntity report) {
+        this.reports.add(report);
+        report.setPost(this);
     }
 
     @PrePersist

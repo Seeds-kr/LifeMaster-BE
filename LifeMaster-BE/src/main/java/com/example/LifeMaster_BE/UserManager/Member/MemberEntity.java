@@ -1,11 +1,14 @@
 package com.example.LifeMaster_BE.UserManager.Member;
 
 import com.example.LifeMaster_BE.Community.Post.PostEntity;
+import com.example.LifeMaster_BE.Community.Comment.CommentEntity;
 import com.example.LifeMaster_BE.Group.GroupEntity;
+import com.example.LifeMaster_BE.Report.ReportEntity;
+import com.example.LifeMaster_BE.SelfDevelop.note.diary.DiaryEntity;
+import com.example.LifeMaster_BE.SelfDevelop.note.thank.ThankEntity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -16,6 +19,9 @@ import java.util.Set;
 @Entity
 @Getter
 @Setter
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 @Table(name = "member_entity")  // 테이블 이름을 단순화하여 충돌 방지
 public class MemberEntity {
 
@@ -38,12 +44,13 @@ public class MemberEntity {
     @Column(name = "login_type") // 컬럼 이름 명시
     private LoginType loginType;
 
-//    @Enumerated(EnumType.STRING)
-//    @Column(name = "login_role") // 컬럼 이름 명시
-//    private LoginRole loginRole;
-
     @Column(name = "login_status") // 컬럼 이름 명시
     private boolean loginStatus;
+
+    // Many-to-Many 관계 추가
+    @Enumerated(EnumType.STRING)
+    @Column
+    private LoginRole loginRole = LoginRole.USER;
 
     // Many-to-Many 관계 추가
     @ManyToMany
@@ -56,7 +63,7 @@ public class MemberEntity {
     private Set<GroupEntity> groups = new HashSet<>(); // 그룹 목록
 
     // 게시글
-    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PostEntity> posts = new ArrayList<>();
 
     // ⭐ 요금제 관련 추가 ⭐
@@ -80,6 +87,21 @@ public class MemberEntity {
 
     public MemberEntity() {
     }
+    // 댓글
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CommentEntity> comments = new ArrayList<>();
+
+    // 5감사
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ThankEntity> thanks = new ArrayList<>();
+
+    // 일기
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<DiaryEntity> diaries = new ArrayList<>();
+
+    // 신고
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ReportEntity> reports = new ArrayList<>();
 
     public MemberEntity(String email, String password) {
         this.email = email;
@@ -105,6 +127,37 @@ public class MemberEntity {
         this.loginStatus = bool;
         return this;
     }
+
+    // 게시글
+    public void addPost(PostEntity post) {
+        this.posts.add(post);
+        post.setMember(this);
+    }
+
+    // 댓글
+    public void addComment(CommentEntity comment) {
+        this.comments.add(comment);
+        comment.setMember(this);
+    }
+
+    // 5감사
+    public void addThank(ThankEntity thank) {
+        this.thanks.add(thank);
+        thank.setMember(this);
+    }
+
+    // 일기
+    public void addDiary(DiaryEntity diary) {
+        this.diaries.add(diary);
+        diary.setMember(this);
+    }
+
+    // 신고
+    public void addReport(ReportEntity report) {
+        this.reports.add(report);
+        report.setMember(this);
+    }
+}
 
     // 요금제 변경 메서드
     public void updateSubscription(SubscriptionPlan plan, LocalDate lastPaymentDate, LocalDate expirationDate) {
