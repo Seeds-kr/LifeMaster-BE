@@ -25,6 +25,9 @@ public class Challenge {
     private String challDesc;
 
     @Column
+    private String challImg;
+
+    @Column
     @Builder.Default
-    private Integer chalCnt = 1;
+    private Integer challCnt = 1;
 }
