@@ -5,12 +5,16 @@ import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Service
@@ -19,6 +23,8 @@ public class ChallengeService {
     private final ChallengeRepository challengeRepository;
     private final ChallengeUserRepository challengeUserRepository;
     private final MemberRepository memberRepository;
+
+    private final Map<Long, SseEmitter> emitters = new ConcurrentHashMap<>();
 
     // 챌린지 생성
     public Challenge createChallenge(ChallengeDto.Create challengeDto) {
@@ -38,7 +44,7 @@ public class ChallengeService {
 
     /** 2. 챌린지 검색 (이름 기준) */
     public Page<ChallengeDto.List> searchChallenges(String name, int page, @AuthenticationPrincipal UserDetails userDetails) {
-        MemberEntity user = memberRepository.findByUsername(userDetails.getUsername())
+        MemberEntity user = memberRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다."));
 
         Page<Challenge> pageChallenge = challengeRepository.findByChallNameContaining(
@@ -63,7 +69,7 @@ public class ChallengeService {
     /** 3. 내가 참여한 챌린지 목록 */
     public List<Challenge> getMyChallenges(@AuthenticationPrincipal UserDetails userDetails) {
         // 유저 정보 가져오기
-        MemberEntity user = memberRepository.findByUsername(userDetails.getUsername())
+        MemberEntity user = memberRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다."));
 
         // 유저가 참여한 챌린지 사용자 엔티티 목록 가져오기
@@ -87,7 +93,7 @@ public class ChallengeService {
     /** 5. 챌린지 참여 */
     @Transactional
     public String joinChallenge(Long challId, @AuthenticationPrincipal UserDetails userDetails) {
-        MemberEntity user = memberRepository.findByUsername(userDetails.getUsername())
+        MemberEntity user = memberRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다."));
         Challenge challenge = challengeRepository.findById(challId)
                 .orElseThrow(() -> new RuntimeException("챌린지를 찾을 수 없습니다."));
@@ -115,7 +121,7 @@ public class ChallengeService {
     /** 6. 챌린지 참여 취소 */
     @Transactional
     public String leaveChallenge(Long challId, @AuthenticationPrincipal UserDetails userDetails) {
-        MemberEntity user = memberRepository.findByUsername(userDetails.getUsername())
+        MemberEntity user = memberRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다."));
         Challenge challenge = challengeRepository.findById(challId)
                 .orElseThrow(() -> new RuntimeException("챌린지를 찾을 수 없습니다."));
@@ -148,5 +154,47 @@ public class ChallengeService {
         challengeRepository.delete(challenge);
 
         return "챌린지 삭제 완료!";
+    }
+
+
+    // 추천 챌린지 알림을 매일 일정 시각에 보내기
+    @Scheduled(cron = "0 0 12 * * ?") // 매일 오전 12시에 실행
+    public void sendDailyChallengeNotification() {
+        // 추천할 챌린지 목록 가져오기 (예: 최신 챌린지나 특정 조건에 맞는 챌린지)
+        List<Challenge> recommendedChallenges = challengeRepository.findTop5ByOrderByCreatedAtDesc(); // 예시로 최신 챌린지 5개
+
+        // 모든 유저에게 추천 챌린지 알림 보내기
+        List<MemberEntity> users = memberRepository.findAll();
+        for (MemberEntity user : users) {
+            // 유저에게 추천 챌린지 알림 보내기
+            sendRecommendationNotification(user, recommendedChallenges);
+        }
+    }
+
+    // 유저에게 추천 챌린지 알림 보내기
+    private void sendRecommendationNotification(MemberEntity user, List<Challenge> recommendedChallenges) {
+        SseEmitter emitter = emitters.get(user.getId()); // 유저 ID에 맞는 SSE 연결을 가져옵니다.
+
+        if (emitter != null) {
+            try {
+                // 추천 챌린지를 유저에게 전송
+                StringBuilder message = new StringBuilder("추천 챌린지:\n");
+                for (Challenge challenge : recommendedChallenges) {
+                    message.append("- ").append(challenge.getChallName()).append("\n");
+                }
+                emitter.send(SseEmitter.event().name("daily-recommendation").data(message.toString()));
+            } catch (Exception e) {
+                emitters.remove(user.getId());
+            }
+        }
+    }
+
+    // 유저가 챌린지에 참여했을 때 실시간 알림을 받을 수 있도록 SSE 연결을 설정하는 메소드
+    public SseEmitter connectToChallengeNotifications(Long userId) {
+        SseEmitter emitter = new SseEmitter();
+        emitters.put(userId, emitter);
+        emitter.onCompletion(() -> emitters.remove(userId));
+        emitter.onTimeout(() -> emitters.remove(userId));
+        return emitter;
     }
 }
