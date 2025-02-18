@@ -33,7 +33,7 @@ public class SpringSecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .cors(Customizer.withDefaults()) // CORS 설정 기본값 사용
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/user/login","/swagger-ui/**", "/user/register").permitAll() // 인증 로직이 필요 없는 url 설정
+                        .requestMatchers("/user/login","/swagger-ui/**", "/user/register", "/challenge/**").permitAll() // 인증 로직이 필요 없는 url 설정
                         .requestMatchers("/private/**").authenticated()//인증 로직이 필요한 url 설정
                         .anyRequest().permitAll()//기본 인증 설정
                 )

@@ -23,13 +23,13 @@ public class ChallengeController {
 
     /** 1. 챌린지 목록 조회 */
     @GetMapping
-    public Page<Challenge> getAllChallenges(@RequestParam(defaultValue = "0") int page) {
+    public Page<Challenge> getAllChallenges(@RequestParam(name = "page",defaultValue = "0") int page) {
         return challengeService.getAllChallenges(page);
     }
 
     /** 2. 챌린지 검색 */
     @GetMapping("/search")
-    public Page<ChallengeDto.List> searchChallenges(@RequestParam String name, @RequestParam(defaultValue = "0") int page
+    public Page<ChallengeDto.List> searchChallenges(@RequestParam String name, @RequestParam(name = "page",defaultValue = "0") int page
     , @AuthenticationPrincipal UserDetails userDetails) {
         return challengeService.searchChallenges(name, page, userDetails);
     }
