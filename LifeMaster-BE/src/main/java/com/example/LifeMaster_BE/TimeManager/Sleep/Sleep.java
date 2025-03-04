@@ -1,7 +1,6 @@
 package com.example.LifeMaster_BE.TimeManager.Sleep;
 
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
-import com.example.LifeMaster_BE.UserManager.User;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
