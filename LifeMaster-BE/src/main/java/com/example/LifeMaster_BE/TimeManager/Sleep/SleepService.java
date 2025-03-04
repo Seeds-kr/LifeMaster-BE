@@ -105,11 +105,16 @@ public class SleepService {
         sleepRepository.save(updatedSleep);
     }
 
-    public List<SleepDto.Response> selectSleep(Integer userId) {
+    public List<SleepDto.Response> selectSleep(Long userId) {
         LocalDateTime oneWeekAgo = LocalDateTime.now().minusDays(7); // 일주일 전 시간 계산
 
+        // 2. User 확인 (수면 데이터를 사용자와 연결)
+        MemberEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+
+
         // 사용자와 일주일 전 데이터 필터링
-        List<Sleep> sleepList = sleepRepository.findByUserIdAndSleepDateAfter(userId, oneWeekAgo);
+        List<Sleep> sleepList = sleepRepository.findByUserAndSleepDateAfter(user, oneWeekAgo);
 
         // Sleep -> SleepDto.Response 변환
         return sleepList.stream()
