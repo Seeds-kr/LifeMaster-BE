@@ -1,4 +1,4 @@
-package com.example.LifeMaster_BE.TimeManager.Alarm;
+package com.example.LifeMaster_BE.TimeManager.Alarm.AlarmMission;
 
 import java.util.Random;
 

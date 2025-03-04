@@ -1,4 +1,4 @@
-package com.example.LifeMaster_BE.TimeManager.Alarm;
+package com.example.LifeMaster_BE.TimeManager.Alarm.AlarmMission;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Alarm Mission API", description = "알람 미션 관련 API")
 @RestController
-@RequestMapping("/api/alarm/mission")
+@RequestMapping("/time/alarm/mission")
 public class AlarmMissionController {
 
     private final AlarmMissionService missionService;
@@ -37,11 +37,13 @@ public class AlarmMissionController {
     @Parameter(name = "userAnswer", description = "사용자가 입력한 정답", required = true)
     @PostMapping("/math-problem/check")
     public ResponseEntity<String> checkMathProblemAnswer(
-            @RequestParam(name = "userAnswer") int userAnswer
+            @RequestParam(name = "userAnswer") int userAnswer,
+            @RequestParam(name = "alarmId") long alarmId // 알람 ID 추가
     ) {
         String result = missionService.checkMathProblemAnswer(mathProblem, userAnswer);
-        // 정답이 맞으면 mathProblem 초기화
+        // 정답이 맞으면 알람 상태 업데이트
         if (result.contains("정답입니다!")) {
+            missionService.updateAlarmStatus(alarmId, false); // 알람 끄기
             mathProblem = null;
         }
         return ResponseEntity.ok(result);
@@ -61,11 +63,13 @@ public class AlarmMissionController {
     @Parameter(name = "userInput", description = "사용자가 입력한 문장", required = true)
     @PostMapping("/typing/check")
     public ResponseEntity<String> checkTypingAnswer(
-            @RequestParam(name = "userInput") String userInput
+            @RequestParam(name = "userInput") String userInput,
+            @RequestParam(name = "alarmId") long alarmId // 알람 ID 추가
     ) {
         String result = missionService.checkTypingAnswer(typingAnswer, userInput);
         // 정답이 맞으면 typingAnswer 초기화
         if (result.contains("성공!")) {
+            missionService.updateAlarmStatus(alarmId, false); // 알람 끄기
             typingAnswer = null;
         }
         return ResponseEntity.ok(result);
@@ -85,11 +89,13 @@ public class AlarmMissionController {
     @Operation(summary = "그리드 정답 확인", description = "사용자가 입력한 그리드와 생성된 그리드를 비교하여 결과를 반환합니다.")
     @PostMapping("/follow-click/check")
     public ResponseEntity<String> checkFollowClickAnswer(
-            @RequestBody int[][] userGrid
+            @RequestBody int[][] userGrid,
+            @RequestParam(name = "alarmId") long alarmId // 알람 ID 추가
     ) {
         String result = missionService.checkFollowClickAnswer(answerGrid, userGrid);
         // 정답이 맞으면 mathProblem 초기화
         if (result.contains("정답입니다!")) {
+            missionService.updateAlarmStatus(alarmId, false); // 알람 끄기
             answerGrid = null;
         }
         return ResponseEntity.ok(result);

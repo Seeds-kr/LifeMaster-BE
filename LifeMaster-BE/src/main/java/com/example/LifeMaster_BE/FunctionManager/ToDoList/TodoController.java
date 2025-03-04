@@ -27,10 +27,10 @@ public class TodoController {
         return ResponseEntity.ok(todos);
     }
 
-    @Operation(summary = "새 To-Do 생성", description = "새로운 To-Do 항목을 추가합니다.")
+    @Operation(summary = "새 To-Do 생성", description = "날짜와 제목을 기반으로 새로운 To-Do 항목을 추가합니다.날짜 형식은 YYYYMMDD 입니다.")
     @PostMapping("/create")
-    public ResponseEntity<TodoEntity> createTodo(@RequestBody TodoEntity todo) {
-        TodoEntity createdTodo = todoService.save(todo);
+    public ResponseEntity<TodoEntity> createTodo(@RequestParam("date") String date, @RequestParam("title") String title) {
+        TodoEntity createdTodo = todoService.createTodo(date, title);
         return new ResponseEntity<>(createdTodo, HttpStatus.CREATED);
     }
 
@@ -43,8 +43,8 @@ public class TodoController {
 
     @Operation(summary = "To-Do 업데이트", description = "ID를 기반으로 기존의 To-Do 항목을 수정합니다.")
     @PutMapping("/{id}")
-    public ResponseEntity<TodoEntity> updateTodo(@PathVariable("id") Long id, @RequestBody TodoEntity todo) {
-        Optional<TodoEntity> updatedTodo = todoService.update(id, todo);
+    public ResponseEntity<TodoEntity> updateTodo(@RequestParam("id") Long id,@RequestParam("date") String date, @RequestParam("title") String title) {
+        Optional<TodoEntity> updatedTodo = todoService.updateDateTitle(id, date, title);
         return updatedTodo.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
@@ -56,5 +56,12 @@ public class TodoController {
         } else {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    @Operation(summary = "To-Do 완료 상태 토글", description = "ID를 기반으로 To-Do 항목의 완료 상태를 토글합니다.")
+    @PatchMapping("/{id}/toggle-completed")
+    public ResponseEntity<TodoEntity> toggleCompleted(@PathVariable("id") Long id) {
+        Optional<TodoEntity> toggledTodo = todoService.toggleCompleted(id);
+        return toggledTodo.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 }

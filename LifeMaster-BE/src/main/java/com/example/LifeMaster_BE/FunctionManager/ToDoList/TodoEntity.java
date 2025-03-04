@@ -1,5 +1,7 @@
 package com.example.LifeMaster_BE.FunctionManager.ToDoList;
-import jakarta.annotation.Nullable;
+
+import com.example.LifeMaster_BE.FunctionManager.Calender.ScheduleCalendarEntity;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -13,18 +15,27 @@ public class TodoEntity {
     private Long id;
 
     // Getter와 Setter
-    @Column(name = "calendar_date")
+    @Column(name = "calendar_date", insertable = false, updatable = false)
     private String date;
 
     private String title;
-    @Nullable
-    private String description;
     private boolean completed;
+
+    @ManyToOne
+    @JoinColumn(name = "calendar_date", referencedColumnName = "date", nullable = false, foreignKey = @ForeignKey(name = "FK_CALENDAR_ID"))
+    @JsonIgnoreProperties("todos") // 순환 참조 방지
+    private ScheduleCalendarEntity calendar;
 
     // 기본 생성자
     public TodoEntity() {
     }
 
+    public void setCalendar(ScheduleCalendarEntity calendar) {
+        if (calendar == null) {
+            throw new IllegalArgumentException("Calendar cannot be null");
+        }
+        this.calendar = calendar;
+    }
 }
 
 

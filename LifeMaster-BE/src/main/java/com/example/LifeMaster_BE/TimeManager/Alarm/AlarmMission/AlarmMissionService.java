@@ -1,19 +1,24 @@
-package com.example.LifeMaster_BE.TimeManager.Alarm;
+package com.example.LifeMaster_BE.TimeManager.Alarm.AlarmMission;
 
-import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
+import com.example.LifeMaster_BE.TimeManager.Alarm.AlarmService;
 
 import java.util.Random;
 
 @Service
 public class AlarmMissionService {
 
+    private final AlarmService alarmService;
     public static final String LEVEL_HIGH = "상";
     public static final String LEVEL_MEDIUM = "중";
     public static final String LEVEL_LOW = "하";
     public static final String[] OPERATORS = {"+", "-", "*", "/"};
 
     private final Random random = new Random();
+
+    public AlarmMissionService(AlarmService alarmService) {
+        this.alarmService = alarmService;
+    }
 
     // ========== 수학 문제 ==========
 
@@ -214,5 +219,9 @@ public class AlarmMissionService {
             this.question = question;
             this.correctAnswer = correctAnswer;
         }
+    }
+
+    public void updateAlarmStatus(Long alarmId, boolean status) {
+        alarmService.updateBooleanField(alarmId, "alarmStatus", status);
     }
 }
