@@ -1,5 +1,6 @@
 package com.example.LifeMaster_BE.TimeManager.Sleep;
 
+import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -22,7 +23,7 @@ public class Sleep {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private User user;  // 사용자, User 엔티티와의 관계
+    private MemberEntity user;  // 사용자, User 엔티티와의 관계
 
     @Column(nullable = false)
     private LocalDateTime sleepStart;  // 수면 시작 시간

@@ -18,7 +18,7 @@ public class SleepDto {
         private LocalDateTime sleepEnd;     // 수면 종료 시간
         private MoodStatus sleepMood;       // 수면 기분 상태 (HAPPY, SOSO, BAD)
         private Integer sleepAwakeCnt;      // 깬 횟수
-        private Integer userId;
+        private Long userId;
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)

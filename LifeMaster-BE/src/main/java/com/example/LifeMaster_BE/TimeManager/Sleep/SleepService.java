@@ -1,7 +1,7 @@
 package com.example.LifeMaster_BE.TimeManager.Sleep;
 
-import com.example.LifeMaster_BE.UserManager.User;
-import com.example.LifeMaster_BE.UserManager.UserRepository;
+import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
+import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -13,11 +13,11 @@ import java.util.List;
 public class SleepService {
 
     private final SleepRepository sleepRepository;
-    private final UserRepository userRepository; // User 정보를 가져오기 위한 Repository
+    private final MemberRepository userRepository; // User 정보를 가져오기 위한 Repository
 
     public void makeSleep(SleepDto.Request request) {
         // 1. User 확인
-        User user = userRepository.findById(request.getUserId())
+        MemberEntity user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
 
         // 2. Sleep 객체 생성
@@ -82,7 +82,7 @@ public class SleepService {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 수면 데이터입니다."));
 
         // 2. User 확인 (수면 데이터를 사용자와 연결)
-        User user = userRepository.findById(request.getUserId())
+        MemberEntity user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
 
         // 3. Builder를 사용해 Sleep 업데이트
