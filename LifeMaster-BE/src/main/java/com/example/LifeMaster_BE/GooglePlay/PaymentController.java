@@ -1,8 +1,6 @@
 package com.example.LifeMaster_BE.GooglePlay;
 
 import com.google.api.services.androidpublisher.model.SubscriptionPurchase;
-import lombok.Getter;
-import lombok.Setter;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -10,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/payments")
+@RequestMapping("/payments/googlePlay")
 public class PaymentController {
     private final GooglePlayService googlePlayService;
 
@@ -20,7 +18,7 @@ public class PaymentController {
 
     @PostMapping("/verify")
     public ResponseEntity<?> verifyReceipt(@RequestBody ReceiptRequest request) {
-        SubscriptionPurchase purchase = googlePlayService.verifyPurchase(request.getSubscriptionId(), request.getPurchaseToken());
+        SubscriptionPurchase purchase = googlePlayService.verifyAndSavePurchase(request.getSubscriptionId(), request.getPurchaseToken());
 
         // 결제 상태를 getPaymentState()로 확인
         int paymentState = purchase.getPaymentState();
@@ -35,11 +33,3 @@ public class PaymentController {
     }
 }
 
-@Getter
-@Setter
-class ReceiptRequest {
-    private String subscriptionId;
-    private String purchaseToken;
-
-    // Getter & Setter
-}
