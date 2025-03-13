@@ -1,6 +1,7 @@
 package com.example.LifeMaster_BE.FunctionManager.ToDoList;
 
 import com.example.LifeMaster_BE.FunctionManager.Calender.ScheduleCalendarEntity;
+import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -25,6 +26,10 @@ public class TodoEntity {
     @JoinColumn(name = "calendar_date", referencedColumnName = "date", nullable = false, foreignKey = @ForeignKey(name = "FK_CALENDAR_ID"))
     @JsonIgnoreProperties("todos") // 순환 참조 방지
     private ScheduleCalendarEntity calendar;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_id", nullable = false)
+    private MemberEntity member;
 
     // 기본 생성자
     public TodoEntity() {

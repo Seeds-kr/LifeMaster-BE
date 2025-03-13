@@ -1,9 +1,11 @@
 package com.example.LifeMaster_BE.FunctionManager.ToDoList;
 
+import com.example.LifeMaster_BE.Security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,8 +31,9 @@ public class TodoController {
 
     @Operation(summary = "새 To-Do 생성", description = "날짜와 제목을 기반으로 새로운 To-Do 항목을 추가합니다.날짜 형식은 YYYYMMDD 입니다.")
     @PostMapping("/create")
-    public ResponseEntity<TodoEntity> createTodo(@RequestParam("date") String date, @RequestParam("title") String title) {
-        TodoEntity createdTodo = todoService.createTodo(date, title);
+    public ResponseEntity<TodoEntity> createTodo(@RequestParam("date") String date, @RequestParam("title") String title,@AuthenticationPrincipal CustomUserDetails user) {
+        Long memberId = user.getId();
+        TodoEntity createdTodo = todoService.createTodo(date, title,memberId);
         return new ResponseEntity<>(createdTodo, HttpStatus.CREATED);
     }
 
