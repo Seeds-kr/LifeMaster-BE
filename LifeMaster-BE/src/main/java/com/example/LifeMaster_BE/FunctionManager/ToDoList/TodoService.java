@@ -3,11 +3,12 @@ package com.example.LifeMaster_BE.FunctionManager.ToDoList;
 import com.example.LifeMaster_BE.FunctionManager.Calender.ScheduleCalendarEntity;
 import com.example.LifeMaster_BE.FunctionManager.Calender.ScheduleCalendarRepository;
 import com.example.LifeMaster_BE.FunctionManager.Calender.ScheduleCalendarService;
-import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
+import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -55,6 +56,18 @@ public class TodoService {
         todo.setCompleted(false); // 기본값 설정
         todo.setCalendar(calendar); // 캘린더 연결
         todo.setMember(member);
+
+        // ✅ 캘린더의 이벤트 리스트에 "todo"가 없는 경우에만 추가
+        if (calendar.getEvents() == null) {
+            calendar.setEvents(new ArrayList<>());
+        }
+        if (!calendar.getEvents().contains("todo")) {
+            calendar.getEvents().add("todo");
+            calendarRepository.save(calendar); // 변경된 캘린더 저장
+        }
+
+        // 변경된 캘린더 저장
+        calendarRepository.save(calendar);
 
         return todoRepository.save(todo);
     }
