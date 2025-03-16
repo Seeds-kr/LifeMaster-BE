@@ -46,7 +46,7 @@ public class TodoController {
 
     @Operation(summary = "To-Do 업데이트", description = "ID를 기반으로 기존의 To-Do 항목을 수정합니다.")
     @PutMapping("/{id}")
-    public ResponseEntity<TodoEntity> updateTodo(@PathVariable("id") Long id,@RequestParam("date") String date, @RequestParam("title") String title) {
+    public ResponseEntity<TodoEntity> updateTodo(@PathVariable("id") Long id,@RequestParam(value = "date", required = false) String date, @RequestParam(value = "title", required = false) String title) {
         Optional<TodoEntity> updatedTodo = todoService.updateDateTitle(id, date, title);
         return updatedTodo.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
