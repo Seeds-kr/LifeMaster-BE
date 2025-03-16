@@ -54,6 +54,7 @@ public class TodoService {
         todo.setId(memberId);
         todo.setCompleted(false); // 기본값 설정
         todo.setCalendar(calendar); // 캘린더 연결
+        todo.setMember(member);
 
         return todoRepository.save(todo);
     }
