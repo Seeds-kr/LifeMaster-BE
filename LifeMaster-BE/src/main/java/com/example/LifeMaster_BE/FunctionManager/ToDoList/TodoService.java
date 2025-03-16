@@ -62,6 +62,9 @@ public class TodoService {
     public Optional<TodoEntity> findById(Long id) {
         return todoRepository.findById(id);
     }
+    public Optional<TodoEntity> findByTitle(String title) {
+        return todoRepository.findByTitle(title);
+    }
 
     // ID로 Todo 엔티티를 삭제합니다.
     public boolean deleteById(Long id) {

@@ -37,16 +37,16 @@ public class TodoController {
         return new ResponseEntity<>(createdTodo, HttpStatus.CREATED);
     }
 
-    @Operation(summary = "특정 To-Do 조회", description = "ID를 기반으로 특정 To-Do 항목을 조회합니다.")
+    @Operation(summary = "특정 To-Do 조회", description = "제목을 기반으로 특정 To-Do 항목을 조회합니다.")
     @GetMapping("/{id}")
-    public ResponseEntity<TodoEntity> getTodoById(@PathVariable("id") Long id) {
-        Optional<TodoEntity> todo = todoService.findById(id);
+    public ResponseEntity<TodoEntity> getTodoById(@RequestParam("title") String title) {
+        Optional<TodoEntity> todo = todoService.findByTitle(title);
         return todo.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @Operation(summary = "To-Do 업데이트", description = "ID를 기반으로 기존의 To-Do 항목을 수정합니다.")
     @PutMapping("/{id}")
-    public ResponseEntity<TodoEntity> updateTodo(@RequestParam("id") Long id,@RequestParam("date") String date, @RequestParam("title") String title) {
+    public ResponseEntity<TodoEntity> updateTodo(@PathVariable("id") Long id,@RequestParam("date") String date, @RequestParam("title") String title) {
         Optional<TodoEntity> updatedTodo = todoService.updateDateTitle(id, date, title);
         return updatedTodo.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
