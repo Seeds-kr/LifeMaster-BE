@@ -3,6 +3,9 @@ package com.example.LifeMaster_BE.FunctionManager.ToDoList;
 import com.example.LifeMaster_BE.FunctionManager.Calender.ScheduleCalendarEntity;
 import com.example.LifeMaster_BE.FunctionManager.Calender.ScheduleCalendarRepository;
 import com.example.LifeMaster_BE.FunctionManager.Calender.ScheduleCalendarService;
+import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
+import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -14,11 +17,13 @@ public class TodoService {
     private final ScheduleCalendarRepository calendarRepository;
 
     private final ScheduleCalendarService scheduleCalendarService;
+    private final MemberRepository memberRepository;
 
-    public TodoService(TodoRepository todoRepository, ScheduleCalendarRepository calendarRepository, ScheduleCalendarService scheduleCalendarService) {
+    public TodoService(TodoRepository todoRepository, ScheduleCalendarRepository calendarRepository, ScheduleCalendarService scheduleCalendarService, MemberRepository memberRepository) {
         this.todoRepository = todoRepository;
         this.calendarRepository = calendarRepository;
         this.scheduleCalendarService = scheduleCalendarService;
+        this.memberRepository = memberRepository;
     }
 
     // 모든 Todo 엔티티를 조회합니다.
@@ -27,7 +32,7 @@ public class TodoService {
     }
 
     // 날짜와 제목만 입력받아 새로운 Todo 엔티티를 생성합니다.
-    public TodoEntity createTodo(String date, String title) {
+    public TodoEntity createTodo(String date, String title,Long memberId) {
         // 날짜에 해당하는 캘린더 조회 또는 생성
         ScheduleCalendarEntity calendar = findOrCreateCalendar(date);
 
@@ -38,12 +43,18 @@ public class TodoService {
             throw new IllegalArgumentException("The Todo with this title already exists for the given date.");
         }
 
+        //멤베 id 존재하는지 검증
+        MemberEntity member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new EntityNotFoundException("Member not found"));
+
         // TodoEntity 생성 및 설정
         TodoEntity todo = new TodoEntity();
         todo.setDate(date);
         todo.setTitle(title);
+        todo.setId(memberId);
         todo.setCompleted(false); // 기본값 설정
         todo.setCalendar(calendar); // 캘린더 연결
+        todo.setMember(member);
 
         return todoRepository.save(todo);
     }
@@ -51,6 +62,9 @@ public class TodoService {
     // ID로 Todo 엔티티를 조회합니다.
     public Optional<TodoEntity> findById(Long id) {
         return todoRepository.findById(id);
+    }
+    public Optional<TodoEntity> findByTitle(String title) {
+        return todoRepository.findByTitle(title);
     }
 
     // ID로 Todo 엔티티를 삭제합니다.

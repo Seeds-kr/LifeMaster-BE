@@ -1,9 +1,11 @@
 package com.example.LifeMaster_BE.FunctionManager.ToDoList;
 
+import com.example.LifeMaster_BE.Security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,21 +31,22 @@ public class TodoController {
 
     @Operation(summary = "새 To-Do 생성", description = "날짜와 제목을 기반으로 새로운 To-Do 항목을 추가합니다.날짜 형식은 YYYYMMDD 입니다.")
     @PostMapping("/create")
-    public ResponseEntity<TodoEntity> createTodo(@RequestParam("date") String date, @RequestParam("title") String title) {
-        TodoEntity createdTodo = todoService.createTodo(date, title);
+    public ResponseEntity<TodoEntity> createTodo(@RequestParam("date") String date, @RequestParam("title") String title,@AuthenticationPrincipal CustomUserDetails user) {
+        Long memberId = user.getId();
+        TodoEntity createdTodo = todoService.createTodo(date, title,memberId);
         return new ResponseEntity<>(createdTodo, HttpStatus.CREATED);
     }
 
-    @Operation(summary = "특정 To-Do 조회", description = "ID를 기반으로 특정 To-Do 항목을 조회합니다.")
+    @Operation(summary = "특정 To-Do 조회", description = "제목을 기반으로 특정 To-Do 항목을 조회합니다.")
     @GetMapping("/{id}")
-    public ResponseEntity<TodoEntity> getTodoById(@PathVariable("id") Long id) {
-        Optional<TodoEntity> todo = todoService.findById(id);
+    public ResponseEntity<TodoEntity> getTodoById(@RequestParam("title") String title) {
+        Optional<TodoEntity> todo = todoService.findByTitle(title);
         return todo.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @Operation(summary = "To-Do 업데이트", description = "ID를 기반으로 기존의 To-Do 항목을 수정합니다.")
     @PutMapping("/{id}")
-    public ResponseEntity<TodoEntity> updateTodo(@RequestParam("id") Long id,@RequestParam("date") String date, @RequestParam("title") String title) {
+    public ResponseEntity<TodoEntity> updateTodo(@PathVariable("id") Long id,@RequestParam("date") String date, @RequestParam("title") String title) {
         Optional<TodoEntity> updatedTodo = todoService.updateDateTitle(id, date, title);
         return updatedTodo.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }

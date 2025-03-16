@@ -2,6 +2,7 @@ package com.example.LifeMaster_BE.FunctionManager.Calender;
 
 
 import com.example.LifeMaster_BE.FunctionManager.ToDoList.TodoEntity;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -28,6 +29,7 @@ public class ScheduleCalendarEntity {
     // TodoEntity와의 관계 설정
     @OneToMany(mappedBy = "calendar", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties("calendar") // 순환 참조 방지
+    @JsonIgnore
     private List<TodoEntity> todos; // To-Do 리스트 (외래키 관계)
 
     // Getter와 Setter
