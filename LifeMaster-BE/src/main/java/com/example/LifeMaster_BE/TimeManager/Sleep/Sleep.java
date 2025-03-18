@@ -3,6 +3,8 @@ package com.example.LifeMaster_BE.TimeManager.Sleep;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.time.Duration;
 import java.time.LocalDateTime;
 
 @Entity
@@ -43,5 +45,14 @@ public class Sleep {
 
     public void setSleepScore(double sleepScore) {
         this.sleepScore = sleepScore;
+    }
+
+    public Duration getSleepDuration() {
+        LocalDateTime sleepstart = this.getSleepStart();
+        LocalDateTime sleepend = this.getSleepEnd();
+        if (sleepstart != null && sleepend != null) {
+            return Duration.between(sleepstart, sleepend);
+        }
+        return Duration.ZERO;
     }
 }

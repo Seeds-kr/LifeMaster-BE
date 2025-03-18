@@ -4,18 +4,29 @@ import com.example.LifeMaster_BE.Group.Goal.GoalEntity;
 import com.example.LifeMaster_BE.Group.Goal.GoalRepository;
 import com.example.LifeMaster_BE.Group.GoalProgress.GoalProgressEntity;
 import com.example.LifeMaster_BE.Group.GoalProgress.GoalProgressRepository;
+import com.example.LifeMaster_BE.TimeManager.Sleep.Sleep;
+import com.example.LifeMaster_BE.TimeManager.Sleep.SleepRepository;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import com.example.LifeMaster_BE.Group.GroupExit.GroupExitHistoryService;
 import com.example.LifeMaster_BE.Group.GoalProgress.GoalProgressService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.*;
 
+@RequiredArgsConstructor
 @Service
 public class GroupService {
+
+    private final SleepRepository sleepRepository;
 
     private final GroupRepository groupRepository;
     private final GoalRepository goalRepository;
@@ -27,15 +38,6 @@ public class GroupService {
     private final GroupExitHistoryService groupExitHistoryService;
     private final GoalProgressService goalProgressService;
 
-    public GroupService(GroupRepository groupRepository, GoalRepository goalRepository, GoalProgressRepository goalProgressRepository, MemberRepository memberRepository, PasswordEncoder passwordEncoder, GroupExitHistoryService groupExitHistoryService, GoalProgressService goalProgressService) {
-        this.groupRepository = groupRepository;
-        this.goalRepository = goalRepository;
-        this.goalProgressRepository = goalProgressRepository;
-        this.memberRepository = memberRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.groupExitHistoryService = groupExitHistoryService;
-        this.goalProgressService = goalProgressService;
-    }
 
     // Create a group
     @Transactional
@@ -405,5 +407,82 @@ public class GroupService {
 
         groupRepository.save(group);
         return "User successfully joined the group.";
+    }
+
+    @Scheduled(cron = "0 0 12 * * ?")
+    public void calculateAverageSleepTimeForAllGroups() {
+        List<GroupEntity> groups = groupRepository.findAll();
+        for (GroupEntity group : groups) {
+            calculateAverageSleepTime(group);
+        }
+    }
+
+    // 평균 수면 시간 계산 메서드
+    public void calculateAverageSleepTime(GroupEntity group) {
+        long totalSleepTime = 0;
+        int userCount = 0;
+        LocalDateTime averTime;
+
+        Set<MemberEntity> users = group.getMembers();
+        List<Sleep> sleeps = sleepRepository.findAllByUser(users);
+
+        // 각 유저의 수면 기록을 가져와서 시간 계산
+        for (MemberEntity user : users) {
+            Sleep sleep = sleepRepository.findByUser(user);
+            for (Sleep record : sleeps) {
+                totalSleepTime += record.getSleepDuration().toMinutes(); // 수면 시간 합산
+                userCount++;
+            }
+        }
+
+        if (userCount > 0) {
+            long averageSleepTimeInMinutes = totalSleepTime / userCount; // 평균 수면 시간 계산
+            averTime = LocalDateTime.ofInstant(Instant.ofEpochSecond(averageSleepTimeInMinutes * 60), ZoneOffset.UTC);
+            GroupStatic groupStatic = GroupStatic.builder()
+                    .group(group)
+                    .date(new Date())
+                    .averTime(averTime)
+                    .build();
+
+        } else {
+            averTime = null;
+        }
+    }
+
+    public GroupDto.Static getUserStatic(String email, GroupEntity group) {
+        MemberEntity user = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다."));
+        List<Long> userSleepDurations = new ArrayList<>();
+        List<Long> groupAverageSleepDurations = new ArrayList<>();
+
+        LocalDate today = LocalDate.now();
+
+        // 최근 7일 데이터 조회
+        for (int i = 6; i >= 0; i--) {
+            LocalDate targetDate = today.minusDays(i);
+
+            // 유저 수면 기록 조회
+            List<Sleep> userSleeps = sleepRepository.findByUserAndDate(user, targetDate);
+            long userTotalSleep = userSleeps.stream()
+                    .mapToLong(sleep -> sleep.getSleepDuration().toMinutes())
+                    .sum();
+            userSleepDurations.add(userTotalSleep);
+
+            // 그룹 멤버들의 수면 기록 조회
+            Set<MemberEntity> members = group.getMembers();
+            List<Sleep> groupSleeps = sleepRepository.findAllByUserAndDate(members, targetDate);
+
+            long groupTotalSleep = groupSleeps.stream()
+                    .mapToLong(sleep -> sleep.getSleepDuration().toMinutes())
+                    .sum();
+
+            long groupAverageSleep = members.isEmpty() ? 0 : groupTotalSleep / members.size();
+            groupAverageSleepDurations.add(groupAverageSleep);
+        }
+
+        return GroupDto.Static.builder()
+                .userSleepDurations(userSleepDurations)
+                .groupAverageSleepDurations(groupAverageSleepDurations)
+                .build();
     }
 }
