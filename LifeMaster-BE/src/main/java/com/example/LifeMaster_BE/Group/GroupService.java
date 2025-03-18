@@ -21,6 +21,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
@@ -424,7 +425,9 @@ public class GroupService {
         LocalDateTime averTime;
 
         Set<MemberEntity> users = group.getMembers();
-        List<Sleep> sleeps = sleepRepository.findAllByUser(users);
+        List<MemberEntity> userList = users.stream()
+                .collect(Collectors.toList());
+        List<Sleep> sleeps = sleepRepository.findAllByUser(userList);
 
         // 각 유저의 수면 기록을 가져와서 시간 계산
         for (MemberEntity user : users) {
@@ -470,7 +473,9 @@ public class GroupService {
 
             // 그룹 멤버들의 수면 기록 조회
             Set<MemberEntity> members = group.getMembers();
-            List<Sleep> groupSleeps = sleepRepository.findAllByUserAndDate(members, targetDate);
+            List<MemberEntity> memberss = members.stream()
+                    .collect(Collectors.toList());;
+            List<Sleep> groupSleeps = sleepRepository.findAllByUserAndDate(memberss, targetDate);
 
             long groupTotalSleep = groupSleeps.stream()
                     .mapToLong(sleep -> sleep.getSleepDuration().toMinutes())

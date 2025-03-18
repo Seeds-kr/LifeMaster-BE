@@ -18,7 +18,6 @@ import java.util.Set;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-@RequiredArgsConstructor
 @Builder(toBuilder = true)
 public class GroupStatic extends BaseEntity {
 

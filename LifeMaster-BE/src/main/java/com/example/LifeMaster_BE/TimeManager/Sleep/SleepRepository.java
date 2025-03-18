@@ -14,10 +14,12 @@ public interface SleepRepository extends JpaRepository<Sleep, Integer> {
 
     Sleep findByUser(MemberEntity user);
 
-    List<Sleep> findAllByUser(Set<MemberEntity> users);
+    @Query("SELECT s FROM Sleep s WHERE s.user IN :users")
+    List<Sleep> findAllByUser(List<MemberEntity> users);
+
     @Query("SELECT s FROM Sleep s WHERE s.user = :user AND DATE(s.sleepStart) = :date")
     List<Sleep> findByUserAndDate(MemberEntity user, LocalDate date);
 
     @Query("SELECT s FROM Sleep s WHERE s.user IN :users AND DATE(s.sleepStart) = :date")
-    List<Sleep> findAllByUserAndDate(Set<MemberEntity> users, LocalDate date);
+    List<Sleep> findAllByUserAndDate(List<MemberEntity> users, LocalDate date);
 }

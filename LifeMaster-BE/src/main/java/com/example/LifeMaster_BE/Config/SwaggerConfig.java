@@ -95,11 +95,20 @@ public class SwaggerConfig implements WebMvcConfigurer {
                 .build();
     }
 
+
     @Bean
     public GroupedOpenApi whiteNoiseApi() {
         return GroupedOpenApi.builder()
                 .group("whiteNoise")
                 .pathsToMatch("/time/sleep/playlist/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi SleepApi() {
+        return GroupedOpenApi.builder()
+                .group("Sleep")
+                .pathsToMatch("/sleep/**")
                 .build();
     }
 
