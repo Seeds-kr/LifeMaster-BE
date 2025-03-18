@@ -1,7 +1,9 @@
 package com.example.LifeMaster_BE.Challenge.Detox;
 
+import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -11,6 +13,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
+@RequiredArgsConstructor
 @Service
 public class TimeDetoxService {
 
@@ -18,15 +21,11 @@ public class TimeDetoxService {
 
     private final RandomPhraseProvider randomPhraseProvider;
 
+    private final MemberRepository memberRepository;
+
     @Getter
     private String currentRandomPhrase;
 
-    @Autowired
-    public TimeDetoxService(TimeDetoxRepository repository, RandomPhraseProvider randomPhraseProvider, MemberRepository memberRepository) {
-        this.repository = repository;
-        this.randomPhraseProvider = randomPhraseProvider;
-        this.currentRandomPhrase = ""; // 기본값 설정
-    }
 
     public void updateRandomPhrase() {
         this.currentRandomPhrase = randomPhraseProvider.getRandomPhrase();
@@ -59,8 +58,11 @@ public class TimeDetoxService {
         return dto;
     }
 
-    public List<TimeDetoxEntity> getAllSchedules() {
-        return repository.findAll();
+    public List<TimeDetoxEntity> getAllSchedules(String email) {
+        MemberEntity user = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다."));
+
+        return repository.findAllByMember(user);
     }
 
     public TimeDetoxEntity getScheduleById(Long id) {
