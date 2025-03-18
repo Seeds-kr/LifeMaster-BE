@@ -29,11 +29,15 @@ public class TodoController {
         return ResponseEntity.ok(todos);
     }
 
-    @Operation(summary = "새 To-Do 생성", description = "날짜와 제목을 기반으로 새로운 To-Do 항목을 추가합니다.날짜 형식은 YYYYMMDD 입니다.")
+    @Operation(
+            summary = "새 To-Do 생성",
+            description = "날짜와 제목을 기반으로 새로운 To-Do 항목을 추가합니다. 날짜 형식은 YYYYMMDD 입니다."
+    )
     @PostMapping("/create")
-    public ResponseEntity<TodoEntity> createTodo(@RequestParam("date") String date, @RequestParam("title") String title,@AuthenticationPrincipal CustomUserDetails user) {
+    public ResponseEntity<TodoDTO> createTodo(@RequestBody TodoDTO todoDto,
+                                              @AuthenticationPrincipal CustomUserDetails user) {
         Long memberId = user.getId();
-        TodoEntity createdTodo = todoService.createTodo(date, title,memberId);
+        TodoDTO createdTodo = todoService.createTodo(todoDto, memberId);
         return new ResponseEntity<>(createdTodo, HttpStatus.CREATED);
     }
 

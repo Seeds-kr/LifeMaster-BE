@@ -22,9 +22,9 @@ public class TodoEntity {
     private String title;
     private boolean completed;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "calendar_id", nullable = false, foreignKey = @ForeignKey(name = "FK_CALENDAR_ID"))
-    @JsonIgnoreProperties("todos")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private ScheduleCalendarEntity calendar;
 
     @ManyToOne(fetch = FetchType.LAZY)
