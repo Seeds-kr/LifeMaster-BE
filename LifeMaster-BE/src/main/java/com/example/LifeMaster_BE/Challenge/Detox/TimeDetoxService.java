@@ -1,5 +1,7 @@
 package com.example.LifeMaster_BE.Challenge.Detox;
 
+import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -8,21 +10,53 @@ import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class TimeDetoxService {
 
-    @Autowired
-    private TimeDetoxRepository repository;
+    private final TimeDetoxRepository repository;
 
-    @Autowired
-    private RandomPhraseProvider randomPhraseProvider;
+    private final RandomPhraseProvider randomPhraseProvider;
 
+    @Getter
     private String currentRandomPhrase;
 
-    public TimeDetoxEntity createSchedule(TimeDetoxEntity schedule) {
-        return repository.save(schedule);
+    @Autowired
+    public TimeDetoxService(TimeDetoxRepository repository, RandomPhraseProvider randomPhraseProvider, MemberRepository memberRepository) {
+        this.repository = repository;
+        this.randomPhraseProvider = randomPhraseProvider;
+        this.currentRandomPhrase = ""; // 기본값 설정
+    }
+
+    public void updateRandomPhrase() {
+        this.currentRandomPhrase = randomPhraseProvider.getRandomPhrase();
+    }
+
+    public TimeDetoxDTO createSchedule(TimeDetoxDTO dto, Long memberId) {
+        TimeDetoxEntity entity = new TimeDetoxEntity();
+        entity.setCycle(dto.getCycle());
+        entity.setDay(dto.getDay());
+        entity.setStartTime(LocalTime.parse(dto.getStartTime()));
+        entity.setEndTime(LocalTime.parse(dto.getEndTime()));
+        entity.setActive(dto.isActive());
+        entity.setLockedApps(dto.getLockedApps());
+        entity.setMemberId(memberId); // 멤버 ID 설정
+
+        TimeDetoxEntity savedEntity = repository.save(entity);
+
+        // 저장된 엔티티를 DTO로 변환하여 반환
+        return convertToDTO(savedEntity);
+    }
+
+    private TimeDetoxDTO convertToDTO(TimeDetoxEntity entity) {
+        TimeDetoxDTO dto = new TimeDetoxDTO();
+        dto.setCycle(entity.getCycle());
+        dto.setDay(entity.getDay());
+        dto.setStartTime(String.valueOf(entity.getStartTime()));
+        dto.setEndTime(String.valueOf(entity.getEndTime()));
+        dto.setActive(entity.isActive());
+        dto.setLockedApps(entity.getLockedApps());
+        return dto;
     }
 
     public List<TimeDetoxEntity> getAllSchedules() {

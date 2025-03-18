@@ -8,7 +8,6 @@ import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,43 +32,40 @@ public class TodoService {
     }
 
     // 날짜와 제목만 입력받아 새로운 Todo 엔티티를 생성합니다.
-    public TodoEntity createTodo(String date, String title,Long memberId) {
-        // 날짜에 해당하는 캘린더 조회 또는 생성
-        ScheduleCalendarEntity calendar = findOrCreateCalendar(date);
+    public TodoDTO createTodo(TodoDTO dto, Long memberId) {
+        // 캘린더 찾거나 생성
+        ScheduleCalendarEntity calendar = findOrCreateCalendar(dto.getDate());
 
-        // 동일한 날짜에 동일한 제목을 가진 Todo가 있는지 확인
-        List<TodoEntity> existingTodos = todoRepository.findByDateAndTitle(date, title);
+        // 동일한 날짜와 제목의 Todo가 있는지 확인
+        List<TodoEntity> existingTodos = todoRepository.findByDateAndTitle(dto.getDate(), dto.getTitle());
         if (!existingTodos.isEmpty()) {
-            // 동일한 제목의 Todo가 이미 존재하는 경우
             throw new IllegalArgumentException("The Todo with this title already exists for the given date.");
         }
 
-        //멤베 id 존재하는지 검증
+        // 멤버 확인
         MemberEntity member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new EntityNotFoundException("Member not found"));
 
         // TodoEntity 생성 및 설정
         TodoEntity todo = new TodoEntity();
-        todo.setDate(date);
-        todo.setTitle(title);
-        todo.setId(memberId);
-        todo.setCompleted(false); // 기본값 설정
-        todo.setCalendar(calendar); // 캘린더 연결
+        todo.setDate(dto.getDate());
+        todo.setTitle(dto.getTitle());
+        todo.setCompleted(false);
+        todo.setCalendar(calendar);
         todo.setMember(member);
 
-        // ✅ 캘린더의 이벤트 리스트에 "todo"가 없는 경우에만 추가
-        if (calendar.getEvents() == null) {
-            calendar.setEvents(new ArrayList<>());
-        }
-        if (!calendar.getEvents().contains("todo")) {
-            calendar.getEvents().add("todo");
-            calendarRepository.save(calendar); // 변경된 캘린더 저장
-        }
+        TodoEntity savedTodo = todoRepository.save(todo);
 
-        // 변경된 캘린더 저장
-        calendarRepository.save(calendar);
+        // 저장된 엔티티를 DTO로 변환하여 반환
+        return convertToDTO(savedTodo);
+    }
 
-        return todoRepository.save(todo);
+    private TodoDTO convertToDTO(TodoEntity entity) {
+        TodoDTO dto = new TodoDTO();
+        dto.setDate(entity.getDate());
+        dto.setTitle(entity.getTitle());
+        dto.setCompleted(entity.isCompleted());
+        return dto;
     }
 
     // ID로 Todo 엔티티를 조회합니다.
