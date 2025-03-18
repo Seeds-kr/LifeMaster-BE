@@ -18,8 +18,9 @@ public class ChallengeController {
     /** 0. 챌린지 생성 */
     @PostMapping
     @Operation(summary = "챌린지 생성", description = "새로운 챌린지를 생성합니다.")
-    public Challenge createChallenge(@RequestBody ChallengeDto.Create challenge) {
-        return challengeService.createChallenge(challenge);
+    public Challenge createChallenge(@RequestBody ChallengeDto.Create challenge, @AuthenticationPrincipal UserDetails userDetails) {
+        String email = userDetails.getUsername();
+        return challengeService.createChallenge(challenge,email);
     }
 
     /** 1. 챌린지 목록 조회 */

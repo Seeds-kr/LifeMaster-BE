@@ -14,6 +14,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -27,11 +28,14 @@ public class ChallengeService {
     private final Map<Long, SseEmitter> emitters = new ConcurrentHashMap<>();
 
     // 챌린지 생성
-    public Challenge createChallenge(ChallengeDto.Create challengeDto) {
+    public Challenge createChallenge(ChallengeDto.Create challengeDto, String email) {
+        MemberEntity user = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다."));
         Challenge challenge = Challenge.builder()
                 .challName(challengeDto.getChallName())
                 .challDesc(challengeDto.getChallDesc())
                 .challImg(challengeDto.getChallImg())
+                .user(user)
                 .challCnt(1)
                 .build();
         return challengeRepository.save(challenge);

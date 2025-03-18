@@ -1,14 +1,18 @@
 package com.example.LifeMaster_BE.Challenge.Detox;
 
 import com.example.LifeMaster_BE.Security.CustomUserDetails;
+import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
+import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -16,8 +20,11 @@ import java.time.LocalTime;
 import java.util.List;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/detox/time")
 public class TimeDetoxController {
+
+    private final MemberRepository memberRepository;
 
     @Autowired
     private TimeDetoxService service;
@@ -113,8 +120,9 @@ public class TimeDetoxController {
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = TimeDetoxEntity.class)))
             })
     @GetMapping
-    public ResponseEntity<List<TimeDetoxEntity>> getAllSchedules() {
-        return ResponseEntity.ok(service.getAllSchedules());
+    public ResponseEntity<List<TimeDetoxEntity>> getAllSchedules(@AuthenticationPrincipal UserDetails user) {
+        String email = user.getUsername();
+        return ResponseEntity.ok(service.getAllSchedules(email));
     }
 
     @Operation(
@@ -126,8 +134,11 @@ public class TimeDetoxController {
                     @ApiResponse(responseCode = "404", description = "일정을 찾을 수 없음")
             })
     @GetMapping("/{id}")
-    public ResponseEntity<TimeDetoxEntity> getScheduleById(@PathVariable(name = "id") Long id) {
-        return ResponseEntity.ok(service.getScheduleById(id));
+    public ResponseEntity<TimeDetoxEntity> getScheduleById(@AuthenticationPrincipal UserDetails user) {
+        String email = user.getUsername();
+        MemberEntity User = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다."));
+        return ResponseEntity.ok(service.getScheduleById(User.getId()));
     }
 
     @Operation(
