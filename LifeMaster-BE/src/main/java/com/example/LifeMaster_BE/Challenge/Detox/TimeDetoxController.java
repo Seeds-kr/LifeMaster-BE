@@ -1,12 +1,18 @@
 package com.example.LifeMaster_BE.Challenge.Detox;
 
+import com.example.LifeMaster_BE.Security.CustomUserDetails;
+import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
+import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -14,8 +20,11 @@ import java.time.LocalTime;
 import java.util.List;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/detox/time")
 public class TimeDetoxController {
+
+    private final MemberRepository memberRepository;
 
     @Autowired
     private TimeDetoxService service;
@@ -75,29 +84,32 @@ public class TimeDetoxController {
                     required = true,
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = TimeDetoxEntity.class),
+                            schema = @Schema(implementation = TimeDetoxDTO.class),
                             examples = @ExampleObject(
                                     value = """
-                                    {
-                                        "cycle": "WEEKLY",
-                                        "day": "MONDAY",
-                                        "startTime": "10:30:00",
-                                        "endTime": "18:30:00",
-                                        "active": true,
-                                        "lockedApps": ["YouTube", "Instagram", "Facebook"]
-                                    }
-                                    """
+                                {
+                                    "cycle": "WEEKLY",
+                                    "day": "MONDAY",
+                                    "startTime": "10:30:00",
+                                    "endTime": "18:30:00",
+                                    "active": true,
+                                    "lockedApps": ["YouTube", "Instagram", "Facebook"]
+                                }
+                                """
                             )
                     )
             ),
             responses = {
                     @ApiResponse(responseCode = "200", description = "일정 생성 성공",
-                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = TimeDetoxEntity.class))),
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = TimeDetoxDTO.class))),
                     @ApiResponse(responseCode = "400", description = "잘못된 입력 데이터")
             })
     @PostMapping
-    public ResponseEntity<TimeDetoxEntity> createSchedule(@RequestBody TimeDetoxEntity schedule) {
-        return ResponseEntity.ok(service.createSchedule(schedule));
+    public ResponseEntity<TimeDetoxDTO> createSchedule(@RequestBody TimeDetoxDTO scheduleDto,
+                                                       @AuthenticationPrincipal CustomUserDetails user) {
+        Long memberId = user.getId();
+        TimeDetoxDTO createdSchedule = service.createSchedule(scheduleDto, memberId);
+        return ResponseEntity.ok(createdSchedule);
     }
 
     @Operation(
@@ -108,8 +120,9 @@ public class TimeDetoxController {
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = TimeDetoxEntity.class)))
             })
     @GetMapping
-    public ResponseEntity<List<TimeDetoxEntity>> getAllSchedules() {
-        return ResponseEntity.ok(service.getAllSchedules());
+    public ResponseEntity<List<TimeDetoxEntity>> getAllSchedules(@AuthenticationPrincipal UserDetails user) {
+        String email = user.getUsername();
+        return ResponseEntity.ok(service.getAllSchedules(email));
     }
 
     @Operation(
@@ -121,8 +134,11 @@ public class TimeDetoxController {
                     @ApiResponse(responseCode = "404", description = "일정을 찾을 수 없음")
             })
     @GetMapping("/{id}")
-    public ResponseEntity<TimeDetoxEntity> getScheduleById(@PathVariable(name = "id") Long id) {
-        return ResponseEntity.ok(service.getScheduleById(id));
+    public ResponseEntity<TimeDetoxEntity> getScheduleById(@AuthenticationPrincipal UserDetails user) {
+        String email = user.getUsername();
+        MemberEntity User = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다."));
+        return ResponseEntity.ok(service.getScheduleById(User.getId()));
     }
 
     @Operation(

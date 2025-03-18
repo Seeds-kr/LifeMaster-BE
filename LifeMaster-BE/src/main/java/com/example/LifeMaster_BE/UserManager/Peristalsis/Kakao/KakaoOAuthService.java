@@ -1,6 +1,7 @@
 package com.example.LifeMaster_BE.UserManager.Peristalsis.Kakao;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -12,19 +13,21 @@ public class KakaoOAuthService {
 
     private final String clientId;
     private final String redirectUri;
+    private final RestTemplate restTemplate;
 
-    // 생성자에서 @Value 어노테이션으로 값 주입
+    // 생성자에서 RestTemplate 주입
     public KakaoOAuthService(
             @Value("${jwt.kakao.secretKey}") String clientId,
-            @Value("${jwt.kakao.redirectUri}") String redirectUri) {
+            @Value("${jwt.kakao.redirectUri}") String redirectUri,
+            RestTemplate restTemplate) { // @Autowired가 자동으로 적용됨
         this.clientId = clientId;
         this.redirectUri = redirectUri;
+        this.restTemplate = restTemplate;
     }
 
     // 카카오 액세스 토큰을 가져오는 메서드
     public String getAccessToken(String code) {
         String tokenUrl = "https://kauth.kakao.com/oauth/token";
-        RestTemplate restTemplate = new RestTemplate();
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -47,7 +50,6 @@ public class KakaoOAuthService {
     // 카카오 사용자 정보를 가져오는 메서드
     public Map<String, Object> getUserInfo(String accessToken) {
         String userInfoUrl = "https://kapi.kakao.com/v2/user/me";
-        RestTemplate restTemplate = new RestTemplate();
 
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(accessToken); // Bearer 토큰 헤더 추가
@@ -61,4 +63,5 @@ public class KakaoOAuthService {
         throw new RuntimeException("Failed to get user info from Kakao");
     }
 }
+
 
