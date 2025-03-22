@@ -406,4 +406,9 @@ public class GroupService {
         groupRepository.save(group);
         return "User successfully joined the group.";
     }
+
+    //유저 id로 목표 조회
+    public List<GoalEntity> getGoalsByMemberId(Long memberId) {
+        return groupRepository.findGoalsByMemberId(memberId);
+    }
 }
