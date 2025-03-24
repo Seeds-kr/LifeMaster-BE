@@ -1,8 +1,11 @@
 package com.example.LifeMaster_BE.TimeManager.Sleep.WhiteNoise;
+import com.example.LifeMaster_BE.Security.CustomUserDetails;
+import com.example.LifeMaster_BE.UserManager.Login;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,8 +17,11 @@ public class WhiteNoiseController {
 
     private final WhiteNoiseService service;
 
-    public WhiteNoiseController(WhiteNoiseService service) {
+    private final Login login;
+
+    public WhiteNoiseController(WhiteNoiseService service, Login login) {
         this.service = service;
+        this.login = login;
     }
 
     @Operation(summary = "전체 백색소음 조회", description = "모든 백색소음 항목을 조회합니다.")
@@ -34,7 +40,10 @@ public class WhiteNoiseController {
 
     @Operation(summary = "백색소음 생성", description = "새로운 백색소음 항목을 생성합니다.")
     @PostMapping
-    public ResponseEntity<WhiteNoiseEntity> createWhiteNoise(@RequestBody WhiteNoiseEntity whiteNoise) {
+    public ResponseEntity<?> createWhiteNoise(@RequestBody WhiteNoiseEntity whiteNoise, @AuthenticationPrincipal CustomUserDetails user) {
+        ResponseEntity<?> loginCheck = login.checkLogin(user);
+        if (loginCheck != null) return loginCheck;
+        Long memberId = user.getId();
         return new ResponseEntity<>(service.save(whiteNoise), HttpStatus.CREATED);
     }
 

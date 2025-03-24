@@ -1,10 +1,13 @@
 package com.example.LifeMaster_BE.TimeManager.PomodoroTimer;
 
 import com.example.LifeMaster_BE.FunctionManager.Calender.ScheduleCalendarService;
+import com.example.LifeMaster_BE.Security.CustomUserDetails;
+import com.example.LifeMaster_BE.UserManager.Login;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,6 +25,12 @@ public class PomodoroTimerController {
     private ScheduleCalendarService calendarService;
 
     private String currentEscapePhrase;
+
+    private final Login login;
+
+    public PomodoroTimerController(Login login) {
+        this.login = login;
+    }
 
     @Operation(summary = "모든 포모도로 타이머 조회", description = "저장된 모든 포모도로 타이머를 조회합니다.")
     @GetMapping
@@ -46,9 +55,14 @@ public class PomodoroTimerController {
     @Operation(summary = "새로운 포모도로 타이머 생성",
             description = "새로운 포모도로 타이머를 생성하고, 캘린더에 관련 항목을 추가합니다.")
     @PostMapping("/create")
-    public PomodoroTimerEntity createTimer(@RequestBody PomodoroTimerEntity timer) {
+    public ResponseEntity<?> createTimer(@RequestBody PomodoroTimerEntity timer, @AuthenticationPrincipal CustomUserDetails user) {
+        ResponseEntity<?> loginCheck = login.checkLogin(user);
+        if (loginCheck != null) return loginCheck;
+        Long memberId = user.getId();
         calendarService.addOrUpdateEvent(timer.getDate(), "pomodoroTimer");
-        return service.save(timer);
+        PomodoroTimerEntity pomodoroTimerEntity = service.create(timer,memberId);
+
+        return ResponseEntity.ok(pomodoroTimerEntity);
     }
 
     @Operation(summary = "ID로 특정 포모도로 타이머 업데이트",
