@@ -32,12 +32,22 @@ public class PomodoroTimerService {
         return repository.findByDate(date);
     }
 
-    public PomodoroTimerEntity create(PomodoroTimerEntity pomodoroTimer,Long memberId) {
+    public PomodoroTimerEntity create(PomodoroTimerDTO timerDto, Long memberId) {
         // 멤버 확인
         MemberEntity member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new EntityNotFoundException("Member not found"));
 
+        // PomodoroTimerEntity 객체 생성 및 DTO 값 설정
+        PomodoroTimerEntity pomodoroTimer = new PomodoroTimerEntity();
+
         pomodoroTimer.setMember(member);
+        pomodoroTimer.setCurrentTimer(timerDto.getCurrentTimer()); // DTO에서 값 가져오기
+        pomodoroTimer.setDate(timerDto.getDate());
+        pomodoroTimer.setCycles(timerDto.getCycles());
+        pomodoroTimer.setFocusTime(timerDto.getFocusTime());
+        pomodoroTimer.setBreakTime(timerDto.getBreakTime());
+        pomodoroTimer.setTaskName(timerDto.getTaskName());
+
         return repository.save(pomodoroTimer);
     }
 

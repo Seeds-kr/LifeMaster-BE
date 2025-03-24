@@ -55,7 +55,7 @@ public class PomodoroTimerController {
     @Operation(summary = "새로운 포모도로 타이머 생성",
             description = "새로운 포모도로 타이머를 생성하고, 캘린더에 관련 항목을 추가합니다.")
     @PostMapping("/create")
-    public ResponseEntity<?> createTimer(@RequestBody PomodoroTimerEntity timer, @AuthenticationPrincipal CustomUserDetails user) {
+    public ResponseEntity<?> createTimer(@RequestBody PomodoroTimerDTO timer, @AuthenticationPrincipal CustomUserDetails user) {
         ResponseEntity<?> loginCheck = login.checkLogin(user);
         if (loginCheck != null) return loginCheck;
         Long memberId = user.getId();
