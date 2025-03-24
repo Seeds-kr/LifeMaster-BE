@@ -167,6 +167,12 @@ public class MemberEntity {
         report.setMember(this);
     }
 
+    // 알람
+    public void addAlarm(AlarmEntity alarm){
+        this.alarms.add(alarm);
+        alarm.setMember(this);
+    }
+
     // 요금제 변경 메서드
     public void updateSubscription(SubscriptionPlan plan, LocalDate lastPaymentDate, LocalDate expirationDate) {
         this.subscriptionPlan = plan;
