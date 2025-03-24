@@ -84,12 +84,18 @@ public class ScheduleCalendarService {
     public ScheduleCalendarEntity addOrUpdateEvent(String date, String event) {
         Optional<ScheduleCalendarEntity> entries = calendarRepository.findByDate(date);
         ScheduleCalendarEntity entry;
+
         if (entries.isEmpty()) {
             entry = new ScheduleCalendarEntity();
             entry.setDate(date);
         } else {
             entry = entries.get();
         }
+
+        if (entry.getEvents() == null) {
+            entry.setEvents(new ArrayList<>()); // null 방지
+        }
+
         entry.getEvents().add(event);
         return calendarRepository.save(entry);
     }
