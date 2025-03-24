@@ -26,13 +26,18 @@ public class WhiteNoiseController {
 
     @Operation(summary = "전체 백색소음 조회", description = "모든 백색소음 항목을 조회합니다.")
     @GetMapping
-    public List<WhiteNoiseEntity> getAllWhiteNoises() {
-        return service.findAll();
+    public ResponseEntity<?> getAllWhiteNoises(@AuthenticationPrincipal CustomUserDetails user) {
+        ResponseEntity<?> loginCheck = login.checkLogin(user);
+        if (loginCheck != null) return loginCheck;
+        List<WhiteNoiseEntity> result = service.findAll();
+        return ResponseEntity.ok(result);
     }
 
     @Operation(summary = "ID로 백색소음 조회", description = "ID를 기준으로 특정 백색소음 항목을 조회합니다.")
     @GetMapping("/{id}")
-    public ResponseEntity<WhiteNoiseEntity> getWhiteNoiseById(@PathVariable(name = "id") Long id) {
+    public ResponseEntity<?> getWhiteNoiseById(@PathVariable(name = "id") Long id, @AuthenticationPrincipal CustomUserDetails user) {
+        ResponseEntity<?> loginCheck = login.checkLogin(user);
+        if (loginCheck != null) return loginCheck;
         return service.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -44,12 +49,14 @@ public class WhiteNoiseController {
         ResponseEntity<?> loginCheck = login.checkLogin(user);
         if (loginCheck != null) return loginCheck;
         Long memberId = user.getId();
-        return new ResponseEntity<>(service.save(whiteNoise), HttpStatus.CREATED);
+        return new ResponseEntity<>(service.create(whiteNoise,memberId), HttpStatus.CREATED);
     }
 
     @Operation(summary = "백색소음 수정", description = "기존의 백색소음 항목을 수정합니다.")
     @PutMapping("/{id}")
-    public ResponseEntity<WhiteNoiseEntity> updateWhiteNoise(@PathVariable(name = "id") Long id, @RequestBody WhiteNoiseEntity whiteNoise) {
+    public ResponseEntity<?> updateWhiteNoise(@PathVariable(name = "id") Long id, @RequestBody WhiteNoiseEntity whiteNoise, @AuthenticationPrincipal CustomUserDetails user) {
+        ResponseEntity<?> loginCheck = login.checkLogin(user);
+        if (loginCheck != null) return loginCheck;
         return service.findById(id)
                 .map(existingNoise -> {
                     whiteNoise.setId(existingNoise.getId());
@@ -60,7 +67,9 @@ public class WhiteNoiseController {
 
     @Operation(summary = "백색소음 삭제", description = "ID를 기준으로 백색소음 항목을 삭제합니다.")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteWhiteNoise(@PathVariable(name = "id") Long id) {
+    public ResponseEntity<?> deleteWhiteNoise(@PathVariable(name = "id") Long id, @AuthenticationPrincipal CustomUserDetails user) {
+        ResponseEntity<?> loginCheck = login.checkLogin(user);
+        if (loginCheck != null) return loginCheck;
         if (service.findById(id).isPresent()) {
             service.deleteById(id);
             return ResponseEntity.noContent().build();
