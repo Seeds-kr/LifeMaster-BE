@@ -1,15 +1,16 @@
 package com.example.LifeMaster_BE.TimeManager.Alarm;
 
 import com.example.LifeMaster_BE.TimeManager.Alarm.Snooze.SnoozeEntity;
+import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Getter
-@Setter // Update operations for alarmStatus
+@Data
+@NoArgsConstructor
 public class AlarmEntity {
 
     @Id
@@ -17,11 +18,13 @@ public class AlarmEntity {
     private Long id;
 
     // 회원 연결
-    // alarm - mission
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_id")
+    private MemberEntity member;
 
     // snooze
-    @OneToOne(mappedBy = "alarm")
-    private SnoozeEntity snooze;
+//    @OneToOne(mappedBy = "alarm")
+//    private SnoozeEntity snooze;
 
     private LocalDateTime alarmTime;
     private String alarmTitle;
