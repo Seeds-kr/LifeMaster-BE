@@ -1,5 +1,7 @@
 package com.example.LifeMaster_BE.TimeManager.Alarm;
 
+import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
+import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +19,7 @@ import java.util.List;
 public class AlarmService {
 
     private final AlarmRepository alarmRepository;
+    private final MemberRepository memberRepository;
 
     //알람 전체 조회 메소드
     public List<AlarmEntity> getAllAlarms(){
@@ -24,8 +27,8 @@ public class AlarmService {
     }
 
     //특정 알람 조회 메소드
-    public AlarmEntity getAlarmById(Long alarmId){
-        return alarmRepository.findById(alarmId)
+    public AlarmEntity getAlarmById(Long alarmId, Long memberId){
+        return alarmRepository.findByIdAndMemberId(alarmId, memberId)
                 .orElseThrow(() -> new EntityNotFoundException("Alarm" + alarmId + "not found"));
     }
 
@@ -63,7 +66,10 @@ public class AlarmService {
     }
 
     //알람 생성 메소드
-    public AlarmEntity createAlarm(AlarmEntity newAlarm) {
+    public AlarmEntity createAlarm(AlarmEntity newAlarm, Long memberId) {
+        MemberEntity member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new EntityNotFoundException("Member " + memberId + " not found"));
+        member.addAlarm(newAlarm);
         return alarmRepository.save(newAlarm);
     }
 
