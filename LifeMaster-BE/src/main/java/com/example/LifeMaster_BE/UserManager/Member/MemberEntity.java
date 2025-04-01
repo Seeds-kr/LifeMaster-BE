@@ -6,6 +6,7 @@ import com.example.LifeMaster_BE.Group.GroupEntity;
 import com.example.LifeMaster_BE.Report.ReportEntity;
 import com.example.LifeMaster_BE.SelfDevelop.note.diary.DiaryEntity;
 import com.example.LifeMaster_BE.SelfDevelop.note.thank.ThankEntity;
+import com.example.LifeMaster_BE.TimeManager.Alarm.AlarmEntity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
@@ -102,6 +103,10 @@ public class MemberEntity {
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ReportEntity> reports = new ArrayList<>();
 
+    // 알람
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<AlarmEntity> alarms = new ArrayList<>();
+
     public MemberEntity(String email, String password) {
         this.email = email;
         this.password = password;
@@ -160,6 +165,12 @@ public class MemberEntity {
     public void addReport(ReportEntity report) {
         this.reports.add(report);
         report.setMember(this);
+    }
+
+    // 알람
+    public void addAlarm(AlarmEntity alarm){
+        this.alarms.add(alarm);
+        alarm.setMember(this);
     }
 
     // 요금제 변경 메서드

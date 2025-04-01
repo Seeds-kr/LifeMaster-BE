@@ -1,6 +1,7 @@
 package com.example.LifeMaster_BE.Challenge.Detox;
 
 import com.example.LifeMaster_BE.Security.CustomUserDetails;
+import com.example.LifeMaster_BE.UserManager.Login;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import io.swagger.v3.oas.annotations.Operation;
@@ -25,6 +26,7 @@ import java.util.List;
 public class TimeDetoxController {
 
     private final MemberRepository memberRepository;
+    private final Login login;
 
     @Autowired
     private TimeDetoxService service;
@@ -105,9 +107,11 @@ public class TimeDetoxController {
                     @ApiResponse(responseCode = "400", description = "잘못된 입력 데이터")
             })
     @PostMapping
-    public ResponseEntity<TimeDetoxDTO> createSchedule(@RequestBody TimeDetoxDTO scheduleDto,
+    public ResponseEntity<?> createSchedule(@RequestBody TimeDetoxDTO scheduleDto,
                                                        @AuthenticationPrincipal CustomUserDetails user) {
         Long memberId = user.getId();
+        ResponseEntity<?> loginCheck = login.checkLogin(user);
+        if (loginCheck != null) return loginCheck;
         TimeDetoxDTO createdSchedule = service.createSchedule(scheduleDto, memberId);
         return ResponseEntity.ok(createdSchedule);
     }

@@ -105,8 +105,11 @@ public class TodoService {
             ScheduleCalendarEntity calendar = findOrCreateCalendar(date);
 
             // 날짜와 제목 수정
-            todo.setDate(date);
-            todo.setTitle(title);
+            if(title != null)
+                todo.setTitle(title);
+            if(date != null)
+                todo.setDate(date);
+
             todo.setCalendar(calendar); // 캘린더 설정
 
             // 저장 및 반환

@@ -474,7 +474,8 @@ public class GroupService {
             // 그룹 멤버들의 수면 기록 조회
             Set<MemberEntity> members = group.getMembers();
             List<MemberEntity> memberss = members.stream()
-                    .collect(Collectors.toList());;
+                    .collect(Collectors.toList());
+            ;
             List<Sleep> groupSleeps = sleepRepository.findAllByUserAndDate(memberss, targetDate);
 
             long groupTotalSleep = groupSleeps.stream()
@@ -489,5 +490,9 @@ public class GroupService {
                 .userSleepDurations(userSleepDurations)
                 .groupAverageSleepDurations(groupAverageSleepDurations)
                 .build();
+    }
+    //유저 id로 목표 조회
+    public List<GoalEntity> getGoalsByMemberId (Long memberId){
+        return groupRepository.findGoalsByMemberId(memberId);
     }
 }

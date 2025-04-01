@@ -1,5 +1,8 @@
 package com.example.LifeMaster_BE.TimeManager.PomodoroTimer;
 
+import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
+import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -11,6 +14,12 @@ public class PomodoroTimerService {
     @Autowired
     private PomodoroTimerRepository repository;
 
+    private final MemberRepository memberRepository;
+
+    public PomodoroTimerService(MemberRepository memberRepository) {
+        this.memberRepository = memberRepository;
+    }
+
     public List<PomodoroTimerEntity> findAll() {
         return repository.findAll();
     }
@@ -21,6 +30,25 @@ public class PomodoroTimerService {
 
     public List<PomodoroTimerEntity> findByDate(String date) {
         return repository.findByDate(date);
+    }
+
+    public PomodoroTimerEntity create(PomodoroTimerDTO timerDto, Long memberId) {
+        // 멤버 확인
+        MemberEntity member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new EntityNotFoundException("Member not found"));
+
+        // PomodoroTimerEntity 객체 생성 및 DTO 값 설정
+        PomodoroTimerEntity pomodoroTimer = new PomodoroTimerEntity();
+
+        pomodoroTimer.setMember(member);
+        pomodoroTimer.setCurrentTimer(timerDto.getCurrentTimer()); // DTO에서 값 가져오기
+        pomodoroTimer.setDate(timerDto.getDate());
+        pomodoroTimer.setCycles(timerDto.getCycles());
+        pomodoroTimer.setFocusTime(timerDto.getFocusTime());
+        pomodoroTimer.setBreakTime(timerDto.getBreakTime());
+        pomodoroTimer.setTaskName(timerDto.getTaskName());
+
+        return repository.save(pomodoroTimer);
     }
 
     public PomodoroTimerEntity save(PomodoroTimerEntity pomodoroTimer) {

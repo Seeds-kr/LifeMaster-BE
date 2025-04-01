@@ -27,7 +27,6 @@ public class GroupStatic extends BaseEntity {
     private GroupEntity group;
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Temporal(TemporalType.DATE)
     private Date date;
 

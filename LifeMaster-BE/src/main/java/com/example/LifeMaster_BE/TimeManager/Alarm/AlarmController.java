@@ -1,11 +1,13 @@
 package com.example.LifeMaster_BE.TimeManager.Alarm;
 
+import com.example.LifeMaster_BE.Security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,8 +30,11 @@ public class AlarmController {
     @Operation(summary = "특정 알람 조회", description = "알람 ID를 이용해 특정 알람의 상세 정보를 반환합니다.")
     @Parameter(name = "alarmId", description = "조회할 알람의 ID", required = true)
     @GetMapping("/{alarmId}")
-    public ResponseEntity<AlarmEntity> getAlarmById(@PathVariable Long alarmId) {
-        AlarmEntity alarmById = alarmService.getAlarmById(alarmId);
+    public ResponseEntity<AlarmEntity> getAlarmById(
+            @PathVariable Long alarmId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long memberId = userDetails.getId();
+        AlarmEntity alarmById = alarmService.getAlarmById(alarmId, memberId);
         return ResponseEntity.ok(alarmById);
     }
 
@@ -45,8 +50,11 @@ public class AlarmController {
 
     @Operation(summary = "새 알람 생성", description = "새로운 알람을 생성합니다.(snooze 항목 부분 지우고 create 하세요)")
     @PostMapping
-    public ResponseEntity<AlarmEntity> createAlarm(@RequestBody AlarmEntity newAlarm) {
-        AlarmEntity createdAlarm = alarmService.createAlarm(newAlarm);
+    public ResponseEntity<AlarmEntity> createAlarm(
+            @RequestBody AlarmEntity newAlarm,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long memberId = userDetails.getId();
+        AlarmEntity createdAlarm = alarmService.createAlarm(newAlarm, memberId);
         return ResponseEntity.ok(createdAlarm);
     }
 
