@@ -1,4 +1,4 @@
-package com.example.LifeMaster_BE.GooglePlay;
+package com.example.LifeMaster_BE.Payment;
 
 import lombok.Getter;
 import lombok.Setter;
