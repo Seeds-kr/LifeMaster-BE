@@ -202,7 +202,7 @@ public class SwaggerConfig implements WebMvcConfigurer {
     public GroupedOpenApi PayPalApi(){
         return GroupedOpenApi.builder()
                 .group("PayPal")
-                .pathsToMatch("/api/paypal/*")
+                .pathsToMatch("/api/paypal/**")
                 .build();
     }
 
