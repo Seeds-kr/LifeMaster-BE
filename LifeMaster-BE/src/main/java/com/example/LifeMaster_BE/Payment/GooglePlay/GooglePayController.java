@@ -1,5 +1,6 @@
-package com.example.LifeMaster_BE.Payment;
+package com.example.LifeMaster_BE.Payment.GooglePlay;
 
+import com.example.LifeMaster_BE.Payment.ReceiptRequest;
 import com.google.api.services.androidpublisher.model.SubscriptionPurchase;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
