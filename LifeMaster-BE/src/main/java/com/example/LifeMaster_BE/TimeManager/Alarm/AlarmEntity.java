@@ -1,7 +1,7 @@
 package com.example.LifeMaster_BE.TimeManager.Alarm;
 
-import com.example.LifeMaster_BE.TimeManager.Alarm.Snooze.SnoozeEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -20,6 +20,7 @@ public class AlarmEntity {
     // 회원 연결
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private MemberEntity member;
 
     // snooze

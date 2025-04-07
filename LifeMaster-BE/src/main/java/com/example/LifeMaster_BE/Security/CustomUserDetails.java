@@ -20,4 +20,5 @@ public class CustomUserDetails extends User {
         this.nickname = nickname;
         this.email = email;
     }
+
 }
