@@ -1,4 +1,4 @@
-package com.example.LifeMaster_BE.GooglePlay;
+package com.example.LifeMaster_BE.Payment;
 
 import com.google.api.services.androidpublisher.model.SubscriptionPurchase;
 import org.springframework.http.ResponseEntity;
@@ -8,11 +8,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/payments/googlePlay")
-public class PaymentController {
+@RequestMapping("/payments/googlePay")
+public class GooglePayController {
     private final GooglePlayService googlePlayService;
 
-    public PaymentController(GooglePlayService googlePlayService) {
+    public GooglePayController(GooglePlayService googlePlayService) {
         this.googlePlayService = googlePlayService;
     }
 
