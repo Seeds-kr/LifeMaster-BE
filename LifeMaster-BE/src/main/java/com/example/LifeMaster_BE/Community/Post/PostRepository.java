@@ -1,6 +1,7 @@
 package com.example.LifeMaster_BE.Community.Post;
 
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -12,6 +13,8 @@ import java.util.Optional;
 
 public interface PostRepository extends JpaRepository<PostEntity, Long> {
     List<PostEntity> findByType(PostType type, Sort sort);
+
+    @EntityGraph(attributePaths = {"member"})
     Optional<PostEntity> findByIdAndMemberId(Long postId, Long memberId);
 
     @Modifying
