@@ -39,6 +39,9 @@ public class GroupService {
     private final GroupExitHistoryService groupExitHistoryService;
     private final GoalProgressService goalProgressService;
 
+    private final GroupPPomodoroRepository groupPPomodoroRepository;
+    private final PpomodoroStaticRepository ppomodoroStaticRepository;
+
 
     // Create a group
     @Transactional
@@ -452,45 +455,108 @@ public class GroupService {
         }
     }
 
+    @Scheduled(cron = "0 0 2 * * ?") // 매일 오전 2시
+    public void calculateAveragePpomodoroForAllGroups() {
+        LocalDate yesterday = LocalDate.now().minusDays(1);
+        List<GroupEntity> groups = groupRepository.findAll();
+
+        for (GroupEntity group : groups) {
+            Set<MemberEntity> members = group.getMembers();
+            if (members.isEmpty()) continue;
+
+            int totalCnt = 0;
+            int userCount = 0;
+
+            for (MemberEntity member : members) {
+                Optional<PpomodoroStatic> record = ppomodoroStaticRepository.findByUserAndDate(member, java.sql.Date.valueOf(yesterday));
+                if (record != null) {
+                    totalCnt += record.get().getCntaver();
+                    userCount++;
+                }
+            }
+
+            int averageCnt = userCount > 0 ? totalCnt / userCount : 0;
+
+            GroupPPomodoro groupPPomodoro = GroupPPomodoro.builder()
+                    .group(group)
+                    .date(java.sql.Date.valueOf(yesterday))
+                    .cntaver(averageCnt)
+                    .build();
+
+            groupPPomodoroRepository.save(groupPPomodoro);
+        }
+    }
+
+    @Transactional
+    public void recordPpomodoro(MemberEntity user) {
+        Date today = java.sql.Date.valueOf(LocalDate.now());
+
+        PpomodoroStatic record = ppomodoroStaticRepository.findByUserAndDate(user, today)
+                .orElse(PpomodoroStatic.builder()
+                        .user(user)
+                        .date(today)
+                        .cntaver(0)
+                        .build()
+                );
+
+        // toBuilder()는 실제 객체에 해야 함
+        record = record.toBuilder()
+                .cntaver(record.getCntaver() + 1)
+                .build();
+
+        ppomodoroStaticRepository.save(record);
+    }
+
+
+
+
     public GroupDto.Static getUserStatic(String email, GroupEntity group) {
         MemberEntity user = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다."));
         List<Long> userSleepDurations = new ArrayList<>();
         List<Long> groupAverageSleepDurations = new ArrayList<>();
+        List<Integer> userPpomodoroCnt = new ArrayList<>();
+        List<Integer> groupPpomodoroCnt = new ArrayList<>();
 
         LocalDate today = LocalDate.now();
+        Set<MemberEntity> members = group.getMembers();
+        List<MemberEntity> memberList = new ArrayList<>(members);
 
-        // 최근 7일 데이터 조회
         for (int i = 6; i >= 0; i--) {
             LocalDate targetDate = today.minusDays(i);
 
-            // 유저 수면 기록 조회
+            // ✅ 1. 유저 수면 기록
             List<Sleep> userSleeps = sleepRepository.findByUserAndDate(user, targetDate);
             long userTotalSleep = userSleeps.stream()
                     .mapToLong(sleep -> sleep.getSleepDuration().toMinutes())
                     .sum();
             userSleepDurations.add(userTotalSleep);
 
-            // 그룹 멤버들의 수면 기록 조회
-            Set<MemberEntity> members = group.getMembers();
-            List<MemberEntity> memberss = members.stream()
-                    .collect(Collectors.toList());
-            ;
-            List<Sleep> groupSleeps = sleepRepository.findAllByUserAndDate(memberss, targetDate);
-
+            // ✅ 2. 그룹 평균 수면 기록
+            List<Sleep> groupSleeps = sleepRepository.findAllByUserAndDate(memberList, targetDate);
             long groupTotalSleep = groupSleeps.stream()
                     .mapToLong(sleep -> sleep.getSleepDuration().toMinutes())
                     .sum();
-
             long groupAverageSleep = members.isEmpty() ? 0 : groupTotalSleep / members.size();
             groupAverageSleepDurations.add(groupAverageSleep);
+
+            // ✅ 3. 유저 포모도로 기록
+            Optional<PpomodoroStatic> userPpomodoro = ppomodoroStaticRepository.findByUserAndDate(user, java.sql.Date.valueOf(targetDate));
+            userPpomodoroCnt.add(userPpomodoro != null ? userPpomodoro.get().getCntaver() : 0);
+
+            // ✅ 4. 그룹 평균 포모도로 기록
+            Optional<GroupPPomodoro> groupPpomodoro = groupPPomodoroRepository.findByGroupAndDate(group, java.sql.Date.valueOf(targetDate));
+            groupPpomodoroCnt.add(groupPpomodoro != null ? groupPpomodoro.get().getCntaver() : 0);
         }
 
         return GroupDto.Static.builder()
                 .userSleepDurations(userSleepDurations)
                 .groupAverageSleepDurations(groupAverageSleepDurations)
+                .userPpomodoroCnt(userPpomodoroCnt)
+                .groupPpomodoroCnt(groupPpomodoroCnt)
                 .build();
     }
+
     //유저 id로 목표 조회
     public List<GoalEntity> getGoalsByMemberId (Long memberId){
         return groupRepository.findGoalsByMemberId(memberId);

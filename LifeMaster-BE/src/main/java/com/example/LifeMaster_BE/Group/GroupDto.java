@@ -14,5 +14,7 @@ public class GroupDto {
     public static class Static {
         private List<Long> userSleepDurations; // 유저의 하루 수면 시간 (분)
         private List<Long> groupAverageSleepDurations; // 그룹 평균 하루 수면 시간 (분)
+        private List<Integer> userPpomodoroCnt; // 유저 평균 포모도로 횟수
+        private List<Integer> groupPpomodoroCnt; // 그룹 평균 포모도로 횟수
     }
 }
