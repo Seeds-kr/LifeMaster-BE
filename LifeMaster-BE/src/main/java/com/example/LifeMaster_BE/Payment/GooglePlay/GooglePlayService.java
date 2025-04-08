@@ -1,5 +1,7 @@
-package com.example.LifeMaster_BE.Payment;
+package com.example.LifeMaster_BE.Payment.GooglePlay;
 
+import com.example.LifeMaster_BE.Payment.PurchaseEntity;
+import com.example.LifeMaster_BE.Payment.PurchaseRepo;
 import com.google.api.client.http.HttpRequest;
 import com.google.api.client.http.HttpRequestInitializer;
 import com.google.api.client.http.HttpTransport;

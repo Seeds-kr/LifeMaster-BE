@@ -21,6 +21,7 @@ configurations {
 }
 
 repositories {
+	google()
 	mavenCentral()
 }
 
@@ -63,11 +64,6 @@ dependencies {
 	implementation 'org.json:json:20240303'
 	implementation 'com.google.http-client:google-http-client-jackson2:1.42.3'
 	implementation 'com.google.http-client:google-http-client-gson:1.42.3'
-}
-
-repositories {
-	google() // Google Maven Repository 추가
-	mavenCentral() // Maven Central Repository
 }
 
 

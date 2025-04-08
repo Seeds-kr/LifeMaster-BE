@@ -1,5 +1,8 @@
-package com.example.LifeMaster_BE.Payment;
+package com.example.LifeMaster_BE.Payment.NaverPay;
 
+import com.example.LifeMaster_BE.Payment.PaymentRequest;
+import com.example.LifeMaster_BE.Payment.PurchaseEntity;
+import com.example.LifeMaster_BE.Payment.PurchaseRepo;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
