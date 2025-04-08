@@ -12,24 +12,24 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/group")
 public class GroupController {
 
+    private final GroupRepository groupRepository;
     private final GroupService groupService;
     private final Login login;
 
-    public GroupController(GroupService groupService, GoalProgressService goalProgressService, Login login) {
-        this.groupService = groupService;
-        this.login = login;
-    }
 
 
     @Operation(summary = "Create a new group", description = "Creates a new group and associates it with the creator.")
@@ -269,5 +269,20 @@ public class GroupController {
         if (loginCheck != null) return loginCheck;
         String response = groupService.joinGroupWithInviteCode(userId, inviteCode);
         return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "그룹 통계", description = "일주일치 수면 통계 반환")
+    @GetMapping("/{groupId}/sleep-stats")
+    public ResponseEntity<GroupDto.Static> getUserSleepStats(
+            @AuthenticationPrincipal UserDetails userdetails,
+            @PathVariable Long groupId) {
+
+        String email = userdetails.getUsername();
+
+        GroupEntity group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new RuntimeException("그룹을 찾을 수 없습니다."));
+
+        GroupDto.Static sleepStats = groupService.getUserStatic(email, group);
+        return ResponseEntity.ok(sleepStats);
     }
 }

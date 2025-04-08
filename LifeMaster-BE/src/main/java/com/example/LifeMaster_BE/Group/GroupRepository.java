@@ -7,6 +7,8 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
+import java.util.List;
+
 public interface GroupRepository extends JpaRepository<GroupEntity, Long> {
     // 특정 유저 ID로 사용자가 속한 그룹의 목표 조회
     @Query("SELECT g.goals FROM GroupEntity g JOIN g.members m WHERE m.id = :memberId")
