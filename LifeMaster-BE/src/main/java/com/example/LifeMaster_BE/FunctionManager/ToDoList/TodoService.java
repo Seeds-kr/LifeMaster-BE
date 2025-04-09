@@ -64,7 +64,6 @@ public class TodoService {
         TodoDTO dto = new TodoDTO();
         dto.setDate(entity.getDate());
         dto.setTitle(entity.getTitle());
-        dto.setCompleted(entity.isCompleted());
         return dto;
     }
 
@@ -148,6 +147,11 @@ public class TodoService {
         // To-Do를 캘린더에 추가
         todo.setCalendar(calendar);
         return todoRepository.save(todo);
+    }
+
+    // 유저별 todo 리스트 조회
+    public List<TodoEntity> getTodosByMember(Long memberId) {
+        return todoRepository.findByMemberId(memberId);
     }
 }
 

@@ -59,7 +59,6 @@ public class PomodoroTimerController {
         ResponseEntity<?> loginCheck = login.checkLogin(user);
         if (loginCheck != null) return loginCheck;
         Long memberId = user.getId();
-        calendarService.addOrUpdateEvent(timer.getDate(), "pomodoroTimer");
         PomodoroTimerEntity pomodoroTimerEntity = service.create(timer,memberId);
 
         return ResponseEntity.ok(pomodoroTimerEntity);
@@ -74,7 +73,6 @@ public class PomodoroTimerController {
             timer.setCurrentTimer(timerDetails.getCurrentTimer());
             timer.setFocusTime(timerDetails.getFocusTime());
             timer.setBreakTime(timerDetails.getBreakTime());
-            timer.setCycles(timerDetails.getCycles());
             timer.setDate(timerDetails.getDate());
             return ResponseEntity.ok(service.save(timer));
         }).orElse(ResponseEntity.notFound().build());
@@ -120,5 +118,25 @@ public class PomodoroTimerController {
         } else {
             return ResponseEntity.status(403).body("Escape failed! Try again.");
         }
+    }
+
+    // 유저 전체 타이머 조회
+    @GetMapping("/member/{memberId}")
+    public ResponseEntity<?> getByMember(@AuthenticationPrincipal CustomUserDetails user) {
+        ResponseEntity<?> loginCheck = login.checkLogin(user);
+        if (loginCheck != null) return loginCheck;
+
+        return ResponseEntity.ok(service.getTimersByMember(user.getId()));
+    }
+
+    // 유저 + 특정 TodoId 타이머 조회
+    @GetMapping("/member/{memberId}/{todoId}")
+    public ResponseEntity<?> getByMemberAndTodo(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable("todoId") Long todoId) {
+        ResponseEntity<?> loginCheck = login.checkLogin(user);
+        if (loginCheck != null) return loginCheck;
+
+        return ResponseEntity.ok(service.getTimersByMemberAndTodo(user.getId(), todoId));
     }
 }

@@ -11,4 +11,6 @@ public interface TodoRepository extends JpaRepository<TodoEntity, Long> {
     Optional<TodoEntity> findByTitle(String title);
 
     List<TodoEntity> findByDateAndTitle(String date, String title);
+
+    List<TodoEntity> findByMemberId(Long memberId);
 }
