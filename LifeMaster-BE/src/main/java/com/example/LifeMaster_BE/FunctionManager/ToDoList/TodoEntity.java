@@ -16,7 +16,6 @@ public class TodoEntity {
     private Long id;
 
     // Getter와 Setter
-    @Column(name = "calendar_date", insertable = false, updatable = false)
     private String date;
 
     private String title;

@@ -7,6 +7,8 @@ import java.util.List;
 
 public interface PomodoroTimerRepository extends JpaRepository<PomodoroTimerEntity, Long> {
     List<PomodoroTimerEntity> findByDate(String date);
+    List<PomodoroTimerEntity> findByMemberId(Long memberId);
+    List<PomodoroTimerEntity> findByMemberIdAndTodoId(Long memberId, Long todoId);
     @Transactional
     void deleteAllByDate(String date);
 }

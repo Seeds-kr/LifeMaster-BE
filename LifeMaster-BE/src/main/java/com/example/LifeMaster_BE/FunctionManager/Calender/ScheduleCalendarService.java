@@ -96,7 +96,10 @@ public class ScheduleCalendarService {
             entry.setEvents(new ArrayList<>()); // null 방지
         }
 
-        entry.getEvents().add(event);
+        // 중복 검사
+        if (!entry.getEvents().contains(event)) {
+            entry.getEvents().add(event);
+        }
         return calendarRepository.save(entry);
     }
 

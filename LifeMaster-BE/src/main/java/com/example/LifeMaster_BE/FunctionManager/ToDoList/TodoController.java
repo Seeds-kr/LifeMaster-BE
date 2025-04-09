@@ -1,5 +1,6 @@
 package com.example.LifeMaster_BE.FunctionManager.ToDoList;
 
+import com.example.LifeMaster_BE.FunctionManager.Calender.ScheduleCalendarService;
 import com.example.LifeMaster_BE.Security.CustomUserDetails;
 import com.example.LifeMaster_BE.UserManager.Login;
 import io.swagger.v3.oas.annotations.Operation;
@@ -18,10 +19,13 @@ import java.util.Optional;
 public class TodoController {
 
     private final TodoService todoService;
+
+    private final ScheduleCalendarService scheduleCalendarService;
     private final Login login;
 
-    public TodoController(TodoService todoService, com.example.LifeMaster_BE.UserManager.Login login) {
+    public TodoController(TodoService todoService, ScheduleCalendarService scheduleCalendarService, com.example.LifeMaster_BE.UserManager.Login login) {
         this.todoService = todoService;
+        this.scheduleCalendarService = scheduleCalendarService;
         this.login = login;
     }
 
@@ -46,6 +50,7 @@ public class TodoController {
         if (loginCheck != null) return loginCheck;
         Long memberId = user.getId();
         TodoDTO createdTodo = todoService.createTodo(todoDto, memberId);
+        scheduleCalendarService.addOrUpdateEvent(todoDto.getDate(), "todo");
         return new ResponseEntity<>(createdTodo, HttpStatus.CREATED);
     }
 
@@ -73,11 +78,14 @@ public class TodoController {
     public ResponseEntity<?> deleteTodo(@PathVariable("id") Long id, @AuthenticationPrincipal CustomUserDetails user) {
         ResponseEntity<?> loginCheck = login.checkLogin(user);
         if (loginCheck != null) return loginCheck;
-        if (todoService.deleteById(id)) {
-            return ResponseEntity.noContent().build();
-        } else {
-            return ResponseEntity.notFound().build();
+
+        Optional<TodoEntity> todo = todoService.findById(id);
+        if (todo.isPresent()) {
+            String date = todo.get().getDate();
+            scheduleCalendarService.deleteSpecificEvent(date, "todo");
         }
+        todoService.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "To-Do 완료 상태 토글", description = "ID를 기반으로 To-Do 항목의 완료 상태를 토글합니다.")
@@ -87,5 +95,14 @@ public class TodoController {
         if (loginCheck != null) return loginCheck;
         Optional<TodoEntity> toggledTodo = todoService.toggleCompleted(id);
         return toggledTodo.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    // 유저별 todo 리스트 조회
+    @Operation(summary = "현재 유저의 To-Do 조회", description = "유저를 기반으로 To-Do 항목을 조회합니다.")
+    @GetMapping("/member/{memberId}")
+    public ResponseEntity<?> getTodosByMember(@AuthenticationPrincipal CustomUserDetails user) {
+        ResponseEntity<?> loginCheck = login.checkLogin(user);
+        if (loginCheck != null) return loginCheck;
+        return ResponseEntity.ok(todoService.getTodosByMember(user.getId()));
     }
 }

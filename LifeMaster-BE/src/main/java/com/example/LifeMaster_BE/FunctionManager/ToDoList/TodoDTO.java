@@ -8,5 +8,4 @@ import lombok.Setter;
 public class TodoDTO {
     private String date;
     private String title;
-    private boolean completed;
 }
