@@ -3,6 +3,7 @@ package com.example.LifeMaster_BE.FunctionManager.ToDoList;
 import com.example.LifeMaster_BE.FunctionManager.Calender.ScheduleCalendarEntity;
 import com.example.LifeMaster_BE.FunctionManager.Calender.ScheduleCalendarRepository;
 import com.example.LifeMaster_BE.FunctionManager.Calender.ScheduleCalendarService;
+import com.example.LifeMaster_BE.TimeManager.PomodoroTimer.PomodoroTimerService;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -19,11 +20,18 @@ public class TodoService {
     private final ScheduleCalendarService scheduleCalendarService;
     private final MemberRepository memberRepository;
 
-    public TodoService(TodoRepository todoRepository, ScheduleCalendarRepository calendarRepository, ScheduleCalendarService scheduleCalendarService, MemberRepository memberRepository) {
+    private final PomodoroTimerService pomodoroTimerService;
+
+    public TodoService(TodoRepository todoRepository,
+                       ScheduleCalendarRepository calendarRepository,
+                       ScheduleCalendarService scheduleCalendarService,
+                       MemberRepository memberRepository,
+                       PomodoroTimerService pomodoroTimerService) {
         this.todoRepository = todoRepository;
         this.calendarRepository = calendarRepository;
         this.scheduleCalendarService = scheduleCalendarService;
         this.memberRepository = memberRepository;
+        this.pomodoroTimerService = pomodoroTimerService;
     }
 
     // 모든 Todo 엔티티를 조회합니다.
@@ -80,14 +88,18 @@ public class TodoService {
         if (todoRepository.existsById(id)) {
             Optional<TodoEntity> todoOptional = todoRepository.findById(id);
             todoOptional.ifPresent(todo -> {
-                // 삭제 전에 해당 캘린더의 To-Do 삭제
+                // 1. 연결된 포모도로 타이머 먼저 삭제
+                pomodoroTimerService.deleteAllByTodoId(todo.getId());
+
+                // 2. 캘린더에서 ToDo도 제거
                 ScheduleCalendarEntity calendar = todo.getCalendar();
                 if (calendar != null) {
-                    // 캘린더에서 Todo 삭제
                     calendar.getTodos().remove(todo);
                 }
+
+                // 3. ToDo 삭제
+                todoRepository.deleteById(todo.getId());
             });
-            todoRepository.deleteById(id);
             return true;
         }
         return false;
