@@ -9,6 +9,8 @@ public interface PomodoroTimerRepository extends JpaRepository<PomodoroTimerEnti
     List<PomodoroTimerEntity> findByDate(String date);
     List<PomodoroTimerEntity> findByMemberId(Long memberId);
     List<PomodoroTimerEntity> findByMemberIdAndTodoId(Long memberId, Long todoId);
+
+    void deleteAllByTodoId(Long todoId);
     @Transactional
     void deleteAllByDate(String date);
 }

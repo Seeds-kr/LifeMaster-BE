@@ -120,7 +120,16 @@ public class PomodoroTimerController {
         }
     }
 
-    // 유저 전체 타이머 조회
+    /**
+     * 🔍 로그인된 사용자의 모든 포모도로 타이머 기록을 조회합니다.
+     * - 사용자는 인증이 되어 있어야 하며, `@AuthenticationPrincipal`을 통해 본인의 ID로 자동 조회됩니다.
+     * - URI의 {memberId}는 사용되지 않으며, 인증된 사용자 정보를 우선합니다.
+     *
+     * @param user 현재 인증된 사용자 (Spring Security에서 주입됨)
+     * @return 해당 사용자의 모든 포모도로 타이머 리스트
+     */
+    @Operation(summary = "회원 전체 포모도로 타이머 조회",
+            description = "로그인된 회원의 모든 포모도로 타이머 기록을 조회합니다.")
     @GetMapping("/member/{memberId}")
     public ResponseEntity<?> getByMember(@AuthenticationPrincipal CustomUserDetails user) {
         ResponseEntity<?> loginCheck = login.checkLogin(user);
@@ -129,14 +138,32 @@ public class PomodoroTimerController {
         return ResponseEntity.ok(service.getTimersByMember(user.getId()));
     }
 
-    // 유저 + 특정 TodoId 타이머 조회
+    /**
+     * 🔍 특정 회원이 특정 ToDo 항목에 대해 수행한 모든 포모도로 타이머 기록을 조회합니다.
+     * 사용자는 로그인 상태여야 하며, 자신의 ID를 기반으로 자동 조회됩니다.
+     *
+     * @param user 현재 인증된 사용자 (Spring Security에서 주입)
+     * @param todoId 조회할 대상 ToDo 항목의 ID
+     * @return 해당 회원의 특정 ToDo에 연결된 포모도로 타이머 리스트
+     */
+    @Operation(summary = "회원 + 특정 ToDo에 대한 포모도로 타이머 조회",
+            description = "로그인된 회원이 특정 ToDo ID에 대해 생성한 모든 포모도로 타이머 기록을 반환합니다.")
     @GetMapping("/member/{memberId}/{todoId}")
     public ResponseEntity<?> getByMemberAndTodo(
             @AuthenticationPrincipal CustomUserDetails user,
-            @PathVariable("todoId") Long todoId) {
+            @PathVariable(name = "todoId") Long todoId) {
         ResponseEntity<?> loginCheck = login.checkLogin(user);
         if (loginCheck != null) return loginCheck;
 
         return ResponseEntity.ok(service.getTimersByMemberAndTodo(user.getId(), todoId));
     }
+
+    @Operation(summary = "특정 ToDo ID에 연결된 포모도로 타이머 전체 삭제",
+            description = "ToDo ID로 연결된 모든 포모도로 타이머를 삭제합니다.")
+    @DeleteMapping("/todo/{todoId}")
+    public ResponseEntity<Void> deleteByTodoId(@PathVariable(name = "todoId") Long todoId) {
+        service.deleteAllByTodoId(todoId);
+        return ResponseEntity.noContent().build();
+    }
+
 }
