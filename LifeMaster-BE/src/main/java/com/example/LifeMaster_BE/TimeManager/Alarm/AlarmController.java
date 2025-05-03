@@ -1,6 +1,7 @@
 package com.example.LifeMaster_BE.TimeManager.Alarm;
 
 import com.example.LifeMaster_BE.Security.CustomUserDetails;
+import com.example.LifeMaster_BE.TimeManager.Alarm.Dto.StatusDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -44,7 +45,7 @@ public class AlarmController {
     public ResponseEntity<AlarmEntity> setAlarmStatus(
             @PathVariable("alarmId") Long alarmId,
             @RequestBody StatusDto statusDto) {
-        AlarmEntity updatedAlarm = alarmService.updateBooleanField(alarmId, statusDto.getField(), statusDto.isStatus());
+        AlarmEntity updatedAlarm = alarmService.updateAlarmDayStatus(alarmId, statusDto.getDay(), statusDto.isStatus());
         return ResponseEntity.ok(updatedAlarm);
     }
 
