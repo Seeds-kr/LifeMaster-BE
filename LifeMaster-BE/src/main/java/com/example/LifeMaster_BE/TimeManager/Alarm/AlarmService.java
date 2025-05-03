@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.lang.reflect.Field;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
@@ -33,12 +32,12 @@ public class AlarmService {
     }
 
     // 알람 상태 수정 매소드
-    public AlarmEntity updateAlarmStatus(Long alarmId, boolean status){
+    public void updateAlarmStatus(Long alarmId, boolean status){
         AlarmEntity alarm = alarmRepository.findById(alarmId)
                 .orElseThrow(() -> new EntityNotFoundException("Alarm" + alarmId + "not found"));
 
         alarm.setAlarmStatus(status);
-        return alarmRepository.save(alarm);
+        alarmRepository.save(alarm);
     }
     //알람 날짜 수정 메소드
     public AlarmEntity updateAlarmDayStatus(Long alarmId, AlarmDay day, boolean status){
