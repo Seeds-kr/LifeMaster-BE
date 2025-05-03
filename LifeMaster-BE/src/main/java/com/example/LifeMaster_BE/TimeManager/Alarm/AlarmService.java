@@ -32,19 +32,27 @@ public class AlarmService {
                 .orElseThrow(() -> new EntityNotFoundException("Alarm" + alarmId + "not found"));
     }
 
-    //알람 정보 수정 메소드
-    public AlarmEntity updateBooleanField(Long alarmId, String fieldName, boolean status){
+    // 알람 상태 수정 매소드
+    public AlarmEntity updateAlarmStatus(Long alarmId, boolean status){
         AlarmEntity alarm = alarmRepository.findById(alarmId)
                 .orElseThrow(() -> new EntityNotFoundException("Alarm" + alarmId + "not found"));
 
-        try{
-            Field declaredField = AlarmEntity.class.getDeclaredField(fieldName);
-            declaredField.setAccessible(true);
-            declaredField.set(alarm, status);
-        }catch (NoSuchFieldException e){
-            throw new IllegalArgumentException("Field " + fieldName + " not found", e);
-        }catch (IllegalAccessException e){
-            throw new RuntimeException("Failed to update field: " + fieldName, e);
+        alarm.setAlarmStatus(status);
+        return alarmRepository.save(alarm);
+    }
+    //알람 날짜 수정 메소드
+    public AlarmEntity updateAlarmDayStatus(Long alarmId, AlarmDay day, boolean status){
+        AlarmEntity alarm = alarmRepository.findById(alarmId)
+                .orElseThrow(() -> new EntityNotFoundException("Alarm" + alarmId + "not found"));
+
+        switch (day) {
+            case MON -> alarm.setAlarmMon(status);
+            case TUE -> alarm.setAlarmTue(status);
+            case WED -> alarm.setAlarmWed(status);
+            case THU -> alarm.setAlarmThu(status);
+            case FRI -> alarm.setAlarmFri(status);
+            case SAT -> alarm.setAlarmSat(status);
+            case SUN -> alarm.setAlarmSun(status);
         }
 
         return alarmRepository.save(alarm);

@@ -222,6 +222,6 @@ public class AlarmMissionService {
     }
 
     public void updateAlarmStatus(Long alarmId, boolean status) {
-        alarmService.updateBooleanField(alarmId, "alarmStatus", status);
+        alarmService.updateAlarmStatus(alarmId, status);
     }
 }
