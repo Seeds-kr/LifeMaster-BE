@@ -1,5 +1,6 @@
 package com.example.LifeMaster_BE.TimeManager.Alarm;
 
+import com.example.LifeMaster_BE.TimeManager.Alarm.Dto.NewAlarmDto;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -39,6 +40,7 @@ public class AlarmService {
         alarm.setAlarmStatus(status);
         alarmRepository.save(alarm);
     }
+
     //알람 날짜 수정 메소드
     public AlarmEntity updateAlarmDayStatus(Long alarmId, AlarmDay day, boolean status){
         AlarmEntity alarm = alarmRepository.findById(alarmId)
@@ -73,9 +75,11 @@ public class AlarmService {
     }
 
     //알람 생성 메소드
-    public AlarmEntity createAlarm(AlarmEntity newAlarm, Long memberId) {
+    public AlarmEntity createAlarm(NewAlarmDto alarmDto, Long memberId) {
         MemberEntity member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new EntityNotFoundException("Member " + memberId + " not found"));
+
+        AlarmEntity newAlarm = AlarmEntity.fromDto(alarmDto);
         member.addAlarm(newAlarm);
         return alarmRepository.save(newAlarm);
     }
