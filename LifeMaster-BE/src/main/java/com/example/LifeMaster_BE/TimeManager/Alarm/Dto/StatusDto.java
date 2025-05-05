@@ -6,6 +6,6 @@ import lombok.*;
 @Data
 @NoArgsConstructor
 public class StatusDto {
-    private boolean status;
     private AlarmDay day;
+    private boolean status;
 }
