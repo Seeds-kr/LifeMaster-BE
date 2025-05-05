@@ -23,9 +23,6 @@ public class AlarmEntity {
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private MemberEntity member;
 
-    // snooze
-//    @OneToOne(mappedBy = "alarm")
-//    private SnoozeEntity snooze;
 
     private LocalDateTime alarmTime;
     private String alarmTitle;
@@ -45,11 +42,17 @@ public class AlarmEntity {
     @Column(nullable = false)
     private boolean alarmSun;
 
-    private String alarmSound;
-    private Long alarmAnti;
-
     @Column(nullable = false)
     private boolean alarmStatus;
 
+    private String alarmSound;
 
+    private boolean isSnoozed;
+    private LocalDateTime snoozeTime;
+    private Long snoozeCount;
+
+    private boolean isReSlept;
+    private LocalDateTime reSleptTime;
+
+    private String randomMissionType;
 }
