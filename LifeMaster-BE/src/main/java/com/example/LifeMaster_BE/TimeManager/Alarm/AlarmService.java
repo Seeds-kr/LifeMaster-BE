@@ -1,5 +1,6 @@
 package com.example.LifeMaster_BE.TimeManager.Alarm;
 
+import com.example.LifeMaster_BE.TimeManager.Alarm.Dto.NewAlarmDto;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -7,7 +8,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.lang.reflect.Field;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
@@ -32,19 +32,28 @@ public class AlarmService {
                 .orElseThrow(() -> new EntityNotFoundException("Alarm" + alarmId + "not found"));
     }
 
-    //알람 정보 수정 메소드
-    public AlarmEntity updateBooleanField(Long alarmId, String fieldName, boolean status){
+    // 알람 상태 수정 매소드
+    public void updateAlarmStatus(Long alarmId, boolean status){
         AlarmEntity alarm = alarmRepository.findById(alarmId)
                 .orElseThrow(() -> new EntityNotFoundException("Alarm" + alarmId + "not found"));
 
-        try{
-            Field declaredField = AlarmEntity.class.getDeclaredField(fieldName);
-            declaredField.setAccessible(true);
-            declaredField.set(alarm, status);
-        }catch (NoSuchFieldException e){
-            throw new IllegalArgumentException("Field " + fieldName + " not found", e);
-        }catch (IllegalAccessException e){
-            throw new RuntimeException("Failed to update field: " + fieldName, e);
+        alarm.setAlarmStatus(status);
+        alarmRepository.save(alarm);
+    }
+
+    //알람 날짜 수정 메소드
+    public AlarmEntity updateAlarmDayStatus(Long alarmId, AlarmDay day, boolean status){
+        AlarmEntity alarm = alarmRepository.findById(alarmId)
+                .orElseThrow(() -> new EntityNotFoundException("Alarm" + alarmId + "not found"));
+
+        switch (day) {
+            case MON -> alarm.setAlarmMon(status);
+            case TUE -> alarm.setAlarmTue(status);
+            case WED -> alarm.setAlarmWed(status);
+            case THU -> alarm.setAlarmThu(status);
+            case FRI -> alarm.setAlarmFri(status);
+            case SAT -> alarm.setAlarmSat(status);
+            case SUN -> alarm.setAlarmSun(status);
         }
 
         return alarmRepository.save(alarm);
@@ -66,9 +75,11 @@ public class AlarmService {
     }
 
     //알람 생성 메소드
-    public AlarmEntity createAlarm(AlarmEntity newAlarm, Long memberId) {
+    public AlarmEntity createAlarm(NewAlarmDto alarmDto, Long memberId) {
         MemberEntity member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new EntityNotFoundException("Member " + memberId + " not found"));
+
+        AlarmEntity newAlarm = AlarmEntity.fromDto(alarmDto);
         member.addAlarm(newAlarm);
         return alarmRepository.save(newAlarm);
     }

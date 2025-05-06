@@ -1,5 +1,6 @@
 package com.example.LifeMaster_BE.TimeManager.Alarm;
 
+import com.example.LifeMaster_BE.TimeManager.Alarm.Dto.NewAlarmDto;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
@@ -23,9 +24,6 @@ public class AlarmEntity {
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private MemberEntity member;
 
-    // snooze
-//    @OneToOne(mappedBy = "alarm")
-//    private SnoozeEntity snooze;
 
     private LocalDateTime alarmTime;
     private String alarmTitle;
@@ -45,11 +43,42 @@ public class AlarmEntity {
     @Column(nullable = false)
     private boolean alarmSun;
 
-    private String alarmSound;
-    private Long alarmAnti;
-
     @Column(nullable = false)
     private boolean alarmStatus;
 
+    private String alarmSound;
 
+    private boolean isSnoozed;
+    private LocalDateTime snoozeTime;
+    private Long snoozeCount;
+
+    private boolean isReSlept;
+    private LocalDateTime reSleptTime;
+
+    private String randomMissionType;
+
+    public static AlarmEntity fromDto(NewAlarmDto dto){
+        AlarmEntity alarm = new AlarmEntity();
+        alarm.alarmTitle = dto.getAlarmTitle();
+        alarm.alarmTime = dto.getAlarmTime();
+        alarm.alarmMon = dto.isAlarmMon();
+        alarm.alarmTue = dto.isAlarmTue();
+        alarm.alarmWed = dto.isAlarmWed();
+        alarm.alarmThu = dto.isAlarmThu();
+        alarm.alarmFri = dto.isAlarmFri();
+        alarm.alarmSat = dto.isAlarmSat();
+        alarm.alarmSun = dto.isAlarmSun();
+
+        alarm.alarmSound = dto.getAlarmSound();
+        alarm.isSnoozed = dto.isSnoozed();
+        alarm.snoozeTime = dto.getSnoozeTime();
+        alarm.snoozeCount = dto.getSnoozeCount();
+
+        alarm.isReSlept = dto.isReSlept();
+        alarm.reSleptTime = dto.getReSleptTime();
+
+        alarm.randomMissionType = dto.getRandomMissionType();
+
+        return alarm;
+    }
 }

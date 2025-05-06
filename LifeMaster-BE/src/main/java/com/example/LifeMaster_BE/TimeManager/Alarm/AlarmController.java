@@ -1,6 +1,8 @@
 package com.example.LifeMaster_BE.TimeManager.Alarm;
 
 import com.example.LifeMaster_BE.Security.CustomUserDetails;
+import com.example.LifeMaster_BE.TimeManager.Alarm.Dto.NewAlarmDto;
+import com.example.LifeMaster_BE.TimeManager.Alarm.Dto.StatusDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -38,23 +40,23 @@ public class AlarmController {
         return ResponseEntity.ok(alarmById);
     }
 
-    @Operation(summary = "알람 상태 업데이트", description = "알람의 특정 필드 상태를 업데이트합니다.(ex field:alarmMon, status:false")
+    @Operation(summary = "알람 상태 업데이트", description = "알람의 특정 필드(MON~SUN) 상태를 업데이트합니다.(ex day:MON, status:false")
     @Parameter(name = "alarmId", description = "업데이트할 알람의 ID", required = true)
     @PutMapping("/{alarmId}/update-status")
     public ResponseEntity<AlarmEntity> setAlarmStatus(
             @PathVariable("alarmId") Long alarmId,
             @RequestBody StatusDto statusDto) {
-        AlarmEntity updatedAlarm = alarmService.updateBooleanField(alarmId, statusDto.getField(), statusDto.isStatus());
+        AlarmEntity updatedAlarm = alarmService.updateAlarmDayStatus(alarmId, statusDto.getDay(), statusDto.isStatus());
         return ResponseEntity.ok(updatedAlarm);
     }
 
-    @Operation(summary = "새 알람 생성", description = "새로운 알람을 생성합니다.(snooze 항목 부분 지우고 create 하세요)")
+    @Operation(summary = "새 알람 생성", description = "새로운 알람을 생성합니다.")
     @PostMapping
     public ResponseEntity<AlarmEntity> createAlarm(
-            @RequestBody AlarmEntity newAlarm,
+            @RequestBody NewAlarmDto alarmDto,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         Long memberId = userDetails.getId();
-        AlarmEntity createdAlarm = alarmService.createAlarm(newAlarm, memberId);
+        AlarmEntity createdAlarm = alarmService.createAlarm(alarmDto, memberId);
         return ResponseEntity.ok(createdAlarm);
     }
 
