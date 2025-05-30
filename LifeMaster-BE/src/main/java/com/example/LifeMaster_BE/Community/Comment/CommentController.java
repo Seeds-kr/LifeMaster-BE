@@ -60,6 +60,6 @@ public class CommentController {
             @PathVariable("postId") Long postId,
             @Parameter(description = "댓글 ID", required = true)
             @PathVariable("commentId") Long commentId){
-        commentService.deleteComment(commentId);
+        commentService.deleteComment(commentId, postId);
     }
 }

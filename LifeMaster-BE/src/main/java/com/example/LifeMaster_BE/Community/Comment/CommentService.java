@@ -82,12 +82,12 @@ public class CommentService {
         commentRepository.save(commentEntity);
     }
 
-    public void deleteComment(Long commentId){
-        CommentEntity comment = commentRepository.findById(commentId)
+    public void deleteComment(Long commentId, Long postId){
+        CommentEntity comment = commentRepository.findWithPostByIdAndPostId(commentId, postId)
                 .orElseThrow(() -> new EntityNotFoundException("comment not found"));
         PostEntity post = comment.getPost();
         post.decreaseCommentCount();
 
-        commentRepository.delete(comment);
+        commentRepository.deleteByIdAndPostId(commentId, postId);
     }
 }
