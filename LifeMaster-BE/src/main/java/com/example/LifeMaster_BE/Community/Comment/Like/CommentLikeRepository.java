@@ -11,6 +11,6 @@ public interface CommentLikeRepository extends JpaRepository<CommentLikeEntity, 
     Optional<CommentLikeEntity> findByMemberIdAndCommentId(Long memberId, Long commentId);
     void deleteByMemberIdAndCommentId(Long memberId, Long commentId);
 
-    @EntityGraph(attributePaths = "comment")
+    @EntityGraph(attributePaths = {"comment"})
     List<CommentLikeEntity> findByMemberIdAndCommentIdIn(Long memberId, List<Long> commentIds);
 }
