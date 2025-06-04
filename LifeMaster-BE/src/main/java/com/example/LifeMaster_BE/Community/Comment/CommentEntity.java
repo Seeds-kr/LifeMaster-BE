@@ -33,7 +33,7 @@ public class CommentEntity {
     private String comment;
 
     @CreatedDate
-    private LocalDateTime commentDate;
+    private LocalDateTime createdAt;
 
     // 작성자 연결
     @Setter
