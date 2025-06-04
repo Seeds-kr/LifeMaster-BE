@@ -18,6 +18,11 @@ import java.util.List;
 @Getter
 @NoArgsConstructor
 @EntityListeners(AuditingEntityListener.class) // Auditing 설정
+@Table(
+        indexes = {
+                @Index(name = "idx_postId", columnList = "post_id")
+        }
+)
 public class CommentEntity {
 
     @Id
