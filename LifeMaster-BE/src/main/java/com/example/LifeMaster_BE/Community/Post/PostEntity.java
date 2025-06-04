@@ -19,6 +19,12 @@ import java.util.List;
 @Entity
 @NoArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
+@Table(
+        indexes = {
+                @Index(name = "idx_type", columnList = "type"),
+                @Index(name = "idx_viewCount", columnList = "view_count")
+        }
+)
 public class PostEntity {
 
     @Id
