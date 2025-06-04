@@ -9,7 +9,12 @@ import lombok.Setter;
 @Entity
 @Getter
 @NoArgsConstructor
-@Table(name = "post_likes", uniqueConstraints = @UniqueConstraint(columnNames = {"member_id", "post_id"}))
+@Table(
+        name = "post_like",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uq_post_like_member_post", columnNames = {"member_id", "post_id"})
+        }
+)
 public class PostLikeEntity {
 
     @Id

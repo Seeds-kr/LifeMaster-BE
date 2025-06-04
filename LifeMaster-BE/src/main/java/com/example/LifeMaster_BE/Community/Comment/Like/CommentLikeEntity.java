@@ -10,7 +10,12 @@ import lombok.Setter;
 @Entity
 @Setter
 @NoArgsConstructor
-@Table(name = "comment_likes", uniqueConstraints = @UniqueConstraint(columnNames = {"member_id", "comment_id"}))
+@Table(
+        name = "comment_likes",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uq_comment_like_member_post", columnNames = {"member_id", "comment_id"})
+        }
+)
 public class CommentLikeEntity {
 
     @Id
