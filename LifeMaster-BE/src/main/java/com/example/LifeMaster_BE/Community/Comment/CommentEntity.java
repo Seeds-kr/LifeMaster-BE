@@ -18,6 +18,11 @@ import java.util.List;
 @Getter
 @NoArgsConstructor
 @EntityListeners(AuditingEntityListener.class) // Auditing 설정
+@Table(
+        indexes = {
+                @Index(name = "idx_postId", columnList = "post_id")
+        }
+)
 public class CommentEntity {
 
     @Id
@@ -28,7 +33,7 @@ public class CommentEntity {
     private String comment;
 
     @CreatedDate
-    private LocalDateTime commentDate;
+    private LocalDateTime createdAt;
 
     // 작성자 연결
     @Setter
