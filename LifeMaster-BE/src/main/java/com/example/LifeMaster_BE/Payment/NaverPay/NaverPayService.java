@@ -19,14 +19,20 @@ import java.time.LocalDateTime;
 @Service
 public class NaverPayService {
 
-    @Value("${naverpay.client-id}")
+   /* @Value("${naverpay.client-id}")
     private String clientId;
 
     @Value("${naverpay.client-secret}")
     private String clientSecret;
 
     @Value("${naverpay.api-url}")
-    private String apiUrl;
+    private String apiUrl;*/
+
+    private String clientId = "clientId";
+
+    private String clientSecret = "clientSecret";
+
+    private String apiUrl = "apiUrl";
 
     @Autowired
     private PurchaseRepo purchaseRepository;

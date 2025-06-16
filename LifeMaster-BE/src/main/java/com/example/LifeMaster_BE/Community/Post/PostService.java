@@ -7,6 +7,7 @@ import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 @RequiredArgsConstructor
+@Slf4j
 public class PostService {
 
     private final PostRepository postRepository;
@@ -90,11 +92,17 @@ public class PostService {
 
     // 인기글 갱신 (Redis에 저장)
     public void updatePopularPosts() {
-        List<PostEntity> popularPosts = postRepository.findTop2ByOrderByViewCountDesc();
+        try {
+            List<Long> popularPostIds = postRepository.findTop2ByOrderByViewCountDesc().stream()
+                    .map(PostEntity::getId)
+                    .collect(Collectors.toList());
 
-        // Redis에 인기글 저장 (TTL 10분 설정)
-        redisTemplate.opsForValue().set(POPULAR_POSTS_KEY, popularPosts, 10, TimeUnit.MINUTES);
+            redisTemplate.opsForValue().set(POPULAR_POSTS_KEY, popularPostIds, 10, TimeUnit.MINUTES);
+        } catch (Exception e) {
+            log.error("🔥 Redis 저장 중 오류 발생: ", e);
+        }
     }
+
 
     // 10분마다 인기글 갱신
     @Scheduled(fixedRate = 600000) // 10분마다 실행
