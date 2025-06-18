@@ -50,7 +50,7 @@ public class CommentService {
                 .map(comment -> new AllCommentsDto(
                         "Comment 작성한 사람(comment.getMember.getEmail?)",
                         comment.getComment(),
-                        comment.getCommentDate(),
+                        comment.getCreatedAt(),
                         likedCommentIds.contains(comment.getId())
                 ))
                 .toList();
