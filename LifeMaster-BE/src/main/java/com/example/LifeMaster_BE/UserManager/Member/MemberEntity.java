@@ -25,6 +25,7 @@ import java.util.Set;
 @Setter
 @Builder
 @AllArgsConstructor
+@NoArgsConstructor
 @Table(name = "member_entity")  // 테이블 이름을 단순화하여 충돌 방지
 public class MemberEntity {
 
@@ -88,8 +89,6 @@ public class MemberEntity {
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
     private List<PaymentEntity> payments = new ArrayList<>();
 
-    public MemberEntity() {
-    }
     // 댓글
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CommentEntity> comments = new ArrayList<>();
