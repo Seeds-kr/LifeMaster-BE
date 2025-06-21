@@ -1,4 +1,4 @@
-package com.example.LifeMaster_BE.UserManager.Member;
+package com.example.LifeMaster_BE.UserManager.Member.Payment;
 
 public enum PaymentStatus {
     UNPAID,   // 미결제

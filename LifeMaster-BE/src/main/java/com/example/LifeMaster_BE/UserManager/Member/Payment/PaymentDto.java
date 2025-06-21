@@ -1,4 +1,4 @@
-package com.example.LifeMaster_BE.UserManager.Member;
+package com.example.LifeMaster_BE.UserManager.Member.Payment;
 
 import lombok.Getter;
 import lombok.Setter;

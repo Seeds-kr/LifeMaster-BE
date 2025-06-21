@@ -1,5 +1,8 @@
-package com.example.LifeMaster_BE.UserManager.Member;
+package com.example.LifeMaster_BE.UserManager.Member.Subscription;
 
+import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
+import com.example.LifeMaster_BE.UserManager.Member.Payment.PaymentDto;
+import com.example.LifeMaster_BE.UserManager.Member.Payment.PaymentEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
