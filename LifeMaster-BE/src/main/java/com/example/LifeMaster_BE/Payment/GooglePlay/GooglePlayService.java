@@ -25,14 +25,14 @@ import java.util.Collections;
 
 @Service
 public class GooglePlayService {
-    @Value("${google.play.package-name}")
+    /*@Value("${google.play.package-name}")
     private String packageName;
 
     @Value("${google.play.credentials-file}")
-    private String credentialsFile;
-    /*private String packageName = "aaaa";
+    private String credentialsFile;*/
+    private String packageName = "aaaa";
 
-    private String credentialsFile = "asdfasdf";*/
+    private String credentialsFile = "asdfasdf";
 
     private final ResourceLoader resourceLoader;
     private final PurchaseRepo purchaseRepository;
