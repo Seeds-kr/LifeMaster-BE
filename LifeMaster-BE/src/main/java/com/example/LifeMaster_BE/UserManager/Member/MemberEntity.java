@@ -26,7 +26,14 @@ import java.util.Set;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "member_entity")  // 테이블 이름을 단순화하여 충돌 방지
+@Table(
+        name = "member_entity",
+        indexes = {
+                @Index(name = "idx_member_email", columnList = "email"),
+                @Index(name = "idx_member_nickname", columnList = "nickname")
+        }
+
+)  // 테이블 이름을 단순화하여 충돌 방지
 public class MemberEntity {
 
     @Id
