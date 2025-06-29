@@ -10,7 +10,13 @@ import java.util.Collection;
 import java.util.Map;
 
 @Entity
-@Table(name = "oauth_users_entity")  // 테이블 이름 설정
+@Table(
+        name = "oauth_users_entity",
+        indexes = {
+                @Index(name = "idx_oauth_email", columnList = "email"),
+                @Index(name = "idx_oauth_identifier", columnList = "identifier")
+        }
+)  // 테이블 이름 설정
 public class OAuthUsersEntity implements OAuth2User {
 
     // Getter와 Setter 추가
