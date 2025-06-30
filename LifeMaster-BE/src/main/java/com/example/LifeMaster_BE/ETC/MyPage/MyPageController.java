@@ -15,7 +15,7 @@ public class MyPageController {
     private final MyPageService myPageService;
 
     @GetMapping
-    public ResponseEntity<MyPageDto> getMMember(
+    public ResponseEntity<MyPageDto> getMember(
             @AuthenticationPrincipal CustomUserDetails user) {
         Long memberId = user.getId();
         MyPageDto memberInfo = myPageService.getMemberInfo(memberId);
