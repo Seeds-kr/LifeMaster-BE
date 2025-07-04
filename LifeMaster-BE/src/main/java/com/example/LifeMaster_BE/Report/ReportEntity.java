@@ -10,6 +10,11 @@ import java.time.LocalDateTime;
 
 @Entity
 @NoArgsConstructor
+@Table(
+        indexes = {
+                @Index(name = "idx_report_member_post", columnList = "member_id, post_id")
+        }
+)
 public class ReportEntity {
 
     @Id

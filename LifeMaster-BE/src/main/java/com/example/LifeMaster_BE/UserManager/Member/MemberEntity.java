@@ -7,6 +7,9 @@ import com.example.LifeMaster_BE.Report.ReportEntity;
 import com.example.LifeMaster_BE.SelfDevelop.note.diary.DiaryEntity;
 import com.example.LifeMaster_BE.SelfDevelop.note.thank.ThankEntity;
 import com.example.LifeMaster_BE.TimeManager.Alarm.AlarmEntity;
+import com.example.LifeMaster_BE.UserManager.Member.Payment.PaymentEntity;
+import com.example.LifeMaster_BE.UserManager.Member.Payment.PaymentStatus;
+import com.example.LifeMaster_BE.UserManager.Member.Subscription.SubscriptionPlan;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
@@ -22,7 +25,15 @@ import java.util.Set;
 @Setter
 @Builder
 @AllArgsConstructor
-@Table(name = "member_entity")  // 테이블 이름을 단순화하여 충돌 방지
+@NoArgsConstructor
+@Table(
+        name = "member_entity",
+        indexes = {
+                @Index(name = "idx_member_email", columnList = "email"),
+                @Index(name = "idx_member_nickname", columnList = "nickname")
+        }
+
+)  // 테이블 이름을 단순화하여 충돌 방지
 public class MemberEntity {
 
     @Id
@@ -85,8 +96,6 @@ public class MemberEntity {
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
     private List<PaymentEntity> payments = new ArrayList<>();
 
-    public MemberEntity() {
-    }
     // 댓글
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CommentEntity> comments = new ArrayList<>();

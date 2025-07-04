@@ -1,4 +1,6 @@
-package com.example.LifeMaster_BE.UserManager.Member;
+package com.example.LifeMaster_BE.UserManager.Member.Subscription;
+
+import com.example.LifeMaster_BE.UserManager.Member.Payment.PaymentStatus;
 
 import java.time.LocalDate;
 

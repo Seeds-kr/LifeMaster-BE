@@ -15,18 +15,18 @@ public class PasswordController {
     private final PasswordService passwordService;
 
     @PostMapping("/send-email")
-    public ResponseEntity<String> sendEmail(@RequestBody String email){
+    public ResponseEntity<PasswordResponseDto> sendEmail(@RequestBody String email){
         passwordService.sendPasswordResetEmail(email);
-        return ResponseEntity.ok("Password reset link sent to your email.");
+        return ResponseEntity.ok(new PasswordResponseDto(true, "Password reset link has been sent to your email."));
     }
 
     @PostMapping("/reset-password")
-    public ResponseEntity<String> resetPassword(@RequestBody PasswordResetDto passwordResetDto){
+    public ResponseEntity<PasswordResponseDto> resetPassword(@RequestBody PasswordResetDto passwordResetDto){
         String token = passwordResetDto.getToken();
         String newPassword = passwordResetDto.getNewPassword();
         String checkPassword = passwordResetDto.getCheckPassword();
 
         passwordService.resetPassword(token, newPassword, checkPassword);
-        return ResponseEntity.ok("password reset successful.");
+        return ResponseEntity.ok(new PasswordResponseDto(true, "password reset successful."));
     }
 }

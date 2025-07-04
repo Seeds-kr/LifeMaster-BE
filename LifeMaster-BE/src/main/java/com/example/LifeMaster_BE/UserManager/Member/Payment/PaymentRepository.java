@@ -1,4 +1,4 @@
-package com.example.LifeMaster_BE.UserManager.Member;
+package com.example.LifeMaster_BE.UserManager.Member.Payment;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 

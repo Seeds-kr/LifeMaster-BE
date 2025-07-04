@@ -1,4 +1,4 @@
-package com.example.LifeMaster_BE.UserManager.Member;
+package com.example.LifeMaster_BE.UserManager.Member.Subscription;
 
 public enum SubscriptionPlan {
     FREE,      // 무료
