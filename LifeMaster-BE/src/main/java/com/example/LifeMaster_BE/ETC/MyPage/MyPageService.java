@@ -26,7 +26,7 @@ public class MyPageService {
         MemberEntity member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new EntityNotFoundException("Member Not Found"));
 
-        member.updateByMyPage(email, nickName);
+        member.updateByMyPage(nickName, email);
         memberRepository.save(member);
 
         return new MyPageDto(member.getNickname(), member.getEmail());
