@@ -136,9 +136,9 @@ public class MemberEntity {
         return this;
     }
 
-    public void updateByMyPage(String email, String password){
+    public void updateByMyPage(String nickname, String email){
+        this.nickname = nickname;
         this.email = email;
-        this.password = password;
     }
 
     public MemberEntity login(boolean bool){
