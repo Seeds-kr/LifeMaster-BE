@@ -34,8 +34,8 @@ public class PomodoroTimerController {
 
     @Operation(summary = "모든 포모도로 타이머 조회", description = "저장된 모든 포모도로 타이머를 조회합니다.")
     @GetMapping
-    public List<PomodoroTimerEntity> getAllTimers() {
-        return service.findAll();
+    public ResponseEntity<List<PomodoroTimerResponseDto>> getAllTimers() {
+        return ResponseEntity.ok(service.getAllTimersAsDto());
     }
 
     @Operation(summary = "ID로 특정 포모도로 타이머 조회", description = "ID를 사용해 특정 포모도로 타이머를 조회합니다.")
@@ -46,9 +46,8 @@ public class PomodoroTimerController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @Operation(summary = "날짜로 포모도로 타이머 목록 조회", description = "입력된 날짜(YYYYMMDD)에 해당하는 포모도로 타이머를 조회합니다.")
     @GetMapping("/date/{date}")
-    public List<PomodoroTimerEntity> getTimerByDate(@PathVariable(name = "date") String date) {
+    public List<PomodoroTimerResponseDto> getTimerByDate(@PathVariable(name = "date") String date) {
         return service.findByDate(date);
     }
 
@@ -110,10 +109,10 @@ public class PomodoroTimerController {
     @Operation(summary = "비상 탈출 문장 검증",
             description = "사용자가 입력한 비상 탈출 문장이 정확한지 검증합니다.")
     @PostMapping("/escape/verify")
-    public ResponseEntity<String> verifyEscapePhrase(@RequestBody String userInput) {
-        System.out.println(userInput);
+    public ResponseEntity<String> verifyEscapePhrase(@RequestBody EscapePhraseRequest request) {
+        String userInput = request.getPhrase();
         if (currentEscapePhrase != null && currentEscapePhrase.equals(userInput)) {
-            currentEscapePhrase = null;  // 탈출 후 현재 문장 초기화
+            currentEscapePhrase = null;
             return ResponseEntity.ok("Escape successful! You are free.");
         } else {
             return ResponseEntity.status(403).body("Escape failed! Try again.");
