@@ -16,7 +16,6 @@ import org.springframework.web.client.RestTemplate;
 
 @SpringBootApplication  // Spring Boot 애플리케이션 설정
 @RestController
-@EnableJpaAuditing
 @ServletComponentScan
 @EnableScheduling
 public class LifeMasterBeApplication {
