@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Tag(name = "Schedule Calendar API", description = "캘린더 관리 API")
 @RestController("scheduleCalendarController")
@@ -19,54 +20,67 @@ public class ScheduleCalendarController {
         this.calendarService = calendarService;
     }
 
+    private ScheduleCalendarResponseDto toResponse(ScheduleCalendarEntity entity) {
+        return new ScheduleCalendarResponseDto(
+                entity.getId(),
+                entity.getDate(),
+                entity.getDay(),
+                entity.getEvents()
+        );
+    }
+
     @Operation(summary = "전체 조회", description = "캘린더에 저장된 모든 엔트리를 조회합니다.")
     @GetMapping
-    public List<ScheduleCalendarEntity> getAllEntries() {
-        return calendarService.findAll();
+    public List<ScheduleCalendarResponseDto> getAllEntries() {
+        return calendarService.findAll().stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
     }
 
     @Operation(summary = "특정 날짜 조회", description = "입력한 날짜(YYYYMMDD)에 저장된 엔트리를 조회합니다.")
     @GetMapping("/{date}")
-    public Optional<ScheduleCalendarEntity> getEntriesByDate(@PathVariable(name = "date") String date) {
-        return calendarService.findByDate(date);
+    public ResponseEntity<ScheduleCalendarResponseDto> getEntriesByDate(@PathVariable(name = "date") String date) {
+        Optional<ScheduleCalendarEntity> entity = calendarService.findByDate(date);
+        return entity.map(e -> ResponseEntity.ok(toResponse(e)))
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @Operation(summary = "월별 조회", description = "입력한 월(YYYYMM)에 저장된 엔트리를 조회합니다.")
     @GetMapping("/month/{date}")
-    public List<ScheduleCalendarEntity> getEntriesByMonth(@PathVariable(name = "date") String month) {
-        return calendarService.findByMonth(month);
+    public List<ScheduleCalendarResponseDto> getEntriesByMonth(@PathVariable(name = "date") String month) {
+        return calendarService.findByMonth(month).stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
     }
 
     @Operation(summary = "새로운 날짜에 이벤트 생성",
             description = "입력한 날짜(YYYYMMDD)에 새로운 이벤트 리스트를 생성합니다.")
     @PostMapping("/create/{date}/events")
-    public ResponseEntity<ScheduleCalendarEntity> createEvent(
+    public ResponseEntity<ScheduleCalendarResponseDto> createEvent(
             @PathVariable(name = "date") String date,
             @RequestBody List<String> events) {
         ScheduleCalendarEntity entry = calendarService.createEvent(date, events);
-        return ResponseEntity.ok(entry);
+        return ResponseEntity.ok(toResponse(entry));
     }
 
-    @Operation(
-            summary = "캘린더 엔티티 생성",
-            description = "캘린더 엔티티를 생성합니다. 날짜 형식은 YYYYMMDD이며, TODO 리스트는 기본값으로 NULL로 설정됩니다."
-    )
+    @Operation(summary = "캘린더 엔티티 생성",
+            description = "캘린더 엔티티를 생성합니다. 날짜 형식은 YYYYMMDD이며, TODO 리스트는 기본값으로 NULL로 설정됩니다.")
     @PostMapping("/create")
-    public ResponseEntity<ScheduleCalendarEntity> createDay(@RequestParam("date") String date) {
+    public ResponseEntity<ScheduleCalendarResponseDto> createDay(@RequestParam("date") String date) {
         ScheduleCalendarEntity calendarEntity = new ScheduleCalendarEntity();
-        calendarEntity.setDate(date); // 날짜만 설정
+        calendarEntity.setDate(date);
         ScheduleCalendarEntity entry = calendarService.createCalendarEntity(calendarEntity);
-        return ResponseEntity.ok(entry);
+        return ResponseEntity.ok(toResponse(entry));
     }
 
     @Operation(summary = "특정 날짜에 항목 추가",
             description = "입력한 날짜(YYYYMMDD)에 이벤트를 추가하거나 기존 이벤트를 수정합니다.")
     @PostMapping("/{date}/add")
-    public ResponseEntity<ScheduleCalendarEntity> addEvent(
+    public ResponseEntity<ScheduleCalendarResponseDto> addEvent(
             @PathVariable(name = "date") String date,
-            @RequestBody String event) {
-        ScheduleCalendarEntity entry = calendarService.addOrUpdateEvent(date, event);
-        return ResponseEntity.ok(entry);
+            @RequestBody EventRequestDto request) {
+        ScheduleCalendarEntity entry = calendarService.addOrUpdateEvent(date, request.getEvent());
+        return ResponseEntity.ok(toResponse(entry));
     }
 
     @Operation(summary = "특정 날짜의 모든 항목 삭제",
@@ -84,12 +98,12 @@ public class ScheduleCalendarController {
     @Operation(summary = "특정 날짜의 특정 항목 삭제",
             description = "입력한 날짜(YYYYMMDD)와 이벤트 내용을 기반으로 특정 엔트리를 삭제합니다.")
     @DeleteMapping("/{date}/event")
-    public ResponseEntity<ScheduleCalendarEntity> deleteSpecificEvent(
+    public ResponseEntity<ScheduleCalendarResponseDto> deleteSpecificEvent(
             @PathVariable(name = "date") String date,
-            @RequestBody String event) {
-        ScheduleCalendarEntity entry = calendarService.deleteSpecificEvent(date, event);
+            @RequestBody EventRequestDto request) {
+        ScheduleCalendarEntity entry = calendarService.deleteSpecificEvent(date, request.getEvent());
         if (entry != null) {
-            return ResponseEntity.ok(entry);
+            return ResponseEntity.ok(toResponse(entry));
         } else {
             return ResponseEntity.status(404).build();
         }
