@@ -68,7 +68,7 @@ dependencies {
 
 
 tasks.withType(JavaCompile) {
-	options.compilerArgs += "-parameters"
+	options.compilerArgs += ['-parameters']
 }
 
 tasks.named('test') {
