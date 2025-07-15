@@ -24,7 +24,7 @@ public class PasswordService {
                 .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 이메일 정보입니다."));
 
         String token = tokenService.createToken(memberEntity.getId());
-        String resetLink = "http://lifemaster.com/reset-password?token=" + token;
+        String resetLink = "http://lifemaster.com/auth/reset-password?token=" + token;
 
         emailService.sendEmail(email, "Reset Password",
                 "Click the link to reset your password: " + resetLink);
