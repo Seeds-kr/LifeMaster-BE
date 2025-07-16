@@ -14,7 +14,16 @@ import java.util.Date;
 public class JwtUtil {
 
     private final SecretKey SECRETE_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
-    private final long EXPIRATION_TIME = 1000 * 60 * 60; // 1시간
+    private final long EXPIRATION_TIME;
+
+    public JwtUtil() {
+        this(1000 * 60 * 60); // 기본 1시간
+    }
+
+    // 테스트 편의를 위한 생성자
+    public JwtUtil(long expirationTime) {
+        EXPIRATION_TIME = expirationTime;
+    }
 
     // jwt 생성
     public String generateToken(String email){
