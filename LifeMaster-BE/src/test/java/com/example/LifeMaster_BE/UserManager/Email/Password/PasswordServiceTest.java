@@ -86,7 +86,7 @@ class PasswordServiceTest {
         member.setId(userId);
         member.setEmail(token);
 
-        when(tokenService.validateToken(token)).thenReturn(userId);
+        when(tokenService.validateAndConsumeToken(token)).thenReturn(userId);
         when(memberRepository.findById(userId)).thenReturn(Optional.of(member));
 
         passwordService.resetPassword(token, newPassword, checkPassword);

@@ -16,7 +16,7 @@ class TokenServiceTest {
         Long userId = 1L;
 
         String token = tokenService.createToken(userId);
-        Long validateUserId = tokenService.validateToken(token);
+        Long validateUserId = tokenService.validateAndConsumeToken(token);
 
         assertEquals(userId, validateUserId);
     }
