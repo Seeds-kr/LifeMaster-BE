@@ -17,7 +17,13 @@ public class TokenService {
         return token;
     }
 
-    public Long validateToken(String token){
+    public void validateToken(String token){
+        if(!tokenStorage.containsKey(token)){
+            throw new IllegalArgumentException("Invalid token");
+        }
+    }
+
+    public Long validateAndConsumeToken(String token){
         if(!tokenStorage.containsKey(token)){
             throw new IllegalArgumentException("Invalid token");
         }

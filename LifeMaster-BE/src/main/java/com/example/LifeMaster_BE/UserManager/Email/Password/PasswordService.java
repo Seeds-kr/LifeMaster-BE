@@ -31,14 +31,17 @@ public class PasswordService {
 
     }
 
+    public void verifyToken(String token){
+        tokenService.validateToken(token);
+    }
 
     public void resetPassword(String token, String newPassword, String checkPassword){
 
         if(!confirmPassword(newPassword, checkPassword)){
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다");
         }
-        Long userId = tokenService.validateToken(token);
 
+        Long userId = tokenService.validateAndConsumeToken(token);
         MemberEntity memberEntity = memberRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("Invalid member"));
 
