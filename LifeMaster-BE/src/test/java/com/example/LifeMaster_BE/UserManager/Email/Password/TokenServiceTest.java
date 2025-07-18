@@ -26,7 +26,7 @@ class TokenServiceTest {
     void tokenUsedOnce_onlyOnce(){
 
         String token = tokenService.createToken(1L);
-        tokenService.validateToken(token); // 첫 번째 사용
+        tokenService.validateAndConsumeToken(token); // 첫 번째 사용
 
         assertThrows(IllegalArgumentException.class, () ->{
             tokenService.validateToken(token); // 두 번째 사용
