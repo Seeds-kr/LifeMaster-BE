@@ -1,4 +1,4 @@
-package com.example.LifeMaster_BE.UserManager.Email.Register;
+package com.example.LifeMaster_BE.UserManagerTest.Register;
 
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;

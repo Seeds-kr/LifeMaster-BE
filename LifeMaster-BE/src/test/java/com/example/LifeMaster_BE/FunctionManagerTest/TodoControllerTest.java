@@ -1,4 +1,4 @@
-package com.example.LifeMaster_BE;
+package com.example.LifeMaster_BE.FunctionManagerTest;
 
 import com.example.LifeMaster_BE.FunctionManager.ToDoList.TodoCreateRequest;
 import com.example.LifeMaster_BE.FunctionManager.ToDoList.TodoResponse;

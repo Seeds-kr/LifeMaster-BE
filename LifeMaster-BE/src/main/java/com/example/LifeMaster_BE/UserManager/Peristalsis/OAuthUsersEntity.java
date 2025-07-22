@@ -99,4 +99,8 @@ public class OAuthUsersEntity implements OAuth2User {
     public OAuthUsersEntity toEntity() {
         return new OAuthUsersEntity(this.name, this.email, this.picture, "User", this.identifier);
     }
+
+    public void setName(String name) {
+        this.name = name;
+    }
 }

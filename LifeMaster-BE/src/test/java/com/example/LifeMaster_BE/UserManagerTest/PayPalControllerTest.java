@@ -1,4 +1,4 @@
-package com.example.LifeMaster_BE;
+package com.example.LifeMaster_BE.UserManagerTest;
 
 import com.example.LifeMaster_BE.Payment.PayPal.PayPalService;
 import com.example.LifeMaster_BE.Payment.PurchaseEntity;
