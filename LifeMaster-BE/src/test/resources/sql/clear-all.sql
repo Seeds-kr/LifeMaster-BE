@@ -5,6 +5,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 DELETE FROM `comment_entity`;
 DELETE FROM `post_entity`;
 DELETE FROM `todo_entity`;
+DELETE FROM `schedule_calendar_entity`; -- ✅ 캘린더 테이블 삭제 추가
 DELETE FROM `member_entity`;
 DELETE FROM `payment_entity`;
 DELETE FROM `oauth_users_entity`;

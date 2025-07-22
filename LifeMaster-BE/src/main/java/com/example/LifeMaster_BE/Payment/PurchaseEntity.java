@@ -37,5 +37,7 @@ public class PurchaseEntity {
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private MemberEntity member;
 
+    public void setId(long l) {
+    }
 }
 

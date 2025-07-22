@@ -7,6 +7,7 @@ import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,6 +15,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class PomodoroTimerService {
@@ -24,10 +26,11 @@ public class PomodoroTimerService {
     private final TodoRepository todoRepository;
     private final ScheduleCalendarService scheduleCalendarService;
 
-    public PomodoroTimerService(MemberRepository memberRepository, TodoRepository todoRepository, ScheduleCalendarService scheduleCalendarService) {
+    public PomodoroTimerService(MemberRepository memberRepository, TodoRepository todoRepository, ScheduleCalendarService scheduleCalendarService, PomodoroTimerRepository repository) {
         this.memberRepository = memberRepository;
         this.todoRepository = todoRepository;
         this.scheduleCalendarService = scheduleCalendarService;
+        this.repository = repository;
     }
 
     /** 전체 포모도로 타이머 목록 조회 */
@@ -41,8 +44,10 @@ public class PomodoroTimerService {
     }
 
     /** 날짜별 타이머 조회 */
-    public List<PomodoroTimerEntity> findByDate(String date) {
-        return repository.findByDate(date);
+    public List<PomodoroTimerResponseDto> findByDate(String date) {
+        return repository.findByDate(date).stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -109,4 +114,24 @@ public class PomodoroTimerService {
     public void deleteAllByDate(String date) {
         repository.deleteAllByDate(date);
     }
+
+    public List<PomodoroTimerResponseDto> getAllTimersAsDto() {
+        return repository.findAll(Sort.by(Sort.Direction.DESC, "id")).stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    private PomodoroTimerResponseDto convertToDto(PomodoroTimerEntity timer) {
+        Long memberId = (timer.getMember() != null) ? timer.getMember().getId() : null;
+        return new PomodoroTimerResponseDto(
+                timer.getId(),
+                timer.getTaskName(),
+                timer.getFocusTime(),
+                timer.getBreakTime(),
+                timer.getCurrentTimer(),
+                timer.getDate(),
+                memberId
+        );
+    }
+
 }

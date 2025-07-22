@@ -1,6 +1,3 @@
-package com.example.LifeMaster_BE.UserManager.Email.Register;
-
-
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import com.example.LifeMaster_BE.UserManager.S3Service;
