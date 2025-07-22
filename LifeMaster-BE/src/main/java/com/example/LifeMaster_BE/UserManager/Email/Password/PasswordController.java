@@ -2,25 +2,28 @@ package com.example.LifeMaster_BE.UserManager.Email.Password;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/auth/password/reset")
 @RequiredArgsConstructor
 public class PasswordController {
 
     private final PasswordService passwordService;
 
-    @PostMapping("/send-email")
+    @PostMapping("/confirm-email")
     public ResponseEntity<PasswordResponseDto> sendEmail(@RequestBody String email){
         passwordService.sendPasswordResetEmail(email);
         return ResponseEntity.ok(new PasswordResponseDto(true, "Password reset link has been sent to your email."));
     }
 
-    @PostMapping("/reset-password")
+    @GetMapping("/verify")
+    public ResponseEntity<PasswordResponseDto> verifyToken(@RequestParam String token) {
+        passwordService.verifyToken(token);
+        return ResponseEntity.ok(new PasswordResponseDto(true, "Token verified."));
+    }
+
+    @PostMapping
     public ResponseEntity<PasswordResponseDto> resetPassword(@RequestBody PasswordResetDto passwordResetDto){
         String token = passwordResetDto.getToken();
         String newPassword = passwordResetDto.getNewPassword();
