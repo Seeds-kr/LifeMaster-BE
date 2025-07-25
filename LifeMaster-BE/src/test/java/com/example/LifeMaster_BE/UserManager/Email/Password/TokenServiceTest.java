@@ -1,44 +1,85 @@
 package com.example.LifeMaster_BE.UserManager.Email.Password;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
+
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 class TokenServiceTest {
 
-    private final TokenService tokenService = new TokenService();
+    @Mock
+    private StringRedisTemplate redisTemplate;
+
+    @Mock
+    private ValueOperations<String, String> valueOperations;
+
+    @InjectMocks
+    private TokenService tokenService;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+    }
 
     @Test
-    @DisplayName("토큰 생성 및 검증 성공")
-    void createAndValidateToken_success(){
-
+    @DisplayName("createToken() - 정상 토큰 생성")
+    void createToken_shouldStoreTokenInRedis(){
         Long userId = 1L;
 
         String token = tokenService.createToken(userId);
-        Long validateUserId = tokenService.validateAndConsumeToken(token);
 
-        assertEquals(userId, validateUserId);
+        assertNotNull(token);
+        verify(valueOperations).set(eq(token), eq(String.valueOf(userId)), any());
     }
 
     @Test
-    @DisplayName("한 번 사용한 토큰은 재사용 불가")
-    void tokenUsedOnce_onlyOnce(){
+    @DisplayName("validateToken() - 유효한 토큰")
+    void validateToken_valid(){
+        String token = "valid-token";
 
-        String token = tokenService.createToken(1L);
-        tokenService.validateAndConsumeToken(token); // 첫 번째 사용
+        when(redisTemplate.hasKey(token)).thenReturn(true);
 
-        assertThrows(IllegalArgumentException.class, () ->{
-            tokenService.validateToken(token); // 두 번째 사용
-        });
+        assertDoesNotThrow(() -> tokenService.validateToken(token));
     }
 
     @Test
-    @DisplayName("존재하지 않는 토큰 사용 시 예외 발생")
-    void invalidToken_throwsException(){
-        assertThrows(IllegalArgumentException.class, () ->{
-            tokenService.validateToken("non-existent-token");
-        });
+    @DisplayName("validateToken() - 유효하지 않은 토큰")
+    void validateToken_inValid(){
+        String token = "invalid-token";
+
+        when(redisTemplate.hasKey(token)).thenReturn(false);
+        assertThrows(IllegalArgumentException.class, () -> tokenService.validateToken(token));
+    }
+
+    @Test
+    @DisplayName("validateAndConsumeToken() - 정상 동작")
+    void validateAndConsumeToken_valid(){
+        String token = "token123";
+        String userId = "456";
+
+        when(valueOperations.get(token)).thenReturn(userId);
+        Long result = tokenService.validateAndConsumeToken(token);
+
+        assertEquals(456L, result);
+        verify(redisTemplate).delete(token);
+    }
+
+    @Test
+    @DisplayName("validateAndConsumeToken() - 잘못된 토큰")
+    void validateAndConsumeToken_invalid(){
+        String token = "invalid-token";
+
+        when(valueOperations.get(token)).thenReturn(null);
+        assertThrows(IllegalArgumentException.class, () -> tokenService.validateAndConsumeToken(token));
     }
 
 }
