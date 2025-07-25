@@ -1,35 +1,38 @@
 package com.example.LifeMaster_BE.UserManager.Email.Password;
 
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.Map;
+import java.time.Duration;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Service
+@RequiredArgsConstructor
 public class TokenService {
 
-    private final Map<String, Long> tokenStorage = new ConcurrentHashMap<>();
+    private final StringRedisTemplate redisTemplate;
+    private static final Duration TOKEN_EXPIRATION = Duration.ofMinutes(10);
 
     public String createToken(Long userId){
         String token = UUID.randomUUID().toString();
-        tokenStorage.put(token, userId);
+        redisTemplate.opsForValue().set(token, String.valueOf(userId), TOKEN_EXPIRATION);
         return token;
     }
 
     public void validateToken(String token){
-        if(!tokenStorage.containsKey(token)){
+        Boolean hasKey = redisTemplate.hasKey(token);
+        if (hasKey == null || !hasKey){
             throw new IllegalArgumentException("Invalid token");
         }
     }
 
     public Long validateAndConsumeToken(String token){
-        if(!tokenStorage.containsKey(token)){
+        String userIdStr = redisTemplate.opsForValue().get(token);
+        if(userIdStr == null){
             throw new IllegalArgumentException("Invalid token");
         }
-
-        Long userId = tokenStorage.get(token);
-        tokenStorage.remove(token);
-        return userId;
+        redisTemplate.delete(token);
+        return Long.valueOf(userIdStr);
     }
 }
