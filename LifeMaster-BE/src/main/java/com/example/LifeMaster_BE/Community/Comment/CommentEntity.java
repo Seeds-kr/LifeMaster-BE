@@ -4,9 +4,7 @@ import com.example.LifeMaster_BE.Community.Comment.Like.CommentLikeEntity;
 import com.example.LifeMaster_BE.Community.Post.PostEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -25,6 +23,8 @@ import java.util.List;
 )
 public class CommentEntity {
 
+    // 테스트코드를 위한 setter
+    @Setter
     @Id
     @GeneratedValue
     private Long id;
@@ -67,4 +67,5 @@ public class CommentEntity {
         this.comment = comment;
         this.post = post;
     }
+
 }
