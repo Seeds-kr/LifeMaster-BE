@@ -13,7 +13,6 @@ import java.util.Optional;
 public class WhiteNoiseService {
 
     private final WhiteNoiseRepository repository;
-
     private final MemberRepository memberRepository;
 
     public WhiteNoiseService(WhiteNoiseRepository repository, MemberRepository memberRepository) {
@@ -25,32 +24,39 @@ public class WhiteNoiseService {
         return repository.findAll();
     }
 
+    public List<WhiteNoiseEntity> getAllForUser(MemberEntity member) {
+        return repository.findAllByMember(member);
+    }
+
     public Optional<WhiteNoiseEntity> findById(Long id) {
         return repository.findById(id);
     }
 
-    public WhiteNoiseEntity create(WhiteNoiseDTO whiteNoise,Long memberId) {
-        WhiteNoiseEntity whiteNoiseEntity = new WhiteNoiseEntity();
-        // 멤버 확인
+    public WhiteNoiseEntity create(WhiteNoiseDTO dto, Long memberId) {
         MemberEntity member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new EntityNotFoundException("Member not found"));
-        whiteNoiseEntity.setMember(member);
-        whiteNoiseEntity.setUrl(whiteNoise.getUrl());
-        whiteNoiseEntity.setTitle(whiteNoise.getTitle());
-        whiteNoiseEntity.setLength(whiteNoise.getLength());
 
-        return repository.save(whiteNoiseEntity);
+        WhiteNoiseEntity entity = new WhiteNoiseEntity();
+        entity.setMember(member);
+        entity.setTitle(dto.getTitle());
+        entity.setDescription(dto.getDescription());
+        entity.setThumbnailUrl(dto.getThumbnailUrl());
+        entity.setAudioUri(dto.getAudioUri());
+        entity.setCategory(dto.getCategory());
+
+        return repository.save(entity);
     }
 
-    public ResponseEntity<?> save(Long id, WhiteNoiseDTO whiteNoiseDTO) {
+    public ResponseEntity<?> save(Long id, WhiteNoiseDTO dto) {
         return repository.findById(id)
-                .map(existingNoise -> {
-                    existingNoise.setTitle(whiteNoiseDTO.getTitle());
-                    existingNoise.setUrl(whiteNoiseDTO.getUrl());
-                    existingNoise.setLength(whiteNoiseDTO.getLength());
+                .map(existing -> {
+                    existing.setTitle(dto.getTitle());
+                    existing.setDescription(dto.getDescription());
+                    existing.setThumbnailUrl(dto.getThumbnailUrl());
+                    existing.setAudioUri(dto.getAudioUri());
+                    existing.setCategory(dto.getCategory());
 
-                    WhiteNoiseEntity updatedNoise = repository.save(existingNoise);
-                    return ResponseEntity.ok(updatedNoise);
+                    return ResponseEntity.ok(repository.save(existing));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -59,4 +65,3 @@ public class WhiteNoiseService {
         repository.deleteById(id);
     }
 }
-

@@ -6,7 +6,23 @@ import lombok.Setter;
 @Getter
 @Setter
 public class WhiteNoiseDTO {
-    private String title; // 백색소음 제목
-    private String url; // 파일 경로 또는 스트리밍 URL
-    private String length; //파일 재생 시간
+    private Long id;
+    private String title;
+    private String description;
+    private String thumbnailUrl;
+    private String audioUri;
+    private MusicCategory category;
+
+    public static WhiteNoiseDTO fromEntity(WhiteNoiseEntity entity) {
+        WhiteNoiseDTO dto = new WhiteNoiseDTO();
+        dto.setId(entity.getId());
+        dto.setTitle(entity.getTitle());
+        dto.setDescription(entity.getDescription());
+        dto.setThumbnailUrl(entity.getThumbnailUrl());
+        dto.setAudioUri(entity.getAudioUri());
+        dto.setCategory(entity.getCategory());
+        return dto;
+    }
+
+    // Getter, Setter 생략
 }

@@ -8,17 +8,21 @@ import lombok.Data;
 @Entity
 @Data
 public class WhiteNoiseEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String title; // 백색소음 제목
-    private String url; // 파일 경로 또는 스트리밍 URL
-    private String length; //파일 재생 시간
+    private String title;
+    private String description;
+    private String thumbnailUrl;
+    private String audioUri;
+
+    @Enumerated(EnumType.STRING)
+    private MusicCategory category;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private MemberEntity member;
 }
-
