@@ -28,6 +28,7 @@ import java.util.List;
 public class PostEntity {
 
     @Id
+    @Setter // 테스트 용
     @GeneratedValue
     private Long id;
     private String title;
