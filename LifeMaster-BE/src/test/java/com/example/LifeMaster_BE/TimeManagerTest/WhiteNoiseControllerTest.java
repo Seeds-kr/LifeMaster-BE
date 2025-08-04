@@ -115,7 +115,7 @@ class WhiteNoiseControllerTest {
                         .content(objectMapper.writeValueAsString(updateDTO)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.title").value("수정된 소리"))
-                .andExpect(jsonPath("$.category").value("클래식"));
+                .andExpect(jsonPath("$.category").value("audio/자연의소리/클래식"));
     }
 
     @Test

@@ -22,7 +22,8 @@ public class WhiteNoiseEntity {
     private MusicCategory category;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id")
+    @JoinColumn(name = "member_id", nullable = true)
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private MemberEntity member;
+
 }
