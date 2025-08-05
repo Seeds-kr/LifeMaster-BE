@@ -8,6 +8,7 @@ import java.util.List;
 @Getter
 @Setter
 public class TimeDetoxDTO {
+    private Long id;
     private String cycle;
     private String day;
     private String startTime;

@@ -4,7 +4,6 @@ import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -49,6 +48,7 @@ public class TimeDetoxService {
 
     private TimeDetoxDTO convertToDTO(TimeDetoxEntity entity) {
         TimeDetoxDTO dto = new TimeDetoxDTO();
+        dto.setId(entity.getId());
         dto.setCycle(entity.getCycle());
         dto.setDay(entity.getDay());
         dto.setStartTime(String.valueOf(entity.getStartTime()));

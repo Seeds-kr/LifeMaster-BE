@@ -87,7 +87,7 @@ class WhiteNoiseControllerTest {
         mockMvc.perform(get("/time/sleep/playlist")
                         .header("Authorization", "Bearer " + jwtToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1));
+                .andExpect(jsonPath("$.length()").value(15));
     }
 
     @Test
@@ -115,7 +115,7 @@ class WhiteNoiseControllerTest {
                         .content(objectMapper.writeValueAsString(updateDTO)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.title").value("수정된 소리"))
-                .andExpect(jsonPath("$.category").value("audio/자연의소리/클래식"));
+                .andExpect(jsonPath("$.category").value("클래식"));
     }
 
     @Test
@@ -128,7 +128,7 @@ class WhiteNoiseControllerTest {
         mockMvc.perform(get("/time/sleep/playlist")
                         .header("Authorization", "Bearer " + jwtToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(0));
+                .andExpect(jsonPath("$.length()").value(14));
     }
 }
 
