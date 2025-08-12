@@ -25,7 +25,7 @@ public class DiaryService {
         return diaryRepository.save(diary);
     }
 
-    public DiaryEntity editDiary(Long diaryId, DiaryUpdateDto diaryDto){
+    public DiaryEntity updateDiary(Long diaryId, DiaryUpdateDto diaryDto){
         DiaryEntity diary = diaryRepository.findById(diaryId)
                 .orElseThrow(() -> new RuntimeException("Diary not found"));
 

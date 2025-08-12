@@ -31,7 +31,7 @@ public class DiaryController {
             @RequestBody DiaryUpdateDto diaryDto,
             @PathVariable("diary-id") Long diaryId) {
 
-        DiaryEntity updatedDiary = diaryService.editDiary(diaryId, diaryDto);
+        DiaryEntity updatedDiary = diaryService.updateDiary(diaryId, diaryDto);
         return ResponseEntity.ok(updatedDiary);
     }
 
