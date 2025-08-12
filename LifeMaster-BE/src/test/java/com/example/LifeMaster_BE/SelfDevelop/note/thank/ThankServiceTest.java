@@ -1,5 +1,7 @@
 package com.example.LifeMaster_BE.SelfDevelop.note.thank;
 
+import com.example.LifeMaster_BE.SelfDevelop.note.thank.Dto.CreateThankDto;
+import com.example.LifeMaster_BE.SelfDevelop.note.thank.Dto.UpdateThankDto;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -42,11 +44,13 @@ class ThankServiceTest {
     void createThank_success_setsBothSides() {
 
         Long memberId = 1L;
+        CreateThankDto dto = mock(CreateThankDto.class);
 
         when(memberRepository.findById(memberId)).thenReturn(Optional.of(member));
         when(thankRepository.save(thank)).thenReturn(thank);
+        when(dto.toEntity()).thenReturn(thank);
 
-        ThankEntity saved = thankService.createThank(thank, memberId);
+        ThankEntity saved = thankService.createThank(dto, memberId);
 
         assertSame(thank, saved);
 
@@ -65,7 +69,7 @@ class ThankServiceTest {
 
         Long thankId = 10L;
 
-        ThankUpdateDto dto = new ThankUpdateDto();
+        UpdateThankDto dto = new UpdateThankDto();
         dto.setThankOne("1");
         dto.setThankTwo("4");
         dto.setThankThree("2");
@@ -107,11 +111,12 @@ class ThankServiceTest {
     void createThank_memberNotFound() {
 
         Long memberId = 404L;
+        CreateThankDto dto = mock(CreateThankDto.class);
 
         when(memberRepository.findById(memberId)).thenReturn(Optional.empty());
 
         assertThrows(EntityNotFoundException.class,
-                () -> thankService.createThank(thank, memberId));
+                () -> thankService.createThank(dto, memberId));
 
         verify(memberRepository).findById(memberId);
         verify(thankRepository, never()).save(any());
@@ -128,7 +133,7 @@ class ThankServiceTest {
         when(thankRepository.findById(thankId)).thenReturn(Optional.empty());
 
         assertThrows(EntityNotFoundException.class,
-                () -> thankService.updateThank(thankId, new ThankUpdateDto()));
+                () -> thankService.updateThank(thankId, new UpdateThankDto()));
 
         verify(thankRepository).findById(thankId);
         verify(thankRepository, never()).save(any());

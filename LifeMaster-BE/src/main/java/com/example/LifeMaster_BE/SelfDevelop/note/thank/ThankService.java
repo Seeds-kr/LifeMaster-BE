@@ -1,5 +1,7 @@
 package com.example.LifeMaster_BE.SelfDevelop.note.thank;
 
+import com.example.LifeMaster_BE.SelfDevelop.note.thank.Dto.CreateThankDto;
+import com.example.LifeMaster_BE.SelfDevelop.note.thank.Dto.UpdateThankDto;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -17,14 +19,16 @@ public class ThankService {
     private final ThankRepository thankRepository;
     private final MemberRepository memberRepository;
 
-    public ThankEntity createThank(ThankEntity thank, Long memberId){
+    public ThankEntity createThank(CreateThankDto thankDto, Long memberId){
+
+        ThankEntity newThank = thankDto.toEntity();
         MemberEntity member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new EntityNotFoundException("Member not found"));
-        member.addThank(thank);
-        return thankRepository.save(thank);
+        member.addThank(newThank);
+        return thankRepository.save(newThank);
     }
 
-    public ThankEntity updateThank(Long thankId, ThankUpdateDto thankDto){
+    public ThankEntity updateThank(Long thankId, UpdateThankDto thankDto){
         ThankEntity thank = thankRepository.findById(thankId)
                 .orElseThrow(() -> new EntityNotFoundException("Thank not found"));
         return updateThankData(thank, thankDto);
@@ -34,7 +38,7 @@ public class ThankService {
         thankRepository.deleteById(thankId);
     }
 
-    private ThankEntity updateThankData(ThankEntity thank, ThankUpdateDto thankDto){
+    private ThankEntity updateThankData(ThankEntity thank, UpdateThankDto thankDto){
         thank.setThankOne(thankDto.getThankOne());
         thank.setThankTwo(thankDto.getThankTwo());
         thank.setThankThree(thankDto.getThankThree());

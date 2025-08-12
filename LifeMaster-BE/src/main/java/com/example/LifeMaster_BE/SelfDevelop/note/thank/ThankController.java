@@ -1,6 +1,8 @@
 package com.example.LifeMaster_BE.SelfDevelop.note.thank;
 
 import com.example.LifeMaster_BE.Security.CustomUserDetails;
+import com.example.LifeMaster_BE.SelfDevelop.note.thank.Dto.CreateThankDto;
+import com.example.LifeMaster_BE.SelfDevelop.note.thank.Dto.UpdateThankDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -17,17 +19,17 @@ public class ThankController {
     private final ThankService thankService;
 
     @PostMapping
-    public ResponseEntity<ThankEntity> newThank(
-            @RequestBody ThankEntity thank,
+    public ResponseEntity<Void> newThank(
+            @RequestBody CreateThankDto thankDto,
             @AuthenticationPrincipal CustomUserDetails user){
         Long memberId = user.getId();
-        ThankEntity createdThank = thankService.createThank(thank, memberId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdThank);
+        ThankEntity createdThank = thankService.createThank(thankDto, memberId);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @PatchMapping("/{thank-id}")
+    @PutMapping("/{thank-id}")
     public ResponseEntity<ThankEntity> editThank(
-            @RequestBody ThankUpdateDto thankDto,
+            @RequestBody UpdateThankDto thankDto,
             @PathVariable("thank-id") Long thankId){
         ThankEntity updatedThank = thankService.updateThank(thankId, thankDto);
         return ResponseEntity.ok(updatedThank);
