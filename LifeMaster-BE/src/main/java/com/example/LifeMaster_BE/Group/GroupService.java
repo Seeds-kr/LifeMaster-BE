@@ -4,17 +4,19 @@ import com.example.LifeMaster_BE.Group.Goal.GoalEntity;
 import com.example.LifeMaster_BE.Group.Goal.GoalRepository;
 import com.example.LifeMaster_BE.Group.GoalProgress.GoalProgressEntity;
 import com.example.LifeMaster_BE.Group.GoalProgress.GoalProgressRepository;
+import com.example.LifeMaster_BE.Group.GoalProgress.GoalProgressService;
+import com.example.LifeMaster_BE.Group.GroupExit.GroupExitHistoryService;
 import com.example.LifeMaster_BE.TimeManager.Sleep.Sleep;
 import com.example.LifeMaster_BE.TimeManager.Sleep.SleepRepository;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
-import com.example.LifeMaster_BE.Group.GroupExit.GroupExitHistoryService;
-import com.example.LifeMaster_BE.Group.GoalProgress.GoalProgressService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -42,23 +44,48 @@ public class GroupService {
 
     // Create a group
     @Transactional
-    public GroupEntity createGroup(String name, String description, String icon, List<Long> statistics, String password, Long creatorId) {
-        // 그룹 생성자를 가져오기
-        MemberEntity creator = memberRepository.findById(creatorId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + creatorId));
+    public GroupEntity createGroup(
+            String name,
+            String description,
+            String icon,
+            List<Long> statistics,
+            String password,
+            Long creatorId,
+            String creatorEmail // ✅ 보조 조회용
+    ) {
+        // 1) 생성자(Member) 조회: id 우선, 실패 시 email
+        MemberEntity creator = null;
+        if (creatorId != null) {
+            creator = memberRepository.findById(creatorId).orElse(null);
+        }
+        if (creator == null && creatorEmail != null) {
+            creator = memberRepository.findByEmail(creatorEmail)
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Member not found by id=" + creatorId + " or email=" + creatorEmail));
+        }
+        if (creator == null) {
+            throw new IllegalArgumentException("Creator not resolved (id/email both invalid).");
+        }
 
-        // null 처리: 아이콘과 비밀번호에 기본값 적용
-        String effectiveIcon = (icon != null) ? icon : ""; // 기본 아이콘 설정
-        String effectivePassword = (password != null) ? password : ""; // 기본 비밀번호 설정
-        String effectiveDescription = (password != null) ? password : "";
+        // 2) null 처리(버그 수정 포함)
+        String effectiveIcon = (icon != null) ? icon : "";
+        String effectivePassword = (password != null) ? password : "";
+        String effectiveDescription = (description != null) ? description : ""; // ✅ description 사용
 
-        // 그룹 생성
-        GroupEntity group = new GroupEntity(effectiveIcon, name, effectiveDescription, statistics, effectivePassword, creator);
+        // 3) 그룹 생성 (생성자에 statistics 전달 시 내부에서 방어적 복사)
+        GroupEntity group = new GroupEntity(
+                effectiveIcon,
+                name,
+                effectiveDescription,
+                statistics,
+                effectivePassword,
+                creator
+        );
 
-        // 생성자를 그룹 멤버로 자동 추가
-        group.getMembers().add(creator);
-        creator.getGroups().add(group);
+        // 4) 생성자를 멤버로 추가(편의 메서드 사용)
+        group.addMember(creator);
 
+        // 5) 저장
         return groupRepository.save(group);
     }
 
@@ -70,7 +97,7 @@ public class GroupService {
     // Retrieve a group by ID
     public GroupEntity getGroupById(Long id) {
         return groupRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Group not found with id " + id));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Group not found with id " + id));
     }
 
     // Update a group
