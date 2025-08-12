@@ -27,7 +27,7 @@ public class ThankService {
 
     public ThankEntity updateThank(Long thankId, ThankUpdateDto thankDto){
         ThankEntity thank = thankRepository.findById(thankId)
-                .orElseThrow(() -> new EntityNotFoundException("Diary not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Thank not found"));
         return updateThankData(thank, thankDto);
     }
 
