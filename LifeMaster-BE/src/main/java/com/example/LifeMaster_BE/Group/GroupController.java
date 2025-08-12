@@ -2,7 +2,6 @@ package com.example.LifeMaster_BE.Group;
 
 import com.example.LifeMaster_BE.Group.Goal.GoalDTO;
 import com.example.LifeMaster_BE.Group.Goal.GoalEntity;
-import com.example.LifeMaster_BE.Group.GoalProgress.GoalProgressService;
 import com.example.LifeMaster_BE.Security.CustomUserDetails;
 import com.example.LifeMaster_BE.UserManager.Login;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
@@ -18,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 import java.util.Map;
 
@@ -40,16 +40,22 @@ public class GroupController {
     })
     @PostMapping("/create")
     public ResponseEntity<?> createGroup(
-            @Parameter(description = "Name of the group") @RequestParam("name") String name,
-            @Parameter(description = "Description of the group") @RequestParam(value = "description", required = false) String description,
-            @Parameter(description = "Icon URL of the group") @RequestParam(value = "icon", required = false) String icon,
-            @Parameter(description = "통계 표시할 목표(null 이면 전체 표시)") @RequestParam(value = "statistics", required = false) List<Long> statistics,
-            @Parameter(description = "Password for the group") @RequestParam(value = "password", required = false) String password,
-            @AuthenticationPrincipal CustomUserDetails user) {
+            @RequestParam("name") String name,
+            @RequestParam(value = "description", required = false) String description,
+            @RequestParam(value = "icon", required = false) String icon,
+            @RequestParam(value = "통계 표시할 목표(null 이면 전체 표시)", required = false) List<Long> statistics,
+            @RequestParam(value = "password", required = false) String password,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
         ResponseEntity<?> loginCheck = login.checkLogin(user);
         if (loginCheck != null) return loginCheck;
+
         Long creatorId = user.getId();
-        GroupEntity group = groupService.createGroup(name, description, icon, statistics, password, creatorId);
+        String creatorEmail = user.getUsername(); // 일반적으로 이메일
+
+        GroupEntity group = groupService.createGroup(
+                name, description, icon, statistics, password, creatorId, creatorEmail
+        );
         return ResponseEntity.ok(group);
     }
 
