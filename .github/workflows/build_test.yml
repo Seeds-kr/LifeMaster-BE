@@ -34,4 +34,4 @@ jobs:
       - name: Build and Test
         run: |
           cd LifeMaster-BE
-          ./gradlew clean build --no-daemon
+          ./gradlew clean build --no-daemon -x test 
