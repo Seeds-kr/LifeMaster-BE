@@ -19,13 +19,13 @@ public class DiaryController {
     private final DiaryService diaryService;
 
     @PostMapping
-    public ResponseEntity<DiaryEntity> newDiary(
+    public ResponseEntity<Void> newDiary(
             @RequestBody CreateDiaryDto diaryDto,
             @AuthenticationPrincipal CustomUserDetails user) {
 
         Long memberId = user.getId();
         DiaryEntity createdDiary = diaryService.createDiary(diaryDto, memberId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdDiary);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @PutMapping("/{diary-id}")
