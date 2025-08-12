@@ -36,7 +36,7 @@ public class ThankController {
     @DeleteMapping("/{thank-id}")
     public ResponseEntity<Void> deleteThank(
             @PathVariable("thank-id") Long thankId){
-        thankService.deleteDiary(thankId);
+        thankService.deleteThank(thankId);
         return ResponseEntity.noContent().build();
     }
 }

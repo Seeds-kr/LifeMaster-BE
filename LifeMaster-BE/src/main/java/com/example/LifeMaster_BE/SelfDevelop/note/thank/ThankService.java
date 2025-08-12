@@ -18,7 +18,6 @@ public class ThankService {
     private final MemberRepository memberRepository;
 
     public ThankEntity createThank(ThankEntity thank, Long memberId){
-
         MemberEntity member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new EntityNotFoundException("Member not found"));
         member.addThank(thank);
@@ -31,8 +30,8 @@ public class ThankService {
         return updateThankData(thank, thankDto);
     }
 
-    public void deleteDiary(Long diaryId){
-        thankRepository.deleteById(diaryId);
+    public void deleteThank(Long thankId){
+        thankRepository.deleteById(thankId);
     }
 
     private ThankEntity updateThankData(ThankEntity thank, ThankUpdateDto thankDto){
