@@ -1,4 +1,4 @@
-package com.example.LifeMaster_BE.SelfDevelop.note.diary;
+package com.example.LifeMaster_BE.SelfDevelop.note.diary.Dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -9,7 +9,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class DiaryUpdateDto {
+public class UpdateDiaryDto {
 
     private String diaryContent;
 }

@@ -1,5 +1,7 @@
 package com.example.LifeMaster_BE.SelfDevelop.note.diary;
 
+import com.example.LifeMaster_BE.SelfDevelop.note.diary.Dto.CreateDiaryDto;
+import com.example.LifeMaster_BE.SelfDevelop.note.diary.Dto.UpdateDiaryDto;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -43,10 +45,13 @@ class DiaryServiceTest {
     void createDiary_success(){
 
         Long memberId = 1L;
+        CreateDiaryDto mock = mock(CreateDiaryDto.class);
+
         when(memberRepository.findById(memberId)).thenReturn(Optional.of(member));
         when(diaryRepository.save(diary)).thenReturn(diary);
+        when(mock.toEntity()).thenReturn(diary);
 
-        DiaryEntity saved = diaryService.createDiary(diary, memberId);
+        DiaryEntity saved = diaryService.createDiary(mock, memberId);
 
         assertSame(diary, saved);
         verify(memberRepository).findById(memberId);
@@ -59,7 +64,7 @@ class DiaryServiceTest {
     void editDiary_success(){
 
         Long diaryId = 1L;
-        DiaryUpdateDto dto = new DiaryUpdateDto();
+        UpdateDiaryDto dto = new UpdateDiaryDto();
         dto.setDiaryContent("new Content");
 
         when(diaryRepository.findById(diaryId)).thenReturn(Optional.of(diary));
@@ -93,10 +98,12 @@ class DiaryServiceTest {
     void createDiary_memberNotFound() {
 
         Long memberId = 99L;
+        CreateDiaryDto mock = mock(CreateDiaryDto.class);
+
         when(memberRepository.findById(memberId)).thenReturn(Optional.empty());
 
         assertThrows(EntityNotFoundException.class,
-                () -> diaryService.createDiary(diary, memberId));
+                () -> diaryService.createDiary(mock, memberId));
 
         verify(memberRepository).findById(memberId);
         verify(diaryRepository, never()).save(any());
@@ -111,7 +118,7 @@ class DiaryServiceTest {
 
         // when & then
         assertThrows(EntityNotFoundException.class,
-                () -> diaryService.updateDiary(diaryId, new DiaryUpdateDto()));
+                () -> diaryService.updateDiary(diaryId, new UpdateDiaryDto()));
 
         verify(diaryRepository).findById(diaryId);
         verify(diaryRepository, never()).save(any());

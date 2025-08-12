@@ -1,5 +1,7 @@
 package com.example.LifeMaster_BE.SelfDevelop.note.diary;
 
+import com.example.LifeMaster_BE.SelfDevelop.note.diary.Dto.CreateDiaryDto;
+import com.example.LifeMaster_BE.SelfDevelop.note.diary.Dto.UpdateDiaryDto;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -17,15 +19,17 @@ public class DiaryService {
     private final DiaryRepository diaryRepository;
     private final MemberRepository memberRepository;
 
-    public DiaryEntity createDiary(DiaryEntity diary, Long memberId){
+    public DiaryEntity createDiary(CreateDiaryDto diaryDto, Long memberId){
 
+        DiaryEntity newDiary = diaryDto.toEntity();
         MemberEntity member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new EntityNotFoundException("Member not found"));
-        member.addDiary(diary);
-        return diaryRepository.save(diary);
+
+        member.addDiary(newDiary);
+        return diaryRepository.save(newDiary);
     }
 
-    public DiaryEntity updateDiary(Long diaryId, DiaryUpdateDto diaryDto){
+    public DiaryEntity updateDiary(Long diaryId, UpdateDiaryDto diaryDto){
         DiaryEntity diary = diaryRepository.findById(diaryId)
                 .orElseThrow(() -> new EntityNotFoundException("Diary not found"));
 
