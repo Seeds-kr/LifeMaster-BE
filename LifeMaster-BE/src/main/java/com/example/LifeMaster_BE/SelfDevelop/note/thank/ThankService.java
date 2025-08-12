@@ -25,9 +25,9 @@ public class ThankService {
         return thankRepository.save(thank);
     }
 
-    public ThankEntity editDiary(Long thankId, ThankUpdateDto thankDto){
+    public ThankEntity updateThank(Long thankId, ThankUpdateDto thankDto){
         ThankEntity thank = thankRepository.findById(thankId)
-                .orElseThrow(() -> new RuntimeException("Diary not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Diary not found"));
         return updateThankData(thank, thankDto);
     }
 

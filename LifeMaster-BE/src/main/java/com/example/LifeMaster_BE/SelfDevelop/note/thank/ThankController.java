@@ -29,7 +29,7 @@ public class ThankController {
     public ResponseEntity<ThankEntity> editThank(
             @RequestBody ThankUpdateDto thankDto,
             @PathVariable("thank-id") Long thankId){
-        ThankEntity updatedThank = thankService.editDiary(thankId, thankDto);
+        ThankEntity updatedThank = thankService.updateThank(thankId, thankDto);
         return ResponseEntity.ok(updatedThank);
     }
 
