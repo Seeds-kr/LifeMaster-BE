@@ -20,7 +20,7 @@ public class SelfDevelopCalendarController {
     // ISO 8601 형식(yyyy-MM-dd 또는 yyyy-MM-dd'T'HH:mm:ss) 아닌 경우
     // @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME
     @GetMapping
-    public EventDto getEvent(@RequestParam("date") LocalDate date){
+    public CalendarDailyContentDto getEvent(@RequestParam("date") LocalDate date){
         return calendarService.getEventsByDate(date);
     }
 

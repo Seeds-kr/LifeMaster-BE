@@ -16,15 +16,15 @@ public class SelfDevelopCalendarService {
     private final DiaryRepository diaryRepository;
     private final ThankRepository thankRepository;
 
-    public EventDto getEventsByDate(LocalDate date){
+    public CalendarDailyContentDto getEventsByDate(LocalDate date){
         DiaryEntity diary = diaryRepository.findByDiaryDate(date);
         ThankEntity thank = thankRepository.findByThankDate(date);
 
         return convertToDto(diary, thank);
     }
 
-    public EventDto convertToDto(DiaryEntity diary, ThankEntity thank) {
-        return new EventDto(diary.getDiaryContent(),
+    public CalendarDailyContentDto convertToDto(DiaryEntity diary, ThankEntity thank) {
+        return new CalendarDailyContentDto(diary.getDiaryContent(),
                 thank.getThankOne(),
                 thank.getThankTwo(),
                 thank.getThankThree(),
