@@ -4,12 +4,15 @@ import com.example.LifeMaster_BE.SelfDevelop.note.diary.DiaryEntity;
 import com.example.LifeMaster_BE.SelfDevelop.note.diary.DiaryRepository;
 import com.example.LifeMaster_BE.SelfDevelop.note.thank.ThankEntity;
 import com.example.LifeMaster_BE.SelfDevelop.note.thank.ThankRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 
 @Service("selfDevelopCalendarService")
+@Transactional
 @RequiredArgsConstructor
 public class SelfDevelopCalendarService {
 
@@ -17,8 +20,11 @@ public class SelfDevelopCalendarService {
     private final ThankRepository thankRepository;
 
     public CalendarDailyContentDto getEventsByDate(LocalDate date){
-        DiaryEntity diary = diaryRepository.findByDiaryDate(date);
-        ThankEntity thank = thankRepository.findByThankDate(date);
+
+        DiaryEntity diary = diaryRepository.findByDiaryDate(date)
+                .orElseThrow(() -> new EntityNotFoundException("Diary not found"));
+        ThankEntity thank = thankRepository.findByThankDate(date)
+                .orElseThrow(() -> new EntityNotFoundException("Thank not found"));
 
         return convertToDto(diary, thank);
     }
