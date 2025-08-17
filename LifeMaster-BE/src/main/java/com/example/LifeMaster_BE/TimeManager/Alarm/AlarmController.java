@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +23,17 @@ import java.util.List;
 public class AlarmController {
 
     private final AlarmService alarmService;
+
+    @Operation(summary = "새 알람 생성", description = "새로운 알람을 생성합니다.")
+    @PostMapping
+    public ResponseEntity<Void> createAlarm(
+            @RequestBody NewAlarmDto alarmDto,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        Long memberId = userDetails.getId();
+        alarmService.createAlarm(alarmDto, memberId);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
 
     @Operation(summary = "모든 알람 조회", description = "등록된 모든 알람을 반환합니다.")
     @GetMapping
@@ -48,16 +60,6 @@ public class AlarmController {
             @RequestBody StatusDto statusDto) {
         AlarmEntity updatedAlarm = alarmService.updateAlarmDayStatus(alarmId, statusDto.getDay(), statusDto.isStatus());
         return ResponseEntity.ok(updatedAlarm);
-    }
-
-    @Operation(summary = "새 알람 생성", description = "새로운 알람을 생성합니다.")
-    @PostMapping
-    public ResponseEntity<AlarmEntity> createAlarm(
-            @RequestBody NewAlarmDto alarmDto,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
-        Long memberId = userDetails.getId();
-        AlarmEntity createdAlarm = alarmService.createAlarm(alarmDto, memberId);
-        return ResponseEntity.ok(createdAlarm);
     }
 
     @Operation(summary = "알람 시간 차이 조회", description = "알람 시간과 현재 시간의 차이를 계산하여 반환합니다.")

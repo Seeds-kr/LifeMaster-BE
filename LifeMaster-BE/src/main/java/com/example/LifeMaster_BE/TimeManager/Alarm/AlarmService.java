@@ -21,6 +21,16 @@ public class AlarmService {
     private final AlarmRepository alarmRepository;
     private final MemberRepository memberRepository;
 
+    //알람 생성 메소드
+    public AlarmEntity createAlarm(NewAlarmDto alarmDto, Long memberId) {
+        MemberEntity member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new EntityNotFoundException("Member " + memberId + " not found"));
+
+        AlarmEntity newAlarm = AlarmEntity.fromDto(alarmDto);
+        member.addAlarm(newAlarm);
+        return alarmRepository.save(newAlarm);
+    }
+
     //알람 전체 조회 메소드
     public List<AlarmEntity> getAllAlarms(){
         return alarmRepository.findAll();
@@ -72,16 +82,6 @@ public class AlarmService {
         long minutes = ChronoUnit.MINUTES.between(now, alarmTime) % 60;
 
         return String.format("Time difference: %d days, %d hours, %d minutes", days, hours, minutes);
-    }
-
-    //알람 생성 메소드
-    public AlarmEntity createAlarm(NewAlarmDto alarmDto, Long memberId) {
-        MemberEntity member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new EntityNotFoundException("Member " + memberId + " not found"));
-
-        AlarmEntity newAlarm = AlarmEntity.fromDto(alarmDto);
-        member.addAlarm(newAlarm);
-        return alarmRepository.save(newAlarm);
     }
 
     //알람 활성화 메소드
