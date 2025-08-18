@@ -1,6 +1,8 @@
 package com.example.LifeMaster_BE.TimeManager.Alarm;
 
+import com.example.LifeMaster_BE.TimeManager.Alarm.Dto.Mapper.AlarmMapStruct;
 import com.example.LifeMaster_BE.TimeManager.Alarm.Dto.NewAlarmDto;
+import com.example.LifeMaster_BE.TimeManager.Alarm.Dto.ResponseAlarmDto;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -20,6 +22,7 @@ public class AlarmService {
 
     private final AlarmRepository alarmRepository;
     private final MemberRepository memberRepository;
+    private final AlarmMapStruct alarmMapStruct;
 
     //알람 생성 메소드
     public AlarmEntity createAlarm(NewAlarmDto alarmDto, Long memberId) {
@@ -32,14 +35,17 @@ public class AlarmService {
     }
 
     //알람 전체 조회 메소드
-    public List<AlarmEntity> getAllAlarms(){
-        return alarmRepository.findAll();
+    public List<ResponseAlarmDto> getAllAlarms(){
+        List<AlarmEntity> allAlarms = alarmRepository.findAll();
+        return alarmMapStruct.toDtoList(allAlarms);
     }
 
     //특정 알람 조회 메소드
-    public AlarmEntity getAlarmById(Long alarmId, Long memberId){
-        return alarmRepository.findByIdAndMemberId(alarmId, memberId)
+    public ResponseAlarmDto getAlarmById(Long alarmId, Long memberId){
+        AlarmEntity alarm = alarmRepository.findByIdAndMemberId(alarmId, memberId)
                 .orElseThrow(() -> new EntityNotFoundException("Alarm" + alarmId + "not found"));
+
+        return alarmMapStruct.toDto(alarm);
     }
 
     // 알람 상태 수정 매소드

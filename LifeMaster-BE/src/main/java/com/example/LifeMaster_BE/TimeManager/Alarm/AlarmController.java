@@ -2,6 +2,7 @@ package com.example.LifeMaster_BE.TimeManager.Alarm;
 
 import com.example.LifeMaster_BE.Security.CustomUserDetails;
 import com.example.LifeMaster_BE.TimeManager.Alarm.Dto.NewAlarmDto;
+import com.example.LifeMaster_BE.TimeManager.Alarm.Dto.ResponseAlarmDto;
 import com.example.LifeMaster_BE.TimeManager.Alarm.Dto.StatusDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -37,19 +38,20 @@ public class AlarmController {
 
     @Operation(summary = "모든 알람 조회", description = "등록된 모든 알람을 반환합니다.")
     @GetMapping
-    public List<AlarmEntity> getAllAlarms() {
-        return alarmService.getAllAlarms();
+    public ResponseEntity<List<ResponseAlarmDto>> getAllAlarms() {
+        List<ResponseAlarmDto> allAlarms = alarmService.getAllAlarms();
+        return ResponseEntity.ok(allAlarms);
     }
 
     @Operation(summary = "특정 알람 조회", description = "알람 ID를 이용해 특정 알람의 상세 정보를 반환합니다.")
     @Parameter(name = "alarmId", description = "조회할 알람의 ID", required = true)
     @GetMapping("/{alarmId}")
-    public ResponseEntity<AlarmEntity> getAlarmById(
+    public ResponseEntity<ResponseAlarmDto> getAlarmById(
             @PathVariable Long alarmId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         Long memberId = userDetails.getId();
-        AlarmEntity alarmById = alarmService.getAlarmById(alarmId, memberId);
-        return ResponseEntity.ok(alarmById);
+        ResponseAlarmDto alarmDtoById = alarmService.getAlarmById(alarmId, memberId);
+        return ResponseEntity.ok(alarmDtoById);
     }
 
     @Operation(summary = "알람 상태 업데이트", description = "알람의 특정 필드(MON~SUN) 상태를 업데이트합니다.(ex day:MON, status:false")

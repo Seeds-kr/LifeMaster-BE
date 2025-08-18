@@ -48,11 +48,11 @@ public class AlarmEntity {
 
     private String alarmSound;
 
-    private boolean isSnoozed;
+    private boolean snoozed;
     private LocalDateTime snoozeTime;
     private Long snoozeCount;
 
-    private boolean isReSlept;
+    private boolean reSlept;
     private LocalDateTime reSleptTime;
 
     private String randomMissionType;
@@ -70,11 +70,11 @@ public class AlarmEntity {
         alarm.alarmSun = dto.isAlarmSun();
 
         alarm.alarmSound = dto.getAlarmSound();
-        alarm.isSnoozed = dto.isSnoozed();
+        alarm.snoozed = dto.isSnoozed();
         alarm.snoozeTime = dto.getSnoozeTime();
         alarm.snoozeCount = dto.getSnoozeCount();
 
-        alarm.isReSlept = dto.isReSlept();
+        alarm.reSlept = dto.isReSlept();
         alarm.reSleptTime = dto.getReSleptTime();
 
         alarm.randomMissionType = dto.getRandomMissionType();
