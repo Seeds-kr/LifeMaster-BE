@@ -24,11 +24,11 @@ public class ResponseAlarmDto {
 
     private String alarmSound;
 
-    private boolean isSnoozed;
+    private boolean snoozed;
     private LocalDateTime snoozeTime;
     private Long snoozeCount;
 
-    private boolean isReSlept;
+    private boolean reSlept;
     private LocalDateTime reSleptTime;
 
     private String randomMissionType;
