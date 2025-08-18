@@ -25,13 +25,14 @@ public class AlarmService {
     private final AlarmMapStruct alarmMapStruct;
 
     //알람 생성 메소드
-    public AlarmEntity createAlarm(NewAlarmDto alarmDto, Long memberId) {
+    public Long createAlarm(NewAlarmDto alarmDto, Long memberId) {
         MemberEntity member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new EntityNotFoundException("Member " + memberId + " not found"));
 
         AlarmEntity newAlarm = AlarmEntity.fromDto(alarmDto);
         member.addAlarm(newAlarm);
-        return alarmRepository.save(newAlarm);
+        AlarmEntity savedAlarm = alarmRepository.save(newAlarm);
+        return savedAlarm.getId();
     }
 
     //알람 전체 조회 메소드

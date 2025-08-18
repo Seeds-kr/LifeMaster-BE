@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.List;
 
 @Slf4j
@@ -32,8 +33,9 @@ public class AlarmController {
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
         Long memberId = userDetails.getId();
-        alarmService.createAlarm(alarmDto, memberId);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        Long alarmId = alarmService.createAlarm(alarmDto, memberId);
+        URI location = URI.create("/time/alarm/" + alarmId);
+        return ResponseEntity.created(location).build();
     }
 
     @Operation(summary = "모든 알람 조회", description = "등록된 모든 알람을 반환합니다.")
