@@ -1,6 +1,8 @@
 package com.example.LifeMaster_BE.SelfDevelop.note.diary;
 
 import com.example.LifeMaster_BE.Security.CustomUserDetails;
+import com.example.LifeMaster_BE.SelfDevelop.note.diary.Dto.CreateDiaryDto;
+import com.example.LifeMaster_BE.SelfDevelop.note.diary.Dto.UpdateDiaryDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -17,21 +19,21 @@ public class DiaryController {
     private final DiaryService diaryService;
 
     @PostMapping
-    public ResponseEntity<DiaryEntity> newDiary(
-            @RequestBody DiaryEntity diary,
+    public ResponseEntity<Void> newDiary(
+            @RequestBody CreateDiaryDto diaryDto,
             @AuthenticationPrincipal CustomUserDetails user) {
 
         Long memberId = user.getId();
-        DiaryEntity createdDiary = diaryService.createDiary(diary, memberId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdDiary);
+        DiaryEntity createdDiary = diaryService.createDiary(diaryDto, memberId);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @PatchMapping("/{diary-id}")
+    @PutMapping("/{diary-id}")
     public ResponseEntity<DiaryEntity> editDiary(
-            @RequestBody DiaryUpdateDto diaryDto,
+            @RequestBody UpdateDiaryDto diaryDto,
             @PathVariable("diary-id") Long diaryId) {
 
-        DiaryEntity updatedDiary = diaryService.editDiary(diaryId, diaryDto);
+        DiaryEntity updatedDiary = diaryService.updateDiary(diaryId, diaryDto);
         return ResponseEntity.ok(updatedDiary);
     }
 
