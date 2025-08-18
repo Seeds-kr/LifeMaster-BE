@@ -1,6 +1,6 @@
 package com.example.LifeMaster_BE.TimeManager.Alarm;
 
-import com.example.LifeMaster_BE.TimeManager.Alarm.Dto.Mapper.AlarmMapStruct;
+import com.example.LifeMaster_BE.TimeManager.Alarm.Mapper.AlarmMapStruct;
 import com.example.LifeMaster_BE.TimeManager.Alarm.Dto.NewAlarmDto;
 import com.example.LifeMaster_BE.TimeManager.Alarm.Dto.ResponseAlarmDto;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;

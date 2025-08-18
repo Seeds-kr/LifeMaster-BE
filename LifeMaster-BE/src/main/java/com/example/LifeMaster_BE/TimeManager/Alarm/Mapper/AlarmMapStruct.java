@@ -1,4 +1,4 @@
-package com.example.LifeMaster_BE.TimeManager.Alarm.Dto.Mapper;
+package com.example.LifeMaster_BE.TimeManager.Alarm.Mapper;
 
 import com.example.LifeMaster_BE.TimeManager.Alarm.AlarmEntity;
 import com.example.LifeMaster_BE.TimeManager.Alarm.Dto.ResponseAlarmDto;
