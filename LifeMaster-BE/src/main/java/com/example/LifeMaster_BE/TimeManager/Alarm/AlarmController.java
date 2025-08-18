@@ -55,11 +55,11 @@ public class AlarmController {
     @Operation(summary = "알람 상태 업데이트", description = "알람의 특정 필드(MON~SUN) 상태를 업데이트합니다.(ex day:MON, status:false")
     @Parameter(name = "alarmId", description = "업데이트할 알람의 ID", required = true)
     @PutMapping("/{alarmId}/update-status")
-    public ResponseEntity<AlarmEntity> setAlarmStatus(
+    public ResponseEntity<String> setAlarmStatus(
             @PathVariable("alarmId") Long alarmId,
             @RequestBody StatusDto statusDto) {
-        AlarmEntity updatedAlarm = alarmService.updateAlarmDayStatus(alarmId, statusDto.getDay(), statusDto.isStatus());
-        return ResponseEntity.ok(updatedAlarm);
+        alarmService.updateAlarmDayStatus(alarmId, statusDto.getDay(), statusDto.isStatus());
+        return ResponseEntity.ok("정상적으로 업데이트 되었습니다.");
     }
 
     @Operation(summary = "알람 시간 차이 조회", description = "알람 시간과 현재 시간의 차이를 계산하여 반환합니다.")

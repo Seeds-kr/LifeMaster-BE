@@ -52,7 +52,7 @@ public class AlarmService {
     }
 
     //알람 날짜 수정 메소드
-    public AlarmEntity updateAlarmDayStatus(Long alarmId, AlarmDay day, boolean status){
+    public void updateAlarmDayStatus(Long alarmId, AlarmDay day, boolean status){
         AlarmEntity alarm = alarmRepository.findById(alarmId)
                 .orElseThrow(() -> new EntityNotFoundException("Alarm" + alarmId + "not found"));
 
@@ -66,10 +66,10 @@ public class AlarmService {
             case SUN -> alarm.setAlarmSun(status);
         }
 
-        return alarmRepository.save(alarm);
+        alarmRepository.save(alarm);
     }
 
-    //알람 남은 시간 계산 메소드
+    //알람 남은 시간 계산 메소드 11
     public String getTimeDifference(Long alarmId) {
         AlarmEntity alarm = alarmRepository.findById(alarmId)
                 .orElseThrow(() -> new EntityNotFoundException("Alarm " + alarmId + " not found"));
@@ -84,7 +84,7 @@ public class AlarmService {
         return String.format("Time difference: %d days, %d hours, %d minutes", days, hours, minutes);
     }
 
-    //알람 활성화 메소드
+    //알람 활성화 메소드 11
     public String activateAlarm(Long alarmId) {
         // 알람 ID로 알람 조회
         AlarmEntity alarm = alarmRepository.findById(alarmId)
@@ -122,7 +122,7 @@ public class AlarmService {
         }
     }
 
-    //전체 알람 활성화 메소드
+    //전체 알람 활성화 메소드 11
     public String activateMatchingAlarms() {
         // 현재 시스템 시간 가져오기
         LocalDateTime now = LocalDateTime.now();
@@ -168,7 +168,7 @@ public class AlarmService {
             return "No alarms matched the current day or time.";
         }
     }
-
+    // 11
     public String deactivateActivatedAlarms() {
         // 모든 알람 가져오기
         List<AlarmEntity> alarms = alarmRepository.findAll();
