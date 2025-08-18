@@ -33,7 +33,7 @@ public class AlarmController {
     @Parameter(name = "alarmId", description = "조회할 알람의 ID", required = true)
     @GetMapping("/{alarmId}")
     public ResponseEntity<AlarmEntity> getAlarmById(
-            @PathVariable Long alarmId,
+            @PathVariable("alarmId") Long alarmId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         Long memberId = userDetails.getId();
         AlarmEntity alarmById = alarmService.getAlarmById(alarmId, memberId);
