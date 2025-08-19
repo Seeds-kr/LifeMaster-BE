@@ -69,6 +69,8 @@ dependencies {
 
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
+  
+	testImplementation 'org.springframework.security:spring-security-test'
 }
 
 
