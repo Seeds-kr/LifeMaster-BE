@@ -28,10 +28,8 @@ repositories {
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
-	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
 	runtimeOnly 'com.mysql:mysql-connector-j'
-	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	implementation 'jakarta.servlet:jakarta.servlet-api:5.0.0'
@@ -64,6 +62,14 @@ dependencies {
 	implementation 'org.json:json:20240303'
 	implementation 'com.google.http-client:google-http-client-jackson2:1.42.3'
 	implementation 'com.google.http-client:google-http-client-gson:1.42.3'
+
+	implementation 'org.mapstruct:mapstruct:1.5.5.Final'
+	annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
+	annotationProcessor "org.projectlombok:lombok-mapstruct-binding:0.2.0"
+
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+  
 	testImplementation 'org.springframework.security:spring-security-test'
 }
 
