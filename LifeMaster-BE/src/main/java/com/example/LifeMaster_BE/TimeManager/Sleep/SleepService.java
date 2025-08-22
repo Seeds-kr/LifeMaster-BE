@@ -58,9 +58,10 @@ public class SleepService {
 
         // 2. 기분 상태 가중치
         double moodScore = switch (sleep.getSleepMood()) {
-            case HAPPY -> 1.0;
-            case SOSO -> 0.85;
+            case VERY_GOOD -> 1.0;
+            case GOOD -> 0.85;
             case BAD -> 0.6;
+            case VERY_BAD -> 0.4;
         };
 
         // 3. 알람 미루기 페널티
