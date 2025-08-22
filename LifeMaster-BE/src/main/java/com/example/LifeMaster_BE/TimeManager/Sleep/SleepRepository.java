@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Set;
 
 public interface SleepRepository extends JpaRepository<Sleep, Integer> {
-    List<Sleep> findByUserAndSleepDateAfter(MemberEntity User, LocalDateTime oneWeekAgo);
+    List<Sleep> findByUserAndSleepDateAfter(MemberEntity User, LocalDate oneWeekAgo);
 
     Sleep findByUser(MemberEntity user);
 
