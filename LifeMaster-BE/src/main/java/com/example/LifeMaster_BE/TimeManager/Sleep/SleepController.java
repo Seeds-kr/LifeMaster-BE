@@ -17,14 +17,14 @@ public class SleepController {
     private final SleepService sleepService;
 
     @Operation(summary = "유저의 수면 기록 조회", description = "사용자의 ID를 기반으로 수면 기록을 조회합니다.")
-    @PostMapping
-    public ResponseEntity<List<SleepDto.Response>> selectSleep(@RequestBody SleepDto.Request request) {
-        List<SleepDto.Response> responses = sleepService.selectSleep(request.getUserId());
+    @GetMapping("/{userId}")
+    public ResponseEntity<List<SleepDto.Response>> selectSleep(@PathVariable Long userId) {
+        List<SleepDto.Response> responses = sleepService.selectSleep(userId);
         return ResponseEntity.ok(responses);
     }
 
     @Operation(summary = "수면 시작 기록", description = "사용자가 수면을 시작했을 때 기록을 생성합니다.")
-    @PutMapping
+    @PostMapping
     public ResponseEntity<String> makeSleep(@RequestBody SleepDto.Request request) {
         sleepService.makeSleep(request);
         return ResponseEntity.ok("Sleep started");

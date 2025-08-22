@@ -5,6 +5,8 @@ import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -13,41 +15,38 @@ import java.util.List;
 public class SleepService {
 
     private final SleepRepository sleepRepository;
-    private final MemberRepository userRepository; // User 정보를 가져오기 위한 Repository
+    private final MemberRepository userRepository;
 
+    // 수면 시작 기록 생성
     public void makeSleep(SleepDto.Request request) {
-        // 1. User 확인
         MemberEntity user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
 
-        // 2. Sleep 객체 생성
         Sleep sleep = Sleep.builder()
-                .sleepDate(request.getSleepDate())
+                .sleepDate(request.getSleepDate())  // LocalDate만 저장
                 .sleepStart(request.getSleepStart())
                 .sleepEnd(request.getSleepEnd())
                 .sleepMood(request.getSleepMood())
-                .sleepAwakeCnt(request.getSleepAwakeCnt())
+                .alarmSnoozeCnt(request.getAlarmSnoozeCnt())
+                .timeToWakeUp(request.getTimeToWakeUp()) // 일어나는데 걸린 시간
+                .antiSleepMode(request.getAntiSleepMode()) // 재수면 방지 여부
                 .user(user)
                 .build();
 
-        // 3. 수면 점수 계산
         double sleepScore = calculateSleepScore(sleep);
         sleep.setSleepScore(sleepScore);
 
-        // 4. DB 저장
         sleepRepository.save(sleep);
     }
 
-    // 수면 점수 계산 메서드
+    // 수면 점수 계산 로직
     private double calculateSleepScore(Sleep sleep) {
         if (sleep.getSleepStart() == null || sleep.getSleepEnd() == null) {
-            throw new IllegalArgumentException("수면 시작 시간과 종료 시간이 모두 필요합니다.");
+            throw new IllegalArgumentException("수면 시작/종료 시간이 필요합니다.");
         }
 
-        // 수면 시간 계산 (시간 단위)
-        long sleepDuration = java.time.Duration.between(sleep.getSleepStart(), sleep.getSleepEnd()).toHours();
-
-        // 수면 시간 점수 계산 (7~9시간 기준)
+        // 1. 수면 시간 점수 (7~9시간 기준)
+        long sleepDuration = Duration.between(sleep.getSleepStart(), sleep.getSleepEnd()).toHours();
         double durationScore;
         if (sleepDuration >= 7 && sleepDuration <= 9) {
             durationScore = 100;
@@ -57,66 +56,65 @@ public class SleepService {
             durationScore = 100 * (9.0 / sleepDuration);
         }
 
-        // 기분 상태 가중치 적용
+        // 2. 기분 상태 가중치
         double moodScore = switch (sleep.getSleepMood()) {
             case HAPPY -> 1.0;
-            case SOSO -> 0.8;
-            case BAD -> 0.5;
+            case SOSO -> 0.85;
+            case BAD -> 0.6;
         };
 
-        // 깬 횟수 페널티 계산
-        int awakeCount = sleep.getSleepAwakeCnt() != null ? sleep.getSleepAwakeCnt() : 0;
-        double awakePenalty = Math.max(1.0 - (0.1 * awakeCount), 0.5);
+        // 3. 알람 미루기 페널티
+        int snoozeCnt = sleep.getAlarmSnoozeCnt() != null ? sleep.getAlarmSnoozeCnt() : 0;
+        double snoozePenalty = Math.max(1.0 - (0.05 * snoozeCnt), 0.5);
 
-        // 최종 점수 계산
-        double rawScore = durationScore * moodScore * awakePenalty;
+        // 4. 일어나는데 걸린 시간 페널티 (10분 이상이면 점수 감소)
+        int timeToWakeUp = sleep.getTimeToWakeUp() != null ? sleep.getTimeToWakeUp() : 0;
+        double wakeUpPenalty = timeToWakeUp <= 10 ? 1.0 : Math.max(1.0 - (timeToWakeUp - 10) * 0.02, 0.6);
 
-        // 점수 보정 (0~100 범위)
+        // 5. 재수면 방지 모드 보너스
+        double antiSleepBonus = (sleep.getAntiSleepMode() != null && sleep.getAntiSleepMode()) ? 1.05 : 1.0;
+
+        // 최종 점수
+        double rawScore = durationScore * moodScore * snoozePenalty * wakeUpPenalty * antiSleepBonus;
+
         return Math.min(Math.max(rawScore, 0), 100);
     }
 
-    // Sleep 수정 메서드
+    // 수면 데이터 수정
     public void updateSleep(SleepDto.Request request) {
-        // 1. Sleep 엔티티 가져오기
         Sleep existingSleep = sleepRepository.findById(request.getSleepId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 수면 데이터입니다."));
 
-        // 2. User 확인 (수면 데이터를 사용자와 연결)
         MemberEntity user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
 
-        // 3. Builder를 사용해 Sleep 업데이트
         Sleep updatedSleep = Sleep.builder()
-                .sleepId(existingSleep.getSleepId()) // ID 유지
-                .user(user) // 사용자 유지
+                .sleepId(existingSleep.getSleepId())
+                .user(user)
                 .sleepDate(request.getSleepDate() != null ? request.getSleepDate() : existingSleep.getSleepDate())
                 .sleepStart(request.getSleepStart() != null ? request.getSleepStart() : existingSleep.getSleepStart())
                 .sleepEnd(request.getSleepEnd() != null ? request.getSleepEnd() : existingSleep.getSleepEnd())
                 .sleepMood(request.getSleepMood() != null ? request.getSleepMood() : existingSleep.getSleepMood())
-                .sleepAwakeCnt(request.getSleepAwakeCnt() != null ? request.getSleepAwakeCnt() : existingSleep.getSleepAwakeCnt())
-                .sleepScore(existingSleep.getSleepScore()) // 점수 초기화 (다시 계산)
+                .alarmSnoozeCnt(request.getAlarmSnoozeCnt() != null ? request.getAlarmSnoozeCnt() : existingSleep.getAlarmSnoozeCnt())
+                .timeToWakeUp(request.getTimeToWakeUp() != null ? request.getTimeToWakeUp() : existingSleep.getTimeToWakeUp())
+                .antiSleepMode(request.getAntiSleepMode() != null ? request.getAntiSleepMode() : existingSleep.getAntiSleepMode())
                 .build();
 
-        // 4. 수면 점수 재계산
         double sleepScore = calculateSleepScore(updatedSleep);
         updatedSleep.setSleepScore(sleepScore);
 
-        // 5. DB 저장
         sleepRepository.save(updatedSleep);
     }
 
+    // 수면 기록 조회
     public List<SleepDto.Response> selectSleep(Long userId) {
-        LocalDateTime oneWeekAgo = LocalDateTime.now().minusDays(7); // 일주일 전 시간 계산
+        LocalDate oneWeekAgo = LocalDate.now().minusDays(7);
 
-        // 2. User 확인 (수면 데이터를 사용자와 연결)
         MemberEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
 
-
-        // 사용자와 일주일 전 데이터 필터링
         List<Sleep> sleepList = sleepRepository.findByUserAndSleepDateAfter(user, oneWeekAgo);
 
-        // Sleep -> SleepDto.Response 변환
         return sleepList.stream()
                 .map(sleep -> SleepDto.Response.builder()
                         .sleepId(sleep.getSleepId())
@@ -124,7 +122,9 @@ public class SleepService {
                         .sleepStart(sleep.getSleepStart())
                         .sleepEnd(sleep.getSleepEnd())
                         .sleepMood(sleep.getSleepMood())
-                        .sleepAwakeCnt(sleep.getSleepAwakeCnt())
+                        .alarmSnoozeCnt(sleep.getAlarmSnoozeCnt())
+                        .timeToWakeUp(sleep.getTimeToWakeUp())
+                        .antiSleepMode(sleep.getAntiSleepMode())
                         .sleepScore(sleep.getSleepScore())
                         .build())
                 .toList();
