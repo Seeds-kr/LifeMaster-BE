@@ -1,7 +1,6 @@
-package com.example.LifeMaster_BE.UserManager.Email.Register;
+package com.example.LifeMaster_BE.UserManager.Email.Register.Dto;
 
 import lombok.Data;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.web.multipart.MultipartFile;
 

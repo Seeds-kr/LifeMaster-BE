@@ -1,5 +1,7 @@
 package com.example.LifeMaster_BE.UserManager.Email.Register;
 
+import com.example.LifeMaster_BE.UserManager.Email.Register.Dto.RegResponseDto;
+import com.example.LifeMaster_BE.UserManager.Email.Register.Dto.RegisterDto;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import com.example.LifeMaster_BE.UserManager.S3Service;
@@ -7,11 +9,13 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -19,16 +23,22 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class RegisterService {
 
-    private final MemberRepository memberRepository;
     private final S3Service s3Service;
+    private final MemberRepository memberRepository;
+    private final RedisTemplate<String, Object> redisTemplate;
 
-    public MemberEntity registerMember(String email, String password, String passwordConfirm) {
+    public RegResponseDto registerMember(RegisterDto registerDto) {
+        String email = registerDto.getEmail();
+        String password = registerDto.getPassword();
+        String passwordConfirm = registerDto.getPasswordConfirm();
 
         checkBeforeRegister(email, password, passwordConfirm);
 
         String encodedPassword = encodePassword(password);
-        MemberEntity memberEntity = new MemberEntity(email, encodedPassword);
-        return memberRepository.save(memberEntity);
+        String regId = UUID.randomUUID().toString();
+        redisTemplate.opsForValue().set(regId, registerDto);
+
+        return new RegResponseDto(regId);
     }
 
     public void registerMemberWithNickname(Long id, String nickname, MultipartFile image){
@@ -54,7 +64,7 @@ public class RegisterService {
     private void checkBeforeRegister(String email, String password, String confirmPassword){
 
         if(checkEmailDuplicate(email)) {
-            throw new IllegalArgumentException("이미 사용중인 닉네임입니다.");
+            throw new IllegalArgumentException("이미 사용중인 이메일입니다.");
         }
         if(!confirmPassword(password, confirmPassword)){
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다");
