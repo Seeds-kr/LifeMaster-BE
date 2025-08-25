@@ -8,7 +8,7 @@ import org.springframework.web.multipart.MultipartFile;
 @NoArgsConstructor
 public class RegisterWithNicknameDto {
 
-    private Long id;
+    private String regId;
     private String nickName;
     private MultipartFile image;
 }
