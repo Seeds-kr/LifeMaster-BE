@@ -122,6 +122,12 @@ public class MemberEntity {
         this.loginStatus = true;
     }
 
+    public MemberEntity(String email, String encodedPassword, String nickname) {
+        this.email = email;
+        this.password = encodedPassword;
+        this.nickname = nickname;
+    }
+
     public String getName() {
         return this.nickname;
     }

@@ -1,11 +1,11 @@
 package com.example.LifeMaster_BE.UserManager.Email.Register;
 
+import com.example.LifeMaster_BE.UserManager.Email.Register.Dto.RegistrationCacheDto;
 import com.example.LifeMaster_BE.UserManager.Email.Register.Dto.RegResponseDto;
 import com.example.LifeMaster_BE.UserManager.Email.Register.Dto.RegisterDto;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import com.example.LifeMaster_BE.UserManager.S3Service;
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.UUID;
 
 @Slf4j
@@ -36,29 +37,40 @@ public class RegisterService {
 
         String encodedPassword = encodePassword(password);
         String regId = UUID.randomUUID().toString();
-        redisTemplate.opsForValue().set(regId, registerDto);
+        RegistrationCacheDto redisRegisterDto = new RegistrationCacheDto(email, encodedPassword);
 
+        redisTemplate.opsForValue().set("reg:" + regId, redisRegisterDto, Duration.ofMinutes(20));
+        log.info(regId);
         return new RegResponseDto(regId);
     }
 
-    public void registerMemberWithNickname(Long id, String nickname, MultipartFile image){
+    public void registerMemberWithNickname(String regId, String nickname, MultipartFile image){
         if(checkNicknameDuplicate(nickname)){
             throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
         }
 
-        MemberEntity memberEntity = memberRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다"));
+        String key = "reg:" + regId;
+        log.info(regId);
+        RegistrationCacheDto cachedData = (RegistrationCacheDto) redisTemplate.opsForValue().get(key);
+        if(cachedData == null){
+            throw new IllegalStateException("회원가입 세션이 만료되었거나 잘못된 key 입니다.");
+        }
 
-        memberEntity.setNickname(nickname);
+        String email = cachedData.getEmail();
+        String encodedPassword = cachedData.getEncodedPassword();
+        MemberEntity newMember = new MemberEntity(email, encodedPassword, nickname);
+
         // 프로필 사진 설정
-        if(!image.isEmpty()){
+        if(image != null){
             try{
                 String fileUrl = s3Service.uploadFile(image);
-                memberEntity.setImageUrl(fileUrl);
+                newMember.setImageUrl(fileUrl);
             } catch (IOException e) {
                 throw new RuntimeException("File upload failed", e); // 런타임 예외로 변환
             }
         }
+
+        memberRepository.save(newMember);
     }
 
     private void checkBeforeRegister(String email, String password, String confirmPassword){
