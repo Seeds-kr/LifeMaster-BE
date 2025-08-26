@@ -1,5 +1,6 @@
 package com.example.LifeMaster_BE.Security;
 
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import com.example.LifeMaster_BE.UserManager.Peristalsis.CustomOAuth2UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
