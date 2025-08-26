@@ -17,14 +17,4 @@ public class RegisterWithNicknameDto {
 
     @Schema(type = "string", format = "binary", description = "프로필 이미지")
     private MultipartFile image;
-
-
-//    @Schema(description = "회원가입 ID", example = "reg123")
-//    private String regId;
-//
-//    @Schema(description = "닉네임", example = "gomz")
-//    private String nickName;
-//
-//    @Schema(type = "string", format = "binary", description = "프로필 이미지")
-//    private MultipartFile image;
 }
