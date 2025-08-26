@@ -3,7 +3,6 @@ package com.example.LifeMaster_BE.UserManager.Email.Register;
 import com.example.LifeMaster_BE.UserManager.Email.Register.Dto.RegResponseDto;
 import com.example.LifeMaster_BE.UserManager.Email.Register.Dto.RegisterDto;
 import com.example.LifeMaster_BE.UserManager.Email.Register.Dto.RegisterWithNicknameDto;
-import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Peristalsis.OAuthUsersRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
