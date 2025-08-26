@@ -38,7 +38,7 @@ public class SpringSecurityConfig {
                 .cors(Customizer.withDefaults()) // CORS 설정 빈 사용
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/user/login","/swagger-ui/**", "/user/register", "/challenge/**").permitAll()
-                        .requestMatchers("/private/**").authenticated()
+                       // .requestMatchers("/private/**").authenticated()
                         .anyRequest().permitAll()
                 )
                 .exceptionHandling(e -> e.accessDeniedPage("/error"))
