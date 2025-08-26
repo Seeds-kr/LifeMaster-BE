@@ -5,17 +5,20 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import io.swagger.v3.oas.models.servers.Server;
 import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.util.Arrays;
 
 //swagger ui 그룹화 설정(최신 버전에는 그룹화가 강제)
 @Configuration
 public class SwaggerConfig implements WebMvcConfigurer {
 
     private static final String SECURITY_SCHEME_NAME = "BearerAuth";
+
     @Bean
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
@@ -23,6 +26,10 @@ public class SwaggerConfig implements WebMvcConfigurer {
                         .title("LifeMaster API")
                         .version("1.0")
                         .description("LifeMaster 백엔드 API 명세서"))
+                .servers(Arrays.asList(
+                        new Server().url("https://api.harvester.kr").description("Development Server"),
+                        new Server().url("http://localhost:7550").description("Local Server")
+                ))
                 .addSecurityItem(new SecurityRequirement().addList(SECURITY_SCHEME_NAME))
                 .components(new Components()
                         .addSecuritySchemes(SECURITY_SCHEME_NAME,
@@ -34,7 +41,6 @@ public class SwaggerConfig implements WebMvcConfigurer {
     }
 
     //Challenge Api
-
     @Bean
     public GroupedOpenApi ChallengeApi() {
         return GroupedOpenApi.builder()
@@ -42,7 +48,6 @@ public class SwaggerConfig implements WebMvcConfigurer {
                 .pathsToMatch("/challenge/**")
                 .build();
     }
-
 
     @Bean
     public GroupedOpenApi detoxTimeApi() {
@@ -94,7 +99,6 @@ public class SwaggerConfig implements WebMvcConfigurer {
                 .pathsToMatch("/time/pomodoro/**")
                 .build();
     }
-
 
     @Bean
     public GroupedOpenApi whiteNoiseApi() {
@@ -198,7 +202,7 @@ public class SwaggerConfig implements WebMvcConfigurer {
                 .pathsToMatch("/payments/**")
                 .build();
     }
-  
+
     @Bean
     public GroupedOpenApi myPageApi(){
         return GroupedOpenApi.builder()
@@ -214,6 +218,4 @@ public class SwaggerConfig implements WebMvcConfigurer {
                 .pathsToMatch("/api/paypal/**")
                 .build();
     }
-
-
 }
