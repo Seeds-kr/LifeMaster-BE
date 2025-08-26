@@ -38,7 +38,7 @@ public class SpringSecurityConfig {
                 .cors(Customizer.withDefaults()) // CORS 설정 빈 사용
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/user/login","/swagger-ui/**", "/user/register", "/challenge/**").permitAll()
-                        .requestMatchers("/private/**").authenticated()
+                       // .requestMatchers("/private/**").authenticated()
                         .anyRequest().permitAll()
                 )
                 .exceptionHandling(e -> e.accessDeniedPage("/error"))
@@ -68,7 +68,7 @@ public class SpringSecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("*")); // 모든 도메인 허용
+        configuration.setAllowedOrigins(List.of("https://api.lifemaster.harvester.kr")); // 모든 도메인 허용
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
