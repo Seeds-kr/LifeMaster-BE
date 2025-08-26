@@ -8,6 +8,7 @@ import com.example.LifeMaster_BE.UserManager.Peristalsis.OAuthUsersRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -38,14 +39,16 @@ public class RegisterController {
         return ResponseEntity.ok(regResponse);
     }
 
-    @PostMapping("/nickname")
+    @PostMapping(
+            value = "/nickname",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
     public ResponseEntity<String> registerNickname(@ModelAttribute RegisterWithNicknameDto registerWithNicknameDto) {
         String regId = registerWithNicknameDto.getRegId();
         String nickName = registerWithNicknameDto.getNickName();
         MultipartFile image = registerWithNicknameDto.getImage();
 
-        System.out.println("nickName:" + nickName);
-
+        log.info(nickName);
         registerService.registerMemberWithNickname(regId, nickName, image);
         return ResponseEntity.ok("회원가입이 완료되었습니다!");
     }

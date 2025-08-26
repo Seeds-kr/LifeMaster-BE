@@ -39,7 +39,7 @@ public class RegisterService {
         String regId = UUID.randomUUID().toString();
         RegistrationCacheDto redisRegisterDto = new RegistrationCacheDto(email, encodedPassword);
 
-        redisTemplate.opsForValue().set("reg:" + regId, redisRegisterDto, Duration.ofMinutes(20));
+        redisTemplate.opsForValue().set("reg:" + regId, redisRegisterDto, Duration.ofMinutes(5));
         log.info(regId);
         return new RegResponseDto(regId);
     }
