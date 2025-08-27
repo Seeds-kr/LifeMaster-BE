@@ -50,7 +50,7 @@ public class SpringSecurityConfig {
                             res.setStatus(401);
                             res.setContentType("application/json;charset=UTF-8");
                             res.getWriter().write("""
-                                    {"status":401,"code":"AUTH_001","message":"로그인이 필요한 서비스입니다."}
+                                    {"status":401,"message":"로그인이 필요한 서비스입니다."}
                                     """);
                         })
                 )
