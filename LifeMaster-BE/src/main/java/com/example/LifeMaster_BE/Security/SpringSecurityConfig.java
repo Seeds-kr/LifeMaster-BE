@@ -40,6 +40,7 @@ public class SpringSecurityConfig {
                         .requestMatchers(
                                 "/user/login",
                                 "/swagger-ui/**",
+                                "/v3/api-docs/**",
                                 "/user/register/**",
                                 "/challenge/**").permitAll()
                         // .requestMatchers("/private/**").authenticated()
