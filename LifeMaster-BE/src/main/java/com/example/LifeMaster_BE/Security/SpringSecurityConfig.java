@@ -45,7 +45,15 @@ public class SpringSecurityConfig {
                         // .requestMatchers("/private/**").authenticated()
                         .anyRequest().authenticated()
                 )
-                .exceptionHandling(e -> e.accessDeniedPage("/error"))
+                .exceptionHandling(e -> e
+                        .authenticationEntryPoint((req, res, ex) -> {
+                            res.setStatus(401);
+                            res.setContentType("application/json;charset=UTF-8");
+                            res.getWriter().write("""
+                                    {"status":401,"code":"AUTH_001","message":"로그인이 필요한 서비스입니다."}
+                                    """);
+                        })
+                )
                 .oauth2Login(oauth2 -> oauth2
                         .loginPage("/googleLogin/loginForm")
                         .defaultSuccessUrl("/privatePage", true)
