@@ -1,9 +1,10 @@
 package com.example.LifeMaster_BE.UserManager.Email.Register;
 
-import com.example.LifeMaster_BE.UserManager.Email.Register.Dto.RegistrationCompleteResponseDto;
-import com.example.LifeMaster_BE.UserManager.Email.Register.Dto.RegistrationInitResponseDto;
-import com.example.LifeMaster_BE.UserManager.Email.Register.Dto.RegisterDto;
-import com.example.LifeMaster_BE.UserManager.Email.Register.Dto.RegisterWithNicknameDto;
+import com.example.LifeMaster_BE.UserManager.Email.Register.Dto.Response.CheckNicknameResponseDto;
+import com.example.LifeMaster_BE.UserManager.Email.Register.Dto.Response.RegistrationCompleteResponseDto;
+import com.example.LifeMaster_BE.UserManager.Email.Register.Dto.Response.RegistrationInitResponseDto;
+import com.example.LifeMaster_BE.UserManager.Email.Register.Dto.Request.RegisterDto;
+import com.example.LifeMaster_BE.UserManager.Email.Register.Dto.Request.RegisterWithNicknameDto;
 import com.example.LifeMaster_BE.UserManager.Peristalsis.OAuthUsersRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +38,17 @@ public class RegisterController {
 
         RegistrationInitResponseDto response = registerService.registerMember(registerDto);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/nickname")
+    public ResponseEntity<CheckNicknameResponseDto> checkNicknameAvailable(
+            @RequestParam("nickname") String nickname) {
+        boolean isDuplicated = registerService.checkNicknameAvailable(nickname);
+        if (!isDuplicated) {
+            return ResponseEntity.ok().body(new CheckNicknameResponseDto(true));
+        }else{
+            return ResponseEntity.badRequest().body(new CheckNicknameResponseDto(false));
+        }
     }
 
     @PostMapping(

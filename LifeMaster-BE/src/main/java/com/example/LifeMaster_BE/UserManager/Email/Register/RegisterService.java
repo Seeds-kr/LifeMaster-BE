@@ -1,8 +1,8 @@
 package com.example.LifeMaster_BE.UserManager.Email.Register;
 
 import com.example.LifeMaster_BE.UserManager.Email.Register.Dto.RegistrationCacheDto;
-import com.example.LifeMaster_BE.UserManager.Email.Register.Dto.RegistrationInitResponseDto;
-import com.example.LifeMaster_BE.UserManager.Email.Register.Dto.RegisterDto;
+import com.example.LifeMaster_BE.UserManager.Email.Register.Dto.Response.RegistrationInitResponseDto;
+import com.example.LifeMaster_BE.UserManager.Email.Register.Dto.Request.RegisterDto;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import com.example.LifeMaster_BE.UserManager.S3Service;
@@ -45,10 +45,6 @@ public class RegisterService {
     }
 
     public Long registerMemberWithNickname(String regId, String nickname, MultipartFile image){
-        if(checkNicknameDuplicate(nickname)){
-            throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
-        }
-
         String key = "reg:" + regId;
         log.info(regId);
         RegistrationCacheDto cachedData = (RegistrationCacheDto) redisTemplate.opsForValue().get(key);
@@ -74,6 +70,10 @@ public class RegisterService {
         return savedMember.getId();
     }
 
+    public boolean checkNicknameAvailable(String nickname){
+        return memberRepository.existsByNickname(nickname);
+    }
+
     private void checkBeforeRegister(String email, String password, String confirmPassword){
 
         if(checkEmailDuplicate(email)) {
@@ -90,10 +90,6 @@ public class RegisterService {
 
     private boolean confirmPassword(String password, String confirmPassword){
         return password.equals(confirmPassword);
-    }
-
-    private boolean checkNicknameDuplicate(String nickname){
-        return memberRepository.existsByNickname(nickname);
     }
 
     private String encodePassword(String password){
