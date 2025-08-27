@@ -7,6 +7,6 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class RegResponseDto {
+public class RegistrationInitResponseDto {
     private String regId;
 }

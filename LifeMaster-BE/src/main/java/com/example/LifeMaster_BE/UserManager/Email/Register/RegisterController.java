@@ -1,6 +1,7 @@
 package com.example.LifeMaster_BE.UserManager.Email.Register;
 
-import com.example.LifeMaster_BE.UserManager.Email.Register.Dto.RegResponseDto;
+import com.example.LifeMaster_BE.UserManager.Email.Register.Dto.RegistrationCompleteResponseDto;
+import com.example.LifeMaster_BE.UserManager.Email.Register.Dto.RegistrationInitResponseDto;
 import com.example.LifeMaster_BE.UserManager.Email.Register.Dto.RegisterDto;
 import com.example.LifeMaster_BE.UserManager.Email.Register.Dto.RegisterWithNicknameDto;
 import com.example.LifeMaster_BE.UserManager.Peristalsis.OAuthUsersRepository;
@@ -23,7 +24,7 @@ public class RegisterController {
     private final OAuthUsersRepository OAuthUsersRepository;
 
     @PostMapping
-    public ResponseEntity<RegResponseDto> register(@RequestBody RegisterDto registerDto) {
+    public ResponseEntity<RegistrationInitResponseDto> register(@RequestBody RegisterDto registerDto) {
         String email = registerDto.getEmail();
 
         // 연동 로그인 이메일 사용 방지
@@ -34,21 +35,21 @@ public class RegisterController {
             );
         }
 
-        RegResponseDto regResponse = registerService.registerMember(registerDto);
-        return ResponseEntity.ok(regResponse);
+        RegistrationInitResponseDto response = registerService.registerMember(registerDto);
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping(
             value = "/nickname",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
-    public ResponseEntity<String> registerNickname(@ModelAttribute RegisterWithNicknameDto registerWithNicknameDto) {
+    public ResponseEntity<RegistrationCompleteResponseDto> registerNickname(@ModelAttribute RegisterWithNicknameDto registerWithNicknameDto) {
         String regId = registerWithNicknameDto.getRegId();
         String nickName = registerWithNicknameDto.getNickName();
         MultipartFile image = registerWithNicknameDto.getImage();
 
-        log.info(nickName);
-        registerService.registerMemberWithNickname(regId, nickName, image);
-        return ResponseEntity.ok("회원가입이 완료되었습니다!");
+        Long memberId = registerService.registerMemberWithNickname(regId, nickName, image);
+        RegistrationCompleteResponseDto response = new RegistrationCompleteResponseDto("회원가입이 완료되었습니다!", memberId);
+        return ResponseEntity.ok(response);
     }
 }

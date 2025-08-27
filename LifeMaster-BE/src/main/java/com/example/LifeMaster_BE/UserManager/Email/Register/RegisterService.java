@@ -1,7 +1,7 @@
 package com.example.LifeMaster_BE.UserManager.Email.Register;
 
 import com.example.LifeMaster_BE.UserManager.Email.Register.Dto.RegistrationCacheDto;
-import com.example.LifeMaster_BE.UserManager.Email.Register.Dto.RegResponseDto;
+import com.example.LifeMaster_BE.UserManager.Email.Register.Dto.RegistrationInitResponseDto;
 import com.example.LifeMaster_BE.UserManager.Email.Register.Dto.RegisterDto;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
@@ -28,7 +28,7 @@ public class RegisterService {
     private final MemberRepository memberRepository;
     private final RedisTemplate<String, Object> redisTemplate;
 
-    public RegResponseDto registerMember(RegisterDto registerDto) {
+    public RegistrationInitResponseDto registerMember(RegisterDto registerDto) {
         String email = registerDto.getEmail();
         String password = registerDto.getPassword();
         String passwordConfirm = registerDto.getPasswordConfirm();
@@ -41,10 +41,10 @@ public class RegisterService {
 
         redisTemplate.opsForValue().set("reg:" + regId, redisRegisterDto, Duration.ofMinutes(5));
         log.info(regId);
-        return new RegResponseDto(regId);
+        return new RegistrationInitResponseDto(regId);
     }
 
-    public void registerMemberWithNickname(String regId, String nickname, MultipartFile image){
+    public Long registerMemberWithNickname(String regId, String nickname, MultipartFile image){
         if(checkNicknameDuplicate(nickname)){
             throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
         }
@@ -70,7 +70,8 @@ public class RegisterService {
             }
         }
 
-        memberRepository.save(newMember);
+        MemberEntity savedMember = memberRepository.save(newMember);
+        return savedMember.getId();
     }
 
     private void checkBeforeRegister(String email, String password, String confirmPassword){
