@@ -42,7 +42,8 @@ public class SpringSecurityConfig {
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/user/register/**",
-                                "/challenge/**").permitAll()
+                                "/challenge/**",
+                                "/auth/kakao/**", "/kakao/**").permitAll()
                         // .requestMatchers("/private/**").authenticated()
                         .anyRequest().authenticated()
                 )
