@@ -1,5 +1,6 @@
 package com.example.LifeMaster_BE.UserManager.Email.Register;
 
+import com.example.LifeMaster_BE.Exception.CustomException.ConflictException;
 import com.example.LifeMaster_BE.UserManager.Email.Register.Dto.RegistrationCacheDto;
 import com.example.LifeMaster_BE.UserManager.Email.Register.Dto.Response.RegistrationInitResponseDto;
 import com.example.LifeMaster_BE.UserManager.Email.Register.Dto.Request.RegisterDto;
@@ -9,6 +10,7 @@ import com.example.LifeMaster_BE.UserManager.S3Service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -66,8 +68,13 @@ public class RegisterService {
             }
         }
 
-        MemberEntity savedMember = memberRepository.save(newMember);
-        return savedMember.getId();
+        try{
+            memberRepository.save(newMember);
+        }catch (DataIntegrityViolationException e){
+            throw new ConflictException("UNIQUE_VIOLATION", "이메일 또는 닉네임이 이미 사용 중입니다.");
+        }
+
+        return newMember.getId();
     }
 
     public boolean checkNicknameAvailable(String nickname){
