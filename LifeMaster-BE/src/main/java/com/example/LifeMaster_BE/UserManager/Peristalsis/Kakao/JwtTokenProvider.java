@@ -24,7 +24,7 @@ public class JwtTokenProvider {
         this.refreshTokenValidityInMilliseconds = refreshTokenValidityInMilliseconds;
     }
     // 액세스 토큰 생성
-    public String createAccessToken(Long userId, String email) {
+    public String createAccessToken(Long userId) {
         Claims claims = Jwts.claims().setSubject(String.valueOf(userId)); // subject에 userId 설정
         //claims.put("email", email);   // <- 추가
         claims.put("role", "USER"); // 추가적인 클레임 설정 가능
