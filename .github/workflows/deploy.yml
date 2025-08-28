@@ -18,9 +18,10 @@ jobs:
           echo "${{ secrets.EC2_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
-      - name: Add EC2 host to known_hosts
+      - name: Add EC2 host to known_hosts (verbose)
         run: |
-          ssh-keyscan -p ${{ secrets.EC2_PORT }} -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          set -x
+          ssh-keyscan -v -p ${{ secrets.EC2_PORT }} -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts || true
 
       - name: Deploy to EC2
         run: |
