@@ -50,7 +50,7 @@ public class AuthController {
         });
 
         // 4. 액세스 토큰과 리프레시 토큰 생성
-        String accessTokenGenerated = jwtTokenProvider.createAccessToken(user.getId(), user.getEmail());
+        String accessTokenGenerated = jwtTokenProvider.createAccessToken(user.getId());
         String refreshTokenGenerated = jwtTokenProvider.createRefreshToken();
 
         // 5. 리프레시 토큰을 안전한 저장소에 보관 (예: 데이터베이스)
@@ -67,8 +67,7 @@ public class AuthController {
     public ResponseEntity<?> refreshAccessToken(@RequestParam String refreshToken) {
 
             Long userId = getUserIdFromRefreshToken(refreshToken);
-            String email = String.valueOf(memberRepository.findEmailById(userId));
-            String newAccessToken = jwtTokenProvider.createAccessToken(userId, email);
+            String newAccessToken = jwtTokenProvider.createAccessToken(userId);
 
             // 3. 새로운 액세스 토큰을 반환
             return ResponseEntity.ok().body("New Access Token: " + newAccessToken);
