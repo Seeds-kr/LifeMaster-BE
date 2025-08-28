@@ -1,14 +1,16 @@
 package com.example.LifeMaster_BE.UserManager.Email.Register;
 
+import com.example.LifeMaster_BE.Exception.CustomException.ConflictException;
 import com.example.LifeMaster_BE.UserManager.Email.Register.Dto.RegistrationCacheDto;
-import com.example.LifeMaster_BE.UserManager.Email.Register.Dto.RegResponseDto;
-import com.example.LifeMaster_BE.UserManager.Email.Register.Dto.RegisterDto;
+import com.example.LifeMaster_BE.UserManager.Email.Register.Dto.Response.RegistrationInitResponseDto;
+import com.example.LifeMaster_BE.UserManager.Email.Register.Dto.Request.RegisterDto;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import com.example.LifeMaster_BE.UserManager.S3Service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -28,7 +30,7 @@ public class RegisterService {
     private final MemberRepository memberRepository;
     private final RedisTemplate<String, Object> redisTemplate;
 
-    public RegResponseDto registerMember(RegisterDto registerDto) {
+    public RegistrationInitResponseDto registerMember(RegisterDto registerDto) {
         String email = registerDto.getEmail();
         String password = registerDto.getPassword();
         String passwordConfirm = registerDto.getPasswordConfirm();
@@ -41,14 +43,10 @@ public class RegisterService {
 
         redisTemplate.opsForValue().set("reg:" + regId, redisRegisterDto, Duration.ofMinutes(5));
         log.info(regId);
-        return new RegResponseDto(regId);
+        return new RegistrationInitResponseDto(regId);
     }
 
-    public void registerMemberWithNickname(String regId, String nickname, MultipartFile image){
-        if(checkNicknameDuplicate(nickname)){
-            throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
-        }
-
+    public Long registerMemberWithNickname(String regId, String nickname, MultipartFile image){
         String key = "reg:" + regId;
         log.info(regId);
         RegistrationCacheDto cachedData = (RegistrationCacheDto) redisTemplate.opsForValue().get(key);
@@ -70,7 +68,17 @@ public class RegisterService {
             }
         }
 
-        memberRepository.save(newMember);
+        try{
+            memberRepository.save(newMember);
+        }catch (DataIntegrityViolationException e){
+            throw new ConflictException("UNIQUE_VIOLATION", "이메일 또는 닉네임이 이미 사용 중입니다.");
+        }
+
+        return newMember.getId();
+    }
+
+    public boolean checkNicknameAvailable(String nickname){
+        return memberRepository.existsByNickname(nickname);
     }
 
     private void checkBeforeRegister(String email, String password, String confirmPassword){
@@ -89,10 +97,6 @@ public class RegisterService {
 
     private boolean confirmPassword(String password, String confirmPassword){
         return password.equals(confirmPassword);
-    }
-
-    private boolean checkNicknameDuplicate(String nickname){
-        return memberRepository.existsByNickname(nickname);
     }
 
     private String encodePassword(String password){

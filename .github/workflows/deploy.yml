@@ -1,4 +1,4 @@
-name: Deploy to EC2
+name: Deploy to EC2 via VPN
 
 on:
   push:
@@ -12,16 +12,42 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # 1️⃣ SSH 개인 키 설정
       - name: Set up SSH private key
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
-      - name: Add EC2 host to known_hosts
+      # 2️⃣ VPN auth 파일 생성 (ID/PW)
+      - name: Create VPN auth file
         run: |
-          ssh-keyscan -p ${{ secrets.EC2_PORT }} -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          echo "${{ secrets.VPN_USER }}" > ~/vpn_auth.txt
+          echo "${{ secrets.VPN_PASSWORD }}" >> ~/vpn_auth.txt
+          chmod 600 ~/vpn_auth.txt
 
+      # 3️⃣ OVPN 파일 생성
+      - name: Create VPN config file
+        run: |
+          echo "${{ secrets.VPN_OVPN_FILE }}" > ~/vpn_config.ovpn
+          chmod 600 ~/vpn_config.ovpn
+
+      # 4️⃣ VPN 연결 (백그라운드) + 설치
+      - name: Install and start OpenVPN
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y openvpn
+          sudo openvpn --config ~/vpn_config.ovpn --auth-user-pass ~/vpn_auth.txt --daemon
+          sleep 10  # VPN 연결 안정화 대기
+
+
+      # 5️⃣ EC2 호스트 SSH 키 등록
+      - name: Add EC2 host to known_hosts (verbose)
+        run: |
+          set -x
+          ssh-keyscan -v -p ${{ secrets.EC2_PORT }} -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts || true
+
+      # 6️⃣ EC2 배포 스크립트 실행
       - name: Deploy to EC2
         run: |
           ssh -p ${{ secrets.EC2_PORT }} ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'bash ~/deploy.sh'
