@@ -28,24 +28,25 @@ import java.util.Set;
 @NoArgsConstructor
 @Table(
         name = "member_entity",
-        indexes = {
-                @Index(name = "idx_member_email", columnList = "email"),
-                @Index(name = "idx_member_nickname", columnList = "nickname")
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_member_email", columnNames = "email"),
+                @UniqueConstraint(name = "idx_member_nickname", columnNames = "nickname")
         }
 
-)  // 테이블 이름을 단순화하여 충돌 방지
+)
 public class MemberEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY) // MySQL 호환 전략
     private Long id;
 
-    @Column(name = "email", nullable = false, unique = true) // 이메일 중복 방지
+    @Column(name = "email", nullable = false) // 이메일 중복 방지
     private String email;
 
     @Column(nullable = false)
     private String password; // 연동 로그인 유저는 고유 식별 ID
 
+    @Column(nullable = false)
     private String nickname;
 
     @Column(name = "image_url") // 컬럼 이름 명시
