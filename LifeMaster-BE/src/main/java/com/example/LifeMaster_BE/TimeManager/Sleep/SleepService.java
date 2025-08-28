@@ -89,9 +89,8 @@ public class SleepService {
         MemberEntity user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
 
-        Sleep updatedSleep = Sleep.builder()
-                .sleepId(existingSleep.getSleepId())
-                .user(user)
+        Sleep updatedSleep = existingSleep.toBuilder()
+                .user(user) // 연관관계 그대로 유지 혹은 새로 설정
                 .sleepDate(request.getSleepDate() != null ? request.getSleepDate() : existingSleep.getSleepDate())
                 .sleepStart(request.getSleepStart() != null ? request.getSleepStart() : existingSleep.getSleepStart())
                 .sleepEnd(request.getSleepEnd() != null ? request.getSleepEnd() : existingSleep.getSleepEnd())
@@ -106,6 +105,7 @@ public class SleepService {
 
         sleepRepository.save(updatedSleep);
     }
+
 
     // 수면 기록 조회
     public List<SleepDto.Response> selectSleep(Long userId) {

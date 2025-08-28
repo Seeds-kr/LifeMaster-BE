@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @Table(name = "sleep")
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
+@Builder(toBuilder = true)
 @Getter
 public class Sleep {
 
