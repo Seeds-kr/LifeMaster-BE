@@ -32,11 +32,14 @@ jobs:
           echo "${{ secrets.VPN_OVPN_FILE }}" > ~/vpn_config.ovpn
           chmod 600 ~/vpn_config.ovpn
 
-      # 4️⃣ VPN 연결 (백그라운드)
-      - name: Start OpenVPN
+      # 4️⃣ VPN 연결 (백그라운드) + 설치
+      - name: Install and start OpenVPN
         run: |
+          sudo apt-get update
+          sudo apt-get install -y openvpn
           sudo openvpn --config ~/vpn_config.ovpn --auth-user-pass ~/vpn_auth.txt --daemon
           sleep 10  # VPN 연결 안정화 대기
+
 
       # 5️⃣ EC2 호스트 SSH 키 등록
       - name: Add EC2 host to known_hosts (verbose)
