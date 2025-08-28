@@ -1,4 +1,4 @@
-package com.example.LifeMaster_BE.UserManager.Email.Register.Dto;
+package com.example.LifeMaster_BE.UserManager.Email.Register.Dto.Request;
 
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
