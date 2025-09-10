@@ -47,6 +47,7 @@ public class PostService {
 
         return posts.stream()
                 .map(post -> new AllPostsDto(
+                        post.getId(),
                         post.getTitle(),
                         post.getMember().getNickname(),
                         post.getViewCount(),
