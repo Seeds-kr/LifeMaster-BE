@@ -82,7 +82,7 @@ public class SleepService {
     }
 
     // 수면 데이터 수정
-    public void updateSleep(SleepDto.Request request) {
+    public SleepDto.Response updateSleep(SleepDto.Request request) {
         Sleep existingSleep = sleepRepository.findById(request.getSleepId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 수면 데이터입니다."));
 
@@ -103,7 +103,18 @@ public class SleepService {
         double sleepScore = calculateSleepScore(updatedSleep);
         updatedSleep.setSleepScore(sleepScore);
 
-        sleepRepository.save(updatedSleep);
+        Sleep saved = sleepRepository.save(updatedSleep);
+        return SleepDto.Response.builder()
+                .sleepId(saved.getSleepId())
+                .sleepDate(saved.getSleepDate())
+                .sleepStart(saved.getSleepStart())
+                .sleepEnd(saved.getSleepEnd())
+                .sleepMood(saved.getSleepMood())
+                .alarmSnoozeCnt(saved.getAlarmSnoozeCnt())
+                .timeToWakeUp(saved.getTimeToWakeUp())
+                .antiSleepMode(saved.getAntiSleepMode())
+                .sleepScore(saved.getSleepScore())
+                .build();
     }
 
 
