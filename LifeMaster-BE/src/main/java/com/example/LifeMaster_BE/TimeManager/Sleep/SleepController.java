@@ -32,8 +32,8 @@ public class SleepController {
 
     @Operation(summary = "수면 기록 업데이트", description = "사용자의 수면 기록을 업데이트합니다.")
     @PatchMapping
-    public ResponseEntity<String> updateSleep(@RequestBody SleepDto.Request request) {
-        sleepService.updateSleep(request);
-        return ResponseEntity.ok("Sleep updated");
+    public ResponseEntity<SleepDto.Response> updateSleep(@RequestBody SleepDto.Request request) {
+        SleepDto.Response updatedResponse = sleepService.updateSleep(request);
+        return ResponseEntity.ok(updatedResponse);
     }
 }
