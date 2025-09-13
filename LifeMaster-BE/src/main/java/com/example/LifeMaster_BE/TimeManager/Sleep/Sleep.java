@@ -38,11 +38,12 @@ public class Sleep {
     @Column(nullable = false)
     private MoodStatus sleepMood;
 
-    private Integer alarmSnoozeCnt; // 알람 미루기 횟수
+    // ✅ 알람 여부만 Sleep에 직접 저장
+    private Boolean isWakeUpAlarmSet;
 
-    private Integer timeToWakeUp;   // 일어나는데 걸린 시간 (분)
-
-    private Boolean antiSleepMode;  // 재수면 방지 여부
+    // ✅ 알람 상세 정보는 Embeddable 객체로 묶음
+    @Embedded
+    private AlarmSettings alarmSettings;
 
     private Double sleepScore;
 
