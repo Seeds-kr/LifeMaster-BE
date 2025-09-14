@@ -80,24 +80,6 @@ class AlarmMissionControllerTest {
         // .andExpect(jsonPath("$.answer").value(7));
     }
 
-    @Test
-    @DisplayName("수학 문제 정답 확인 - 정답 시 알람 끄기 호출")
-    void checkMathProblemAnswer_correct() throws Exception {
-        var stored = mathProblem("5 + 5 = ?", 10);
-        ReflectionTestUtils.setField(controller, "mathProblem", stored);
-
-        given(missionService.checkMathProblemAnswer(any(AlarmMissionService.MathProblem.class), eq(10)))
-                .willReturn("정답입니다! 수고하셨어요.");
-
-        mockMvc.perform(post("/time/alarm/mission/math-problem/check")
-                        .param("userAnswer", "10")
-                        .param("alarmId", "123"))
-                .andExpect(status().isOk())
-                .andExpect(content().string(containsString("정답입니다!")));
-
-        verify(missionService).updateAlarmStatus(123L, false);
-    }
-
     // ===== 타이핑 =====
     @Test
     @DisplayName("랜덤 문장 생성 - 반환 문자열 확인")
