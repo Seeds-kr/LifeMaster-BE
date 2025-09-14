@@ -1,13 +1,12 @@
-package com.example.LifeMaster_BE.UserManager.Email.Register;
+package com.example.LifeMaster_BE.UserManager.Email.Register.Dto.Request;
 
 import lombok.AllArgsConstructor;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.*;
 
-@Getter
+@Data
+@NoArgsConstructor
 @AllArgsConstructor
-@NoArgsConstructor // 파라미터 없는 디폴트 생성자 추가
 public class RegisterDto {
 
     private String email;

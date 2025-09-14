@@ -1,7 +1,8 @@
 package com.example.LifeMaster_BE.TimeManager.Sleep;
 
 public enum MoodStatus {
-    HAPPY,    // 좋은 기분
+    VERY_GOOD,
+    GOOD,// 좋은 기분
     BAD,     // 나쁜 기분
-    SOSO  // 보통 기분
+    VERY_BAD  // 보통 기분
 }

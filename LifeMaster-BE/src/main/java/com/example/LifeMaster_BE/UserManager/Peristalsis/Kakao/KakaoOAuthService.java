@@ -17,7 +17,7 @@ public class KakaoOAuthService {
 
     // 생성자에서 RestTemplate 주입
     public KakaoOAuthService(
-            @Value("${jwt.kakao.secretKey}") String clientId,
+            @Value("${jwt.kakao.rest-api-key}") String clientId,
             @Value("${jwt.kakao.redirectUri}") String redirectUri,
             RestTemplate restTemplate) { // @Autowired가 자동으로 적용됨
         this.clientId = clientId;

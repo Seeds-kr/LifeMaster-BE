@@ -12,18 +12,20 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql       # 데이터 영속성을 위한 볼륨
 
-  app:
-    image: lifemaster_app               # 빌드된 Spring Boot 애플리케이션 이미지 이름 (소문자)
+  backend:
     build:
-      context: .                        # Dockerfile이 있는 디렉터리 경로
+      context: .
+      dockerfile: Dockerfile
+    container_name: spring-app
+    restart: always
+    depends_on:
+      - mysql
+    ports:
+      - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/LifeMaster_db  # MySQL 서비스 이름 사용
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/LifeMaster_db
       SPRING_DATASOURCE_USERNAME: user
       SPRING_DATASOURCE_PASSWORD: 1234
-    ports:
-      - "8081:8080"                     # Spring Boot의 8080 포트를 호스트에 매핑
-    depends_on:
-      - mysql                           # mysql 서비스가 준비된 후 app 시작
 
 volumes:
   mysql_data:

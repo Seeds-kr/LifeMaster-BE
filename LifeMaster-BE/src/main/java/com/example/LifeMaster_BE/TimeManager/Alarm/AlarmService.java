@@ -1,6 +1,8 @@
 package com.example.LifeMaster_BE.TimeManager.Alarm;
 
+import com.example.LifeMaster_BE.TimeManager.Alarm.Mapper.AlarmMapStruct;
 import com.example.LifeMaster_BE.TimeManager.Alarm.Dto.NewAlarmDto;
+import com.example.LifeMaster_BE.TimeManager.Alarm.Dto.ResponseAlarmDto;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -20,16 +22,31 @@ public class AlarmService {
 
     private final AlarmRepository alarmRepository;
     private final MemberRepository memberRepository;
+    private final AlarmMapStruct alarmMapStruct;
+
+    //알람 생성 메소드
+    public Long createAlarm(NewAlarmDto alarmDto, Long memberId) {
+        MemberEntity member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new EntityNotFoundException("Member " + memberId + " not found"));
+
+        AlarmEntity newAlarm = AlarmEntity.fromDto(alarmDto);
+        member.addAlarm(newAlarm);
+        AlarmEntity savedAlarm = alarmRepository.save(newAlarm);
+        return savedAlarm.getId();
+    }
 
     //알람 전체 조회 메소드
-    public List<AlarmEntity> getAllAlarms(){
-        return alarmRepository.findAll();
+    public List<ResponseAlarmDto> getAllAlarms(){
+        List<AlarmEntity> allAlarms = alarmRepository.findAll();
+        return alarmMapStruct.toDtoList(allAlarms);
     }
 
     //특정 알람 조회 메소드
-    public AlarmEntity getAlarmById(Long alarmId, Long memberId){
-        return alarmRepository.findByIdAndMemberId(alarmId, memberId)
+    public ResponseAlarmDto getAlarmById(Long alarmId, Long memberId){
+        AlarmEntity alarm = alarmRepository.findByIdAndMemberId(alarmId, memberId)
                 .orElseThrow(() -> new EntityNotFoundException("Alarm" + alarmId + "not found"));
+
+        return alarmMapStruct.toDto(alarm);
     }
 
     // 알람 상태 수정 매소드
@@ -42,7 +59,7 @@ public class AlarmService {
     }
 
     //알람 날짜 수정 메소드
-    public AlarmEntity updateAlarmDayStatus(Long alarmId, AlarmDay day, boolean status){
+    public void updateAlarmDayStatus(Long alarmId, AlarmDay day, boolean status){
         AlarmEntity alarm = alarmRepository.findById(alarmId)
                 .orElseThrow(() -> new EntityNotFoundException("Alarm" + alarmId + "not found"));
 
@@ -56,10 +73,10 @@ public class AlarmService {
             case SUN -> alarm.setAlarmSun(status);
         }
 
-        return alarmRepository.save(alarm);
+        alarmRepository.save(alarm);
     }
 
-    //알람 남은 시간 계산 메소드
+    //알람 남은 시간 계산 메소드 11
     public String getTimeDifference(Long alarmId) {
         AlarmEntity alarm = alarmRepository.findById(alarmId)
                 .orElseThrow(() -> new EntityNotFoundException("Alarm " + alarmId + " not found"));
@@ -74,17 +91,7 @@ public class AlarmService {
         return String.format("Time difference: %d days, %d hours, %d minutes", days, hours, minutes);
     }
 
-    //알람 생성 메소드
-    public AlarmEntity createAlarm(NewAlarmDto alarmDto, Long memberId) {
-        MemberEntity member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new EntityNotFoundException("Member " + memberId + " not found"));
-
-        AlarmEntity newAlarm = AlarmEntity.fromDto(alarmDto);
-        member.addAlarm(newAlarm);
-        return alarmRepository.save(newAlarm);
-    }
-
-    //알람 활성화 메소드
+    //알람 활성화 메소드 11
     public String activateAlarm(Long alarmId) {
         // 알람 ID로 알람 조회
         AlarmEntity alarm = alarmRepository.findById(alarmId)
@@ -122,7 +129,7 @@ public class AlarmService {
         }
     }
 
-    //전체 알람 활성화 메소드
+    //전체 알람 활성화 메소드 11
     public String activateMatchingAlarms() {
         // 현재 시스템 시간 가져오기
         LocalDateTime now = LocalDateTime.now();
@@ -168,7 +175,7 @@ public class AlarmService {
             return "No alarms matched the current day or time.";
         }
     }
-
+    // 11
     public String deactivateActivatedAlarms() {
         // 모든 알람 가져오기
         List<AlarmEntity> alarms = alarmRepository.findAll();

@@ -5,53 +5,55 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "sleep")
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
+@Builder(toBuilder = true)
 @Getter
 public class Sleep {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer sleepId;  // 기본 키
+    private Integer sleepId;
 
     @Column(nullable = false)
-    private LocalDateTime sleepDate;  // 수면 날짜
+    private LocalDate sleepDate;  // 수면 날짜 (년-월-일만 저장)
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private MemberEntity user;  // 사용자, User 엔티티와의 관계
+    private MemberEntity user;
 
     @Column(nullable = false)
-    private LocalDateTime sleepStart;  // 수면 시작 시간
+    private LocalDateTime sleepStart;
 
-    private LocalDateTime sleepEnd;  // 수면 종료 시간 (NULL 가능)
+    private LocalDateTime sleepEnd;
 
-    private LocalDateTime sleepAlarm; // 알람이 울린 시간 (NULL 가능)
+    private LocalDateTime sleepAlarm; // 필요하다면 유지
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private MoodStatus sleepMood;  // 오늘의 기분 (ENUM 타입)
+    private MoodStatus sleepMood;
 
-    @Column
-    private Integer sleepAwakeCnt; // 꺤 횟수
+    // ✅ 알람 여부만 Sleep에 직접 저장
+    private Boolean isWakeUpAlarmSet;
 
-    @Column(nullable = true)
-    private Double sleepScore;  // 알람 점수
+    // ✅ 알람 상세 정보는 Embeddable 객체로 묶음
+    @Embedded
+    private AlarmSettings alarmSettings;
+
+    private Double sleepScore;
 
     public void setSleepScore(double sleepScore) {
         this.sleepScore = sleepScore;
     }
 
     public Duration getSleepDuration() {
-        LocalDateTime sleepstart = this.getSleepStart();
-        LocalDateTime sleepend = this.getSleepEnd();
-        if (sleepstart != null && sleepend != null) {
-            return Duration.between(sleepstart, sleepend);
+        if (sleepStart != null && sleepEnd != null) {
+            return Duration.between(sleepStart, sleepEnd);
         }
         return Duration.ZERO;
     }

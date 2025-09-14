@@ -2,6 +2,7 @@ package com.example.LifeMaster_BE.TimeManager.Alarm;
 
 import com.example.LifeMaster_BE.Security.CustomUserDetails;
 import com.example.LifeMaster_BE.TimeManager.Alarm.Dto.NewAlarmDto;
+import com.example.LifeMaster_BE.TimeManager.Alarm.Dto.ResponseAlarmDto;
 import com.example.LifeMaster_BE.TimeManager.Alarm.Dto.StatusDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -12,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.List;
 
 @Slf4j
@@ -23,41 +25,44 @@ public class AlarmController {
 
     private final AlarmService alarmService;
 
+    @Operation(summary = "새 알람 생성", description = "새로운 알람을 생성합니다.")
+    @PostMapping
+    public ResponseEntity<Void> createAlarm(
+            @RequestBody NewAlarmDto alarmDto,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        Long memberId = userDetails.getId();
+        Long alarmId = alarmService.createAlarm(alarmDto, memberId);
+        URI location = URI.create("/time/alarm/" + alarmId);
+        return ResponseEntity.created(location).build();
+    }
+
     @Operation(summary = "모든 알람 조회", description = "등록된 모든 알람을 반환합니다.")
     @GetMapping
-    public List<AlarmEntity> getAllAlarms() {
-        return alarmService.getAllAlarms();
+    public ResponseEntity<List<ResponseAlarmDto>> getAllAlarms() {
+        List<ResponseAlarmDto> allAlarms = alarmService.getAllAlarms();
+        return ResponseEntity.ok(allAlarms);
     }
 
     @Operation(summary = "특정 알람 조회", description = "알람 ID를 이용해 특정 알람의 상세 정보를 반환합니다.")
     @Parameter(name = "alarmId", description = "조회할 알람의 ID", required = true)
     @GetMapping("/{alarmId}")
-    public ResponseEntity<AlarmEntity> getAlarmById(
-            @PathVariable("alarmId") Long alarmId,
+    public ResponseEntity<ResponseAlarmDto> getAlarmById(
+            @PathVariable Long alarmId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         Long memberId = userDetails.getId();
-        AlarmEntity alarmById = alarmService.getAlarmById(alarmId, memberId);
-        return ResponseEntity.ok(alarmById);
+        ResponseAlarmDto alarmDtoById = alarmService.getAlarmById(alarmId, memberId);
+        return ResponseEntity.ok(alarmDtoById);
     }
 
     @Operation(summary = "알람 상태 업데이트", description = "알람의 특정 필드(MON~SUN) 상태를 업데이트합니다.(ex day:MON, status:false")
     @Parameter(name = "alarmId", description = "업데이트할 알람의 ID", required = true)
     @PutMapping("/{alarmId}/update-status")
-    public ResponseEntity<AlarmEntity> setAlarmStatus(
+    public ResponseEntity<String> setAlarmStatus(
             @PathVariable("alarmId") Long alarmId,
             @RequestBody StatusDto statusDto) {
-        AlarmEntity updatedAlarm = alarmService.updateAlarmDayStatus(alarmId, statusDto.getDay(), statusDto.isStatus());
-        return ResponseEntity.ok(updatedAlarm);
-    }
-
-    @Operation(summary = "새 알람 생성", description = "새로운 알람을 생성합니다.")
-    @PostMapping
-    public ResponseEntity<AlarmEntity> createAlarm(
-            @RequestBody NewAlarmDto alarmDto,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
-        Long memberId = userDetails.getId();
-        AlarmEntity createdAlarm = alarmService.createAlarm(alarmDto, memberId);
-        return ResponseEntity.ok(createdAlarm);
+        alarmService.updateAlarmDayStatus(alarmId, statusDto.getDay(), statusDto.isStatus());
+        return ResponseEntity.ok("정상적으로 업데이트 되었습니다.");
     }
 
     @Operation(summary = "알람 시간 차이 조회", description = "알람 시간과 현재 시간의 차이를 계산하여 반환합니다.")

@@ -1,18 +1,20 @@
 package com.example.LifeMaster_BE.UserManager.Peristalsis.Kakao;
 
+import com.example.LifeMaster_BE.Security.CustomUserDetails;
+import com.example.LifeMaster_BE.Security.Utils.JwtUtil;
 import com.example.LifeMaster_BE.UserManager.Member.LoginRole;
 import com.example.LifeMaster_BE.UserManager.Member.LoginType;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
+import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
-
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
 
 @RestController
 @RequiredArgsConstructor
@@ -20,69 +22,80 @@ import io.jsonwebtoken.Jwts;
 public class AuthController {
 
     private final KakaoOAuthService kakaoOAuthService;
-    private final MemberRepository userRepository;
-    private final JwtTokenProvider jwtTokenProvider;
-
+    private final MemberRepository memberRepository;
+    private final JwtUtil jwtUtil;
 
     @GetMapping("/kakao/callback")
     public ResponseEntity<?> kakaoCallback(@RequestParam String code) {
-        // 1. 카카오에서 Access Token을 가져옴
-        String accessToken = kakaoOAuthService.getAccessToken(code);
+        // 1. 카카오 Access Token 받기
+        String kakaoAccessToken = kakaoOAuthService.getAccessToken(code);
 
-        // 2. Access Token으로 카카오 사용자 정보 가져오기
-        Map<String, Object> kakaoUserInfo = kakaoOAuthService.getUserInfo(accessToken);
+        // 2. 사용자 정보 조회
+        Map<String, Object> kakaoUserInfo = kakaoOAuthService.getUserInfo(kakaoAccessToken);
         String email = (String) ((Map<String, Object>) kakaoUserInfo.get("kakao_account")).get("email");
         String nickname = (String) ((Map<String, Object>) kakaoUserInfo.get("properties")).get("nickname");
         String profileUrl = (String) ((Map<String, Object>) kakaoUserInfo.get("properties")).get("profile_image");
 
-        // 3. DB에서 사용자 조회 (이메일 기반)
-        MemberEntity user = userRepository.findByEmail(email).orElseGet(() -> {
-            // 사용자 없으면 새로 저장
+        // 3. DB 조회 or 신규 생성
+        MemberEntity user = memberRepository.findByEmail(email).orElseGet(() -> {
             MemberEntity newUser = MemberEntity.builder()
                     .email(email)
                     .nickname(nickname)
                     .imageUrl(profileUrl)
                     .loginType(LoginType.KAKAO)
-                    .loginRole(LoginRole.USER) // 기본 권한
+                    .loginRole(LoginRole.USER)
                     .build();
-            return userRepository.save(newUser);
+            return memberRepository.save(newUser);
         });
 
-        // 4. 액세스 토큰과 리프레시 토큰 생성
-        String accessTokenGenerated = jwtTokenProvider.createAccessToken(user.getId());
-        String refreshTokenGenerated = jwtTokenProvider.createRefreshToken();
+        // 4. 기존 JwtUtil을 이용해 AccessToken 생성 (email 기반)
+        String accessToken = jwtUtil.generateToken(user.getEmail());
 
-        // 5. 리프레시 토큰을 안전한 저장소에 보관 (예: 데이터베이스)
+        // 5. (선택) refreshToken은 DB에 저장 후 반환
+        String refreshToken = "dummy-refresh-token"; // 추후 구현
 
-        // 6. JWT와 리프레시 토큰 반환
         Map<String, String> response = new HashMap<>();
-        response.put("accessToken", accessTokenGenerated);
-        response.put("refreshToken", refreshTokenGenerated);
+        response.put("accessToken", accessToken);
+        response.put("refreshToken", refreshToken);
 
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshAccessToken(@RequestParam String refreshToken) {
+        try {
+            // 1. 리프레시 토큰에서 email 추출
+            String email = getEmailFromRefreshToken(refreshToken);
 
-            Long userId = getUserIdFromRefreshToken(refreshToken);
-            String newAccessToken = jwtTokenProvider.createAccessToken(userId);
+            // 2. DB에서 유저 조회
+            MemberEntity user = memberRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다: " + email));
 
-            // 3. 새로운 액세스 토큰을 반환
-            return ResponseEntity.ok().body("New Access Token: " + newAccessToken);
+            // 3. 새로운 액세스 토큰 생성
+            String newAccessToken = jwtUtil.generateToken(user.getEmail());
 
+            // 4. 응답 반환
+            Map<String, String> response = new HashMap<>();
+            response.put("accessToken", newAccessToken);
+            response.put("refreshToken", refreshToken); // 기존 리프레시 토큰 그대로 반환
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(401).body(Map.of(
+                    "status", 401,
+                    "message", "리프레시 토큰이 유효하지 않습니다."
+            ));
+        }
     }
 
-    public Long getUserIdFromRefreshToken(String refreshToken) {
-        // 리프레시 토큰에서 Claims 추출
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey("921473d7f670df7a9151a8c9e8070cc5") // 비밀 키 사용
+    // 리프레시 토큰에서 email 추출
+    private String getEmailFromRefreshToken(String refreshToken) {
+        return Jwts.parserBuilder()
+                .setSigningKey("921473d7f670df7a9151a8c9e8070cc5")// 리프레시 토큰 전용 키
                 .build()
                 .parseClaimsJws(refreshToken)
-                .getBody();
-
-        // Claims에서 userId를 추출하여 반환
-        return Long.valueOf(claims.getSubject()); // subject에 userId가 저장되어 있다고 가정
+                .getBody()
+                .getSubject();
     }
-}
 
+}

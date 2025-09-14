@@ -1,12 +1,15 @@
 package com.example.LifeMaster_BE.TimeManager.Alarm.Dto;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
-public class NewAlarmDto {
+@AllArgsConstructor
+public class ResponseAlarmDto {
 
     private String alarmTitle;
     private LocalDateTime alarmTime;
@@ -30,12 +33,3 @@ public class NewAlarmDto {
 
     private String randomMissionType;
 }
-
-
-
-/*
-time, title,  mon~sun,
-sound 와 미루기 (유무, 몇분, 횟수 포함),
-다시 잠들기 방지(유무, 몇분),
-랜덤미션 유형(수학 같은 경우 난이도도 포함) 필요할 것 같아요.
- */
