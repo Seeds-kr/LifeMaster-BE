@@ -1,14 +1,12 @@
 package com.example.LifeMaster_BE.Community.Post.Dto;
 
 import com.example.LifeMaster_BE.Community.Post.PostType;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
-public class PostDto {
+public class PostCreateRequest {
 
     private String title;
     private String content;
