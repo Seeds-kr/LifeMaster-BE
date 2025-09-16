@@ -45,14 +45,14 @@ public class PostController {
 
     @Operation(summary = "게시글 조회", description = "게시글 ID를 통해 단일 게시글을 조회합니다.")
     @GetMapping("/{postId}")
-    public ResponseEntity<PostEntity> getPost(@PathVariable Long postId){
+    public ResponseEntity<PostEntity> getPost(@PathVariable("postId") Long postId){
         PostEntity post = postService.getPost(postId);
         return ResponseEntity.ok(post);
     }
 
     @Operation(summary = "게시글 수정", description = "게시글 ID를 통해 특정 게시글을 수정합니다.")
     @PatchMapping("/{postId}")
-    public void updatePost(@PathVariable Long postId,
+    public void updatePost(@PathVariable("postId") Long postId,
                            @RequestBody PostDto postDto,
                            @AuthenticationPrincipal CustomUserDetails user){
         String title = postDto.getTitle();
@@ -64,7 +64,7 @@ public class PostController {
 
     @Operation(summary = "게시글 삭제", description = "게시글 ID를 통해 특정 게시글을 삭제합니다.")
     @DeleteMapping("/{postId}")
-    public void deletePost(@PathVariable Long postId){
+    public void deletePost(@PathVariable("postId") Long postId){
         postService.deletePost(postId);
     }
 
