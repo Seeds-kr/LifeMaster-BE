@@ -11,6 +11,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/posts")
@@ -30,7 +31,7 @@ public class PostController {
 
     @Operation(summary = "게시글 작성", description = "새로운 게시글을 작성합니다.")
     @PostMapping
-    public ResponseEntity<PostEntity> newPost(@RequestBody PostDto postDto,
+    public ResponseEntity<Map<String, Long>> newPost(@RequestBody PostDto postDto,
                                               @AuthenticationPrincipal CustomUserDetails user) {
         Long memberId = user.getId();
         String title = postDto.getTitle();
@@ -40,7 +41,7 @@ public class PostController {
 
         PostEntity post = postService.createPost(title, content, fileUrl, type, memberId);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(post);
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("postId", post.getId()));
     }
 
     @Operation(summary = "게시글 조회", description = "게시글 ID를 통해 단일 게시글을 조회합니다.")
