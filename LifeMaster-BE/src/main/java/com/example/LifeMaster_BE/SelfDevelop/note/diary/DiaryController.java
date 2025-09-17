@@ -10,6 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @Slf4j
 @RestController
 @RequestMapping("/schedule/self-reflection/diary")
@@ -19,13 +21,14 @@ public class DiaryController {
     private final DiaryService diaryService;
 
     @PostMapping
-    public ResponseEntity<Void> newDiary(
+    public ResponseEntity<Map<String, Long>> newDiary(
             @RequestBody CreateDiaryDto diaryDto,
             @AuthenticationPrincipal CustomUserDetails user) {
 
         Long memberId = user.getId();
         DiaryEntity createdDiary = diaryService.createDiary(diaryDto, memberId);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(Map.of("diartId", createdDiary.getId()));
     }
 
     @PutMapping("/{diary-id}")
