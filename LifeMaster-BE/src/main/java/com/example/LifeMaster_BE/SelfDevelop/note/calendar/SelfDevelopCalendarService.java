@@ -30,7 +30,10 @@ public class SelfDevelopCalendarService {
     }
 
     public CalendarDailyContentDto convertToDto(DiaryEntity diary, ThankEntity thank) {
-        return new CalendarDailyContentDto(diary.getDiaryContent(),
+        return new CalendarDailyContentDto(
+                diary.getId(),
+                thank.getId(),
+                diary.getDiaryContent(),
                 thank.getThankOne(),
                 thank.getThankTwo(),
                 thank.getThankThree(),

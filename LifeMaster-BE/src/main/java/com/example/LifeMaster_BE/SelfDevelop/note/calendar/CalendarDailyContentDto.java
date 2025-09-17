@@ -9,6 +9,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CalendarDailyContentDto {
 
+    private Long diaryId;
+    private Long thankId;
     private String diaryContent;
     private String thankOne;
     private String thankTwo;

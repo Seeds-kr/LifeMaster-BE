@@ -10,6 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @Slf4j
 @RestController
 @RequestMapping("/schedule/self-reflection/thank")
@@ -19,12 +21,13 @@ public class ThankController {
     private final ThankService thankService;
 
     @PostMapping
-    public ResponseEntity<Void> newThank(
+    public ResponseEntity<Map<String, Long>> newThank(
             @RequestBody CreateThankDto thankDto,
             @AuthenticationPrincipal CustomUserDetails user){
         Long memberId = user.getId();
         ThankEntity createdThank = thankService.createThank(thankDto, memberId);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(Map.of("thankId", createdThank.getId()));
     }
 
     @PutMapping("/{thank-id}")
