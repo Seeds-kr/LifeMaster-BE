@@ -211,12 +211,4 @@ public class SwaggerConfig implements WebMvcConfigurer {
                 .pathsToMatch("/users/me")
                 .build();
     }
-
-    @Bean
-    public GroupedOpenApi PayPalApi(){
-        return GroupedOpenApi.builder()
-                .group("PayPal")
-                .pathsToMatch("/api/paypal/**")
-                .build();
-    }
 }

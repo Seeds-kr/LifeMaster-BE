@@ -1,6 +1,7 @@
 package com.example.LifeMaster_BE.Payment.PayPal;
 
 import com.example.LifeMaster_BE.Payment.PurchaseEntity;
+import com.example.LifeMaster_BE.Payment.PurchaseDto;
 import com.example.LifeMaster_BE.Security.CustomUserDetails;
 import com.example.LifeMaster_BE.UserManager.Login;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
@@ -21,7 +22,7 @@ import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/paypal")
+@RequestMapping("/payments/paypal")
 @Tag(name = "PayPal API", description = "PayPal 결제 처리 및 결제 내역 조회 API")
 public class PayPalController {
 
@@ -73,10 +74,10 @@ public class PayPalController {
 
     @Operation(
             summary = "내 결제 내역 조회",
-            description = "로그인한 사용자의 PayPal(및 공통 결제원) 결제 내역을 최신순으로 조회합니다.",
+            description = "로그인한 사용자의 결제 내역(모든 결제원)을 최신순으로 조회합니다. 결제 관련 필드만 반환합니다.",
             responses = {
                     @ApiResponse(responseCode = "200", description = "결제 내역 조회 성공",
-                            content = @Content(array = @ArraySchema(schema = @Schema(implementation = PurchaseEntity.class)))),
+                            content = @Content(array = @ArraySchema(schema = @Schema(implementation = PurchaseDto.class)))),
                     @ApiResponse(responseCode = "401", description = "인증 실패 또는 로그인 필요")
             }
     )
@@ -89,7 +90,13 @@ public class PayPalController {
 
         MemberEntity member = buildMemberFromUser(user);
         List<PurchaseEntity> purchases = payPalService.getPurchasesByMember(member);
-        return ResponseEntity.ok(purchases);
+
+        // ✅ Entity → DTO 매핑
+        List<PurchaseDto> dtoList = purchases.stream()
+                .map(PurchaseDto::from)
+                .toList();
+
+        return ResponseEntity.ok(dtoList);
     }
 
     /** 로그인 사용자로부터 최소 MemberEntity 스텁 생성 (ID만 사용) */
