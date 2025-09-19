@@ -219,4 +219,11 @@ public class SwaggerConfig implements WebMvcConfigurer {
                 .pathsToMatch("/users/**")
                 .build();
     }
+    @Bean
+    public GroupedOpenApi s3Api() {
+        return GroupedOpenApi.builder()
+                .group("s3")
+                .pathsToMatch("/s3/**")
+                .build();
+    }
 }
