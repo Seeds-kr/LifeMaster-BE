@@ -48,8 +48,10 @@ public class CommentService {
 
         return comments.stream()
                 .map(comment -> new AllCommentsDto(
-                        comment.getMember().getNickname(),
+                        comment.getId(),
+                        comment.getMember().getId(),
                         comment.getComment(),
+                        comment.getMember().getNickname(),
                         comment.getCreatedAt(),
                         likedCommentIds.contains(comment.getId())
                 ))

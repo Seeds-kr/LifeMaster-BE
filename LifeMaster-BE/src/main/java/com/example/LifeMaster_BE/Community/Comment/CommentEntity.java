@@ -15,7 +15,7 @@ import java.util.List;
 @Entity
 @Getter
 @NoArgsConstructor
-@EntityListeners(AuditingEntityListener.class) // Auditing 설정
+@EntityListeners(AuditingEntityListener.class)
 @Table(
         indexes = {
                 @Index(name = "idx_postId", columnList = "post_id")
@@ -32,6 +32,7 @@ public class CommentEntity {
     @Column(length = 50)
     private String comment;
 
+    @Column(name = "created_at", nullable = false, updatable = false)
     @CreatedDate
     private LocalDateTime createdAt;
 
@@ -67,5 +68,4 @@ public class CommentEntity {
         this.comment = comment;
         this.post = post;
     }
-
 }

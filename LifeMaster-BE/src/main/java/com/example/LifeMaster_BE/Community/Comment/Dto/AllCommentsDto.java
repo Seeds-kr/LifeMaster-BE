@@ -13,8 +13,10 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class AllCommentsDto {
 
-    private String author;
+    private Long commentId;
+    private Long memberId;
     private String comment;
+    private String nickname;
     private LocalDateTime commentDate;
     private boolean liked;
 }
