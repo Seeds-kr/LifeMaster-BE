@@ -53,7 +53,10 @@ public class PostController {
                 post.getTitle(),
                 post.getContent(),
                 post.getFile(),
-                post.getType()
+                post.getType(),
+                post.getMember().getId(),
+                post.getMember().getNickname(),
+                post.getCreatedAt()
         );
         return ResponseEntity.ok(response);
     }

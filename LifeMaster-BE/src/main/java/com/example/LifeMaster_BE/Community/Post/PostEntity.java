@@ -98,9 +98,4 @@ public class PostEntity {
         this.reports.add(report);
         report.setPost(this);
     }
-
-    @PrePersist
-    protected void onCreate() {
-        this.createdAt = LocalDateTime.now(); // 현재 시간을 자동으로 설정
-    }
 }
