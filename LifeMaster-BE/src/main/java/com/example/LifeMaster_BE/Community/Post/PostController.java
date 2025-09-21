@@ -55,7 +55,8 @@ public class PostController {
                 post.getFile(),
                 post.getType(),
                 post.getMember().getId(),
-                post.getMember().getNickname()
+                post.getMember().getNickname(),
+                post.getCreatedAt()
         );
         return ResponseEntity.ok(response);
     }
