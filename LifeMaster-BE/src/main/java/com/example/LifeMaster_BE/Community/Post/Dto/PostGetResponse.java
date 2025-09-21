@@ -14,4 +14,6 @@ public class PostGetResponse {
     private String content;
     private String file;
     private PostType type;
+    private Long memberId;
+    private String nickname;
 }
