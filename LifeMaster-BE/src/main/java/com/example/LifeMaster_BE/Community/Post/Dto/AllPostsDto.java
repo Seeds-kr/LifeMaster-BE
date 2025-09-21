@@ -1,5 +1,6 @@
 package com.example.LifeMaster_BE.Community.Post.Dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -14,6 +15,7 @@ public class AllPostsDto {
     private String nickName;
     private int viewCount;
     private int commentCount;
+    @JsonFormat(pattern = "yyyy.MM.dd")
     private LocalDateTime createdAt;
     private boolean liked;
 
