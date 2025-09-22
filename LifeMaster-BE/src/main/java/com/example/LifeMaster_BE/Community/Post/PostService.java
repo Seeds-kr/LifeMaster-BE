@@ -112,13 +112,30 @@ public class PostService {
     }
 
     // 캐싱된 인기글 가져오기
-    public List<PostEntity> getPopularPosts() {
-        List<PostEntity> cachedPosts = (List<PostEntity>) redisTemplate.opsForValue().get(POPULAR_POSTS_KEY);
+    public List<AllPostsDto> getPopularPosts(Long memberId) {
+        List<Long> cachedPostIds = (List<Long>) redisTemplate.opsForValue().get(POPULAR_POSTS_KEY);
 
-        if (cachedPosts == null) { // Redis에 없으면 갱신
+        if (cachedPostIds == null || cachedPostIds.isEmpty()) { // Redis에 없으면 갱신
             updatePopularPosts();
-            cachedPosts = (List<PostEntity>) redisTemplate.opsForValue().get(POPULAR_POSTS_KEY);
+            cachedPostIds = (List<Long>) redisTemplate.opsForValue().get(POPULAR_POSTS_KEY);
         }
-        return cachedPosts;
+        log.info(cachedPostIds.toString());
+        List<PostEntity> popularPosts = postRepository.findByIdIn(cachedPostIds);
+        List<PostLikeEntity> userLikes = likeRepository.findByMemberIdAndPostIdIn(memberId, cachedPostIds);
+        Set<Long> likedPostIds = userLikes.stream()
+                .map(like -> like.getPost().getId())
+                .collect(Collectors.toSet());
+
+        return popularPosts.stream()
+                .map(post -> new AllPostsDto(
+                        post.getId(),
+                        post.getTitle(),
+                        post.getMember().getNickname(),
+                        post.getViewCount(),
+                        post.getCommentCount(),
+                        post.getCreatedAt(),
+                        likedPostIds.contains(post.getId())
+                ))
+                .toList();
     }
 }

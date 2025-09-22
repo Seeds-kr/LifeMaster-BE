@@ -13,6 +13,8 @@ import java.util.Optional;
 
 public interface PostRepository extends JpaRepository<PostEntity, Long> {
 
+    List<PostEntity> findByIdIn(List<Long> ids);
+
     @EntityGraph(attributePaths = {"member"})
     List<PostEntity> findByType(PostType type, Sort sort);
 

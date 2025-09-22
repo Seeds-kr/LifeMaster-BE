@@ -82,7 +82,8 @@ public class PostController {
     // 인기글 조회 (Redis에서 가져오기)
     @Operation(summary = "인기 게시글 조회", description = "Redis에서 인기 게시글 목록을 가져옵니다.")
     @GetMapping("/popular")
-    public List<PostEntity> getPopularPosts() {
-        return postService.getPopularPosts();
+    public ResponseEntity<List<AllPostsDto>> getPopularPosts(@AuthenticationPrincipal CustomUserDetails user) {
+        List<AllPostsDto> popularPosts = postService.getPopularPosts(user.getId());
+        return ResponseEntity.ok(popularPosts);
     }
 }
