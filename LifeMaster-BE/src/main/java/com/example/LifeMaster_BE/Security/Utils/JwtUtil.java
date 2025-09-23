@@ -40,6 +40,17 @@ public class JwtUtil {
                 .compact();
     }
 
+    public String generateRefreshToken(String email) {
+        // refresh token은 만료시간 더 길게 (예: 2주)
+        long refreshExpiration = 1000L * 60 * 60 * 24 * 14;
+        return Jwts.builder()
+                .setSubject(email)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + refreshExpiration))
+                .signWith(getSecretKey())
+                .compact();
+    }
+
     // JWT에서 사용자 email 추출.
     public String extractEmail(String token){
         return Jwts.parserBuilder()
