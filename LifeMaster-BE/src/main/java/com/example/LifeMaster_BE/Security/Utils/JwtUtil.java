@@ -13,7 +13,7 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
-    private final SecretKey SECRETE_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    private static final SecretKey SECRETE_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
     private final long EXPIRATION_TIME;
 
     public JwtUtil() {
@@ -23,6 +23,11 @@ public class JwtUtil {
     // 테스트 편의를 위한 생성자
     public JwtUtil(long expirationTime) {
         EXPIRATION_TIME = expirationTime;
+    }
+
+    // 🔑 SecretKey 리턴 메서드 추가
+    public SecretKey getSecretKey() {
+        return SECRETE_KEY;
     }
 
     // jwt 생성
