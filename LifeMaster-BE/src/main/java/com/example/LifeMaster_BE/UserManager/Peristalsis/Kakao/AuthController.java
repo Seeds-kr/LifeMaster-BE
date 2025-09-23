@@ -55,6 +55,7 @@ public class AuthController {
                         .imageUrl(profileUrl)
                         .loginType(LoginType.KAKAO)
                         .loginRole(LoginRole.USER)
+                        .password("OAUTH_USER") // ✅ 더미 값 넣어줌
                         .build();
                 return memberRepository.save(newUser);
             });
