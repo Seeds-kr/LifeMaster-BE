@@ -91,7 +91,7 @@ public class AuthController {
     // 리프레시 토큰에서 email 추출
     private String getEmailFromRefreshToken(String refreshToken) {
         return Jwts.parserBuilder()
-                .setSigningKey("921473d7f670df7a9151a8c9e8070cc5")// 리프레시 토큰 전용 키
+                .setSigningKey(jwtUtil.getSecretKey())// 리프레시 토큰 전용 키
                 .build()
                 .parseClaimsJws(refreshToken)
                 .getBody()
