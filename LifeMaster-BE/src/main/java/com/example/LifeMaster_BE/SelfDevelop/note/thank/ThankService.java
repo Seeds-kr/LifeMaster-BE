@@ -21,10 +21,12 @@ public class ThankService {
 
     public ThankEntity createThank(CreateThankDto thankDto, Long memberId){
 
-        ThankEntity newThank = thankDto.toEntity();
+        ThankEntity newThank1 = thankDto.toEntity();
         MemberEntity member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new EntityNotFoundException("Member not found"));
-        member.addThank(newThank);
+        ThankEntity newThank = newThank1.toBuilder()
+                .member(member)
+                .build();
         return thankRepository.save(newThank);
     }
 
