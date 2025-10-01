@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 
 @Data
 @Entity
-@Builder
+@Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class) // Auditing 설정
@@ -36,7 +36,6 @@ public class ThankEntity {
 
     @ManyToOne
     @JoinColumn(name = "member_id")
-    @JsonIgnore
     private MemberEntity member;
 
 }

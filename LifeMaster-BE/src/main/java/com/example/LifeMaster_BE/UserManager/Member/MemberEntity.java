@@ -101,10 +101,6 @@ public class MemberEntity {
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CommentEntity> comments = new ArrayList<>();
 
-    // 5감사
-    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ThankEntity> thanks = new ArrayList<>();
-
     // 일기
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DiaryEntity> diaries = new ArrayList<>();
@@ -163,12 +159,6 @@ public class MemberEntity {
     public void addComment(CommentEntity comment) {
         this.comments.add(comment);
         comment.setMember(this);
-    }
-
-    // 5감사
-    public void addThank(ThankEntity thank) {
-        this.thanks.add(thank);
-        thank.setMember(this);
     }
 
     // 일기
