@@ -52,7 +52,9 @@ class PostServiceTest {
         member = new MemberEntity();
         post = new PostEntity("title", "content", "fileurl", PostType.FREE);
         post.setId(1L);
-        member.addPost(post);
+        PostEntity post1 = post.toBuilder()
+                .member(member)
+                .build();
     }
 
     @Test
@@ -65,12 +67,16 @@ class PostServiceTest {
         post1.setId(1L);
         post2.setId(2L);
 
-        member.addPost(post1);
-        member.addPost(post2);
+        PostEntity post11 = post1.toBuilder()
+                .member(member)
+                .build();
+        PostEntity post22 = post2.toBuilder()
+                .member(member)
+                .build();
 
-        List<PostEntity> posts = List.of(post1, post2);
+        List<PostEntity> posts = List.of(post11, post22);
         PostLikeEntity like = new PostLikeEntity();
-        like.setPost(post1);
+        like.setPost(post11);
 
         when(postRepository.findByType(eq(PostType.FREE), any(Sort.class))).thenReturn(posts);
         when(likeRepository.findByMemberIdAndPostIdIn(eq(memberId), anyList()))

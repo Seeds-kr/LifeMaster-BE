@@ -14,6 +14,8 @@ import java.util.List;
 
 @Entity
 @Getter
+@Builder(toBuilder = true)
+@AllArgsConstructor
 @NoArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
 @Table(

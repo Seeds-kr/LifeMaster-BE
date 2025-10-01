@@ -5,9 +5,7 @@ import com.example.LifeMaster_BE.Community.Post.Like.PostLikeEntity;
 import com.example.LifeMaster_BE.Report.ReportEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -17,6 +15,8 @@ import java.util.List;
 
 @Getter
 @Entity
+@Builder(toBuilder = true)
+@AllArgsConstructor
 @NoArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
 @Table(
@@ -54,9 +54,6 @@ public class PostEntity {
     private List<PostLikeEntity> likes = new ArrayList<>();
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<CommentEntity> comments = new ArrayList<>();
-
-    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ReportEntity> reports = new ArrayList<>();
 
     private int commentCount = 0;
@@ -82,11 +79,6 @@ public class PostEntity {
         if (this.commentCount > 0) {
             this.commentCount--;
         }
-    }
-
-    public void addComment(CommentEntity comment) {
-        this.comments.add(comment);
-        comment.setPost(this);
     }
 
     public void addLike(PostLikeEntity like) {

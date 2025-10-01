@@ -74,10 +74,6 @@ public class MemberEntity {
     )
     private Set<GroupEntity> groups = new HashSet<>(); // 그룹 목록
 
-    // 게시글
-    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<PostEntity> posts = new ArrayList<>();
-
     // ⭐ 요금제 관련 추가 ⭐
     @Enumerated(EnumType.STRING)
     @Column(name = "subscription_plan", nullable = false)
@@ -96,10 +92,6 @@ public class MemberEntity {
     // 결제 내역
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
     private List<PaymentEntity> payments = new ArrayList<>();
-
-    // 댓글
-    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<CommentEntity> comments = new ArrayList<>();
 
     // 신고
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -143,18 +135,6 @@ public class MemberEntity {
     public MemberEntity login(boolean bool){
         this.loginStatus = bool;
         return this;
-    }
-
-    // 게시글
-    public void addPost(PostEntity post) {
-        this.posts.add(post);
-        post.setMember(this);
-    }
-
-    // 댓글
-    public void addComment(CommentEntity comment) {
-        this.comments.add(comment);
-        comment.setMember(this);
     }
 
     // 신고

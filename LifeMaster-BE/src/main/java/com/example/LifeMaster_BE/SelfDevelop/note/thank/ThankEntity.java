@@ -2,6 +2,7 @@ package com.example.LifeMaster_BE.SelfDevelop.note.thank;
 
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -34,8 +35,9 @@ public class ThankEntity {
     private String thankFour;
     private String thankFive;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private MemberEntity member;
 
 }
