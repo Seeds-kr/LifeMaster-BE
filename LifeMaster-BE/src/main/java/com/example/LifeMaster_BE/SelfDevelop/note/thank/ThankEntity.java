@@ -1,6 +1,7 @@
 package com.example.LifeMaster_BE.SelfDevelop.note.thank;
 
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -35,7 +36,7 @@ public class ThankEntity {
 
     @ManyToOne
     @JoinColumn(name = "member_id")
-    @ToString.Exclude // Lombok 무한루프 방지
+    @JsonIgnore
     private MemberEntity member;
 
 }

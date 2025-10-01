@@ -103,7 +103,6 @@ public class MemberEntity {
 
     // 5감사
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
-    @ToString.Exclude
     private List<ThankEntity> thanks = new ArrayList<>();
 
     // 일기
