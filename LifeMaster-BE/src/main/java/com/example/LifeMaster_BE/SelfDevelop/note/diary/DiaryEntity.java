@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 
 @Data
 @Entity
-@Builder
+@Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class) // Auditing 설정
