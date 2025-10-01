@@ -21,11 +21,11 @@ public class DiaryService {
 
     public DiaryEntity createDiary(CreateDiaryDto diaryDto, Long memberId){
 
-        DiaryEntity newDiary = diaryDto.toEntity();
+        DiaryEntity newDiary1 = diaryDto.toEntity();
         MemberEntity member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new EntityNotFoundException("Member not found"));
 
-        member.addDiary(newDiary);
+        DiaryEntity newDiary = newDiary1.toBuilder() .member(member) .build();
         return diaryRepository.save(newDiary);
     }
 
