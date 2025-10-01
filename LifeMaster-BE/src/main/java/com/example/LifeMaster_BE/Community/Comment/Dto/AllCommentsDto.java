@@ -1,5 +1,6 @@
 package com.example.LifeMaster_BE.Community.Comment.Dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,5 +19,10 @@ public class AllCommentsDto {
     private String comment;
     private String nickname;
     private LocalDateTime commentDate;
+
+    @JsonProperty("isLiked")
     private boolean liked;
+
+    @JsonProperty("isMine")
+    private boolean mine;
 }

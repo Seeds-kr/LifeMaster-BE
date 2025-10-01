@@ -47,7 +47,10 @@ public class PostController {
 
     @Operation(summary = "게시글 조회", description = "게시글 ID를 통해 단일 게시글을 조회합니다.")
     @GetMapping("/{postId}")
-    public ResponseEntity<PostGetResponse> getPost(@PathVariable("postId") Long postId){
+    public ResponseEntity<PostGetResponse> getPost(
+            @PathVariable("postId") Long postId,
+            @AuthenticationPrincipal CustomUserDetails user
+    ){
         PostEntity post = postService.getPost(postId);
         PostGetResponse response = new PostGetResponse(
                 post.getTitle(),
@@ -56,6 +59,7 @@ public class PostController {
                 post.getType(),
                 post.getMember().getId(),
                 post.getMember().getNickname(),
+                user.getId().equals(post.getMember().getId()),
                 post.getCreatedAt()
         );
         return ResponseEntity.ok(response);
@@ -75,8 +79,9 @@ public class PostController {
 
     @Operation(summary = "게시글 삭제", description = "게시글 ID를 통해 특정 게시글을 삭제합니다.")
     @DeleteMapping("/{postId}")
-    public void deletePost(@PathVariable("postId") Long postId){
-        postService.deletePost(postId);
+    public void deletePost(@PathVariable("postId") Long postId,
+                           @AuthenticationPrincipal CustomUserDetails user){
+        postService.deletePost(postId, user.getId());
     }
 
     // 인기글 조회 (Redis에서 가져오기)

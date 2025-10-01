@@ -5,6 +5,7 @@ import com.example.LifeMaster_BE.Community.Comment.Like.CommentLikeEntity;
 import com.example.LifeMaster_BE.Community.Comment.Like.CommentLikeRepository;
 import com.example.LifeMaster_BE.Community.Post.PostEntity;
 import com.example.LifeMaster_BE.Community.Post.PostRepository;
+import com.example.LifeMaster_BE.Exception.CustomException.ForbiddenActionException;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -53,7 +54,8 @@ public class CommentService {
                         comment.getComment(),
                         comment.getMember().getNickname(),
                         comment.getCreatedAt(),
-                        likedCommentIds.contains(comment.getId())
+                        likedCommentIds.contains(comment.getId()),
+                        memberId.equals(comment.getMember().getId())
                 ))
                 .toList();
     }
@@ -66,27 +68,29 @@ public class CommentService {
         PostEntity post = postRepository.findById(postId)
                 .orElseThrow(() -> new EntityNotFoundException("post not found"));
 
-        CommentEntity commentEntity = new CommentEntity(comment, post);
+        CommentEntity commentEntity = CommentEntity.builder()
+                .comment(comment)
+                .member(member)
+                .post(post)
+                .build();
 
-        CommentEntity commentEntity1 = commentEntity.toBuilder() .member(member) .build();
-        CommentEntity commentEntity2 = commentEntity1.toBuilder().post(post).build();
-        commentRepository.save(commentEntity2);      // 제거 가능 - 변경감지
+        commentRepository.save(commentEntity);      // 제거 가능 - 변경감지
         post.increaseCommentCount();
 
         return commentEntity;
     }
 
-    public void updateComment(Long commentId, Long postId, String comment){
-        CommentEntity commentEntity = commentRepository.findByIdAndPostId(commentId, postId)
-                .orElseThrow(() -> new EntityNotFoundException("comment not found"));
+    public void updateComment(Long commentId, Long postId, String comment, Long memberId){
+        CommentEntity commentEntity = commentRepository.findByIdAndPostIdAndMemberId(commentId, postId, memberId)
+                .orElseThrow(() -> new ForbiddenActionException("본인 댓글만 수정할 수 있습니다."));
 
         commentEntity.updateComment(comment);
         commentRepository.save(commentEntity);
     }
 
-    public void deleteComment(Long commentId, Long postId){
-        CommentEntity comment = commentRepository.findWithPostByIdAndPostId(commentId, postId)
-                .orElseThrow(() -> new EntityNotFoundException("comment not found"));
+    public void deleteComment(Long commentId, Long postId, Long memberId){
+        CommentEntity comment = commentRepository.findWithPostByIdAndPostIdAndMemberId(commentId, postId, memberId)
+                .orElseThrow(() -> new ForbiddenActionException("본인 댓글만 삭제할 수 있습니다."));
         PostEntity post = comment.getPost();
         post.decreaseCommentCount();
 
