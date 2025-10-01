@@ -53,7 +53,8 @@ public class CommentService {
                         comment.getComment(),
                         comment.getMember().getNickname(),
                         comment.getCreatedAt(),
-                        likedCommentIds.contains(comment.getId())
+                        likedCommentIds.contains(comment.getId()),
+                        memberId.equals(comment.getMember().getId())
                 ))
                 .toList();
     }
@@ -66,11 +67,13 @@ public class CommentService {
         PostEntity post = postRepository.findById(postId)
                 .orElseThrow(() -> new EntityNotFoundException("post not found"));
 
-        CommentEntity commentEntity = new CommentEntity(comment, post);
+        CommentEntity commentEntity = CommentEntity.builder()
+                .comment(comment)
+                .member(member)
+                .post(post)
+                .build();
 
-        CommentEntity commentEntity1 = commentEntity.toBuilder() .member(member) .build();
-        CommentEntity commentEntity2 = commentEntity1.toBuilder().post(post).build();
-        commentRepository.save(commentEntity2);      // 제거 가능 - 변경감지
+        commentRepository.save(commentEntity);      // 제거 가능 - 변경감지
         post.increaseCommentCount();
 
         return commentEntity;
