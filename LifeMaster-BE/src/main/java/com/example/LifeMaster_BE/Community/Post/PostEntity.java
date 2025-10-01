@@ -4,6 +4,7 @@ import com.example.LifeMaster_BE.Community.Comment.CommentEntity;
 import com.example.LifeMaster_BE.Community.Post.Like.PostLikeEntity;
 import com.example.LifeMaster_BE.Report.ReportEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -48,6 +49,7 @@ public class PostEntity {
     @Setter
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
     private MemberEntity member;
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
