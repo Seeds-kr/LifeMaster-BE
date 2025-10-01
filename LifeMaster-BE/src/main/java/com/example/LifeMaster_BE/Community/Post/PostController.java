@@ -79,8 +79,9 @@ public class PostController {
 
     @Operation(summary = "게시글 삭제", description = "게시글 ID를 통해 특정 게시글을 삭제합니다.")
     @DeleteMapping("/{postId}")
-    public void deletePost(@PathVariable("postId") Long postId){
-        postService.deletePost(postId);
+    public void deletePost(@PathVariable("postId") Long postId,
+                           @AuthenticationPrincipal CustomUserDetails user){
+        postService.deletePost(postId, user.getId());
     }
 
     // 인기글 조회 (Redis에서 가져오기)

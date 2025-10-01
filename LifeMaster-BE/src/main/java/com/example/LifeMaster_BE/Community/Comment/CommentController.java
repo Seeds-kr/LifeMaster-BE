@@ -51,8 +51,9 @@ public class CommentController {
             @PathVariable("postId") Long postId,
             @Parameter(description = "댓글 ID", required = true)
             @PathVariable("commentId") Long commentId,
-            @RequestBody CommentCreateRequest commentDto){
-        commentService.updateComment(commentId, postId, commentDto.getComment());
+            @RequestBody CommentCreateRequest commentDto,
+            @AuthenticationPrincipal CustomUserDetails user){
+        commentService.updateComment(commentId, postId, commentDto.getComment(), user.getId());
     }
 
     @DeleteMapping("/{commentId}")
@@ -60,7 +61,8 @@ public class CommentController {
             @Parameter(description = "게시글 ID", required = true)
             @PathVariable("postId") Long postId,
             @Parameter(description = "댓글 ID", required = true)
-            @PathVariable("commentId") Long commentId){
-        commentService.deleteComment(commentId, postId);
+            @PathVariable("commentId") Long commentId,
+            @AuthenticationPrincipal CustomUserDetails user){
+        commentService.deleteComment(commentId, postId, user.getId());
     }
 }

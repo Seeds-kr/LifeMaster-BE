@@ -5,6 +5,7 @@ import com.example.LifeMaster_BE.Community.Comment.Like.CommentLikeEntity;
 import com.example.LifeMaster_BE.Community.Comment.Like.CommentLikeRepository;
 import com.example.LifeMaster_BE.Community.Post.PostEntity;
 import com.example.LifeMaster_BE.Community.Post.PostRepository;
+import com.example.LifeMaster_BE.Exception.CustomException.ForbiddenActionException;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -79,17 +80,17 @@ public class CommentService {
         return commentEntity;
     }
 
-    public void updateComment(Long commentId, Long postId, String comment){
-        CommentEntity commentEntity = commentRepository.findByIdAndPostId(commentId, postId)
-                .orElseThrow(() -> new EntityNotFoundException("comment not found"));
+    public void updateComment(Long commentId, Long postId, String comment, Long memberId){
+        CommentEntity commentEntity = commentRepository.findByIdAndPostIdAndMemberId(commentId, postId, memberId)
+                .orElseThrow(() -> new ForbiddenActionException("본인 댓글만 수정할 수 있습니다."));
 
         commentEntity.updateComment(comment);
         commentRepository.save(commentEntity);
     }
 
-    public void deleteComment(Long commentId, Long postId){
-        CommentEntity comment = commentRepository.findWithPostByIdAndPostId(commentId, postId)
-                .orElseThrow(() -> new EntityNotFoundException("comment not found"));
+    public void deleteComment(Long commentId, Long postId, Long memberId){
+        CommentEntity comment = commentRepository.findWithPostByIdAndPostIdAndMemberId(commentId, postId, memberId)
+                .orElseThrow(() -> new ForbiddenActionException("본인 댓글만 삭제할 수 있습니다."));
         PostEntity post = comment.getPost();
         post.decreaseCommentCount();
 

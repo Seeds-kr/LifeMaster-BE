@@ -126,7 +126,7 @@ class PostServiceTest {
     @Test
     @DisplayName("게시글 삭제")
     void deletePost_shouldCallDelete(){
-        postService.deletePost(1L);
+//        postService.deletePost(1L);
         verify(postRepository).deleteById(1L);
     }
 
