@@ -3,6 +3,7 @@ package com.example.LifeMaster_BE.Community.Comment;
 import com.example.LifeMaster_BE.Community.Comment.Like.CommentLikeEntity;
 import com.example.LifeMaster_BE.Community.Post.PostEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -14,6 +15,8 @@ import java.util.List;
 
 @Entity
 @Getter
+@Builder(toBuilder = true)
+@AllArgsConstructor
 @NoArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
 @Table(
@@ -40,12 +43,14 @@ public class CommentEntity {
     @Setter
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
     private MemberEntity member;
 
     // 게시글 연결
     @Setter
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
     private PostEntity post;
 
     // 좋아요

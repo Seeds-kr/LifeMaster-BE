@@ -68,9 +68,9 @@ public class CommentService {
 
         CommentEntity commentEntity = new CommentEntity(comment, post);
 
-        member.addComment(commentEntity);
-        post.addComment(commentEntity);
-        commentRepository.save(commentEntity);      // 제거 가능 - 변경감지
+        CommentEntity commentEntity1 = commentEntity.toBuilder() .member(member) .build();
+        CommentEntity commentEntity2 = commentEntity1.toBuilder().post(post).build();
+        commentRepository.save(commentEntity2);      // 제거 가능 - 변경감지
         post.increaseCommentCount();
 
         return commentEntity;

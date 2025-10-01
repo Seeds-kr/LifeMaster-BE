@@ -2,6 +2,7 @@ package com.example.LifeMaster_BE.Challenge;
 
 import com.example.LifeMaster_BE.ETC.BaseEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -31,6 +32,7 @@ public class Challenge extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "userId")
+    @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
     private MemberEntity user;
 
     @Column

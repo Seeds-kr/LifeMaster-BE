@@ -75,8 +75,11 @@ public class PostService {
                 .orElseThrow(() -> new EntityNotFoundException("Member not found"));
 
         PostEntity postEntity = new PostEntity(title, content, fileUrl, type);
-        member.addPost(postEntity);
-        return postRepository.save(postEntity);
+        PostEntity postEntity1 = postEntity.toBuilder()
+                .member(member)
+                .build();
+
+        return postRepository.save(postEntity1);
     }
 
     public void updatePost(Long postId, String title, String content, String fileUrl, Long memberId){

@@ -1,6 +1,7 @@
 package com.example.LifeMaster_BE.SelfDevelop.note.diary;
 
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -33,9 +34,9 @@ public class DiaryEntity {
     private LocalDateTime createdAt;
 
 
-    // Member
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private MemberEntity member;
 
 
