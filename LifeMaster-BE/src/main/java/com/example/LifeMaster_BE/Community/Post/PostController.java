@@ -49,19 +49,10 @@ public class PostController {
     @GetMapping("/{postId}")
     public ResponseEntity<PostGetResponse> getPost(
             @PathVariable("postId") Long postId,
-            @AuthenticationPrincipal CustomUserDetails user
-    ){
-        PostEntity post = postService.getPost(postId);
-        PostGetResponse response = new PostGetResponse(
-                post.getTitle(),
-                post.getContent(),
-                post.getFile(),
-                post.getType(),
-                post.getMember().getId(),
-                post.getMember().getNickname(),
-                user.getId().equals(post.getMember().getId()),
-                post.getCreatedAt()
-        );
+            @AuthenticationPrincipal CustomUserDetails user) {
+        Long memberId = user.getId();
+        PostGetResponse response = postService.getPost(postId, memberId);
+
         return ResponseEntity.ok(response);
     }
 

@@ -123,8 +123,8 @@ class CommentServiceTest {
         CommentEntity comment = new CommentEntity("삭제할 댓글", post);
         comment.setId(commentId);
 
-        when(commentRepository.findWithPostByIdAndPostId(commentId, postId))
-                .thenReturn(Optional.of(comment));
+//        when(commentRepository.findWithPostByIdAndPostId(commentId, postId))
+//                .thenReturn(Optional.of(comment));
 
 //        commentService.deleteComment(commentId, postId);
 

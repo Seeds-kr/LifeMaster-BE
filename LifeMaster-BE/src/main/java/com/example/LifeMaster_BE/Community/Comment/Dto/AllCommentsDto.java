@@ -18,11 +18,10 @@ public class AllCommentsDto {
     private Long memberId;
     private String comment;
     private String nickname;
-    private LocalDateTime commentDate;
-
-    @JsonProperty("isLiked")
+    private int likeCount;
     private boolean liked;
 
     @JsonProperty("isMine")
     private boolean mine;
+    private LocalDateTime commentDate;
 }

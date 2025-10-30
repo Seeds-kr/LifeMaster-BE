@@ -21,6 +21,9 @@ public class PostGetResponse {
     private Long memberId;
     private String nickname;
 
+    private boolean liked;
+    private int viewCount;
+    private int likeCount;
     @JsonProperty("isMine")
     private boolean isMine;
 
