@@ -8,12 +8,13 @@ import java.util.Optional;
 
 public interface CommentRepository extends JpaRepository<CommentEntity, Long> {
     void deleteByIdAndPostId(Long commentId, Long postId);
-    Optional<CommentEntity> findByIdAndPostId(Long commentId, Long postId);
+
+    Optional<CommentEntity> findByIdAndPostIdAndMemberId(Long commentId, Long postId, Long memberId);
 
     @EntityGraph(attributePaths = {"member"})
     List<CommentEntity> findByPostId(Long postId);
 
     @EntityGraph(attributePaths = {"post"})
-    Optional<CommentEntity> findWithPostByIdAndPostId(Long commentId, Long postId);
+    Optional<CommentEntity> findWithPostByIdAndPostIdAndMemberId(Long commentId, Long postId, Long memberId);
 
 }

@@ -1,6 +1,7 @@
 package com.example.LifeMaster_BE.Exception;
 
 import com.example.LifeMaster_BE.Exception.CustomException.ConflictException;
+import com.example.LifeMaster_BE.Exception.CustomException.ForbiddenActionException;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpStatus;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.nio.file.AccessDeniedException;
 import java.util.NoSuchElementException;
 
 @RestControllerAdvice
@@ -75,6 +77,16 @@ public class GlobalExceptionHandler {
                 System.currentTimeMillis()
         );
         return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
+    }
+
+    @ExceptionHandler(ForbiddenActionException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(ForbiddenActionException ex) {
+        ErrorResponse body = new ErrorResponse(
+                HttpStatus.FORBIDDEN.value(),
+                ex.getMessage(),
+                System.currentTimeMillis()
+        );
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
     }
 
     @ExceptionHandler(Exception.class) // 최후의 보루

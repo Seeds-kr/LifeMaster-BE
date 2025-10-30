@@ -4,6 +4,7 @@ import com.example.LifeMaster_BE.Community.Post.Dto.AllPostsDto;
 import com.example.LifeMaster_BE.Community.Post.Dto.PostGetResponse;
 import com.example.LifeMaster_BE.Community.Post.Like.PostLikeEntity;
 import com.example.LifeMaster_BE.Community.Post.Like.PostLikeRepository;
+import com.example.LifeMaster_BE.Exception.CustomException.ForbiddenActionException;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -100,14 +101,17 @@ public class PostService {
 
     public void updatePost(Long postId, String title, String content, String fileUrl, Long memberId){
         PostEntity postEntity = postRepository.findByIdAndMemberId(postId, memberId)
-                .orElseThrow(() -> new RuntimeException("수정 권한이 없습니다."));
+                .orElseThrow(() -> new ForbiddenActionException("본인 게시글만 수정할 수 있습니다."));
 
         postEntity.updatePost(title, content, fileUrl);
         postRepository.save(postEntity);
     }
 
-    public void deletePost(Long postId){
-        postRepository.deleteById(postId);
+    public void deletePost(Long postId, Long memberId){
+        PostEntity postEntity = postRepository.findByIdAndMemberId(postId, memberId)
+                .orElseThrow(() -> new ForbiddenActionException("본인 게시글만 삭제할 수 있습니다."));
+
+        postRepository.delete(postEntity);
     }
 
     // 인기글 갱신 (Redis에 저장)
@@ -122,7 +126,6 @@ public class PostService {
             log.error("🔥 Redis 저장 중 오류 발생: ", e);
         }
     }
-
 
     // 10분마다 인기글 갱신
     @Scheduled(fixedRate = 600000) // 10분마다 실행
