@@ -17,6 +17,7 @@ public class AllCommentsDto {
     private Long memberId;
     private String comment;
     private String nickname;
-    private LocalDateTime commentDate;
+    private int likeCount;
     private boolean liked;
+    private LocalDateTime commentDate;
 }

@@ -52,8 +52,9 @@ public class CommentService {
                         comment.getMember().getId(),
                         comment.getComment(),
                         comment.getMember().getNickname(),
-                        comment.getCreatedAt(),
-                        likedCommentIds.contains(comment.getId())
+                        comment.getLikes().size(),
+                        likedCommentIds.contains(comment.getId()),
+                        comment.getCreatedAt()
                 ))
                 .toList();
     }
