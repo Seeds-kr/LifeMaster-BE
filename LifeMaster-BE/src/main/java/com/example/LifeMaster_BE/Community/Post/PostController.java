@@ -47,17 +47,12 @@ public class PostController {
 
     @Operation(summary = "게시글 조회", description = "게시글 ID를 통해 단일 게시글을 조회합니다.")
     @GetMapping("/{postId}")
-    public ResponseEntity<PostGetResponse> getPost(@PathVariable("postId") Long postId){
-        PostEntity post = postService.getPost(postId);
-        PostGetResponse response = new PostGetResponse(
-                post.getTitle(),
-                post.getContent(),
-                post.getFile(),
-                post.getType(),
-                post.getMember().getId(),
-                post.getMember().getNickname(),
-                post.getCreatedAt()
-        );
+    public ResponseEntity<PostGetResponse> getPost(
+            @PathVariable("postId") Long postId,
+            @AuthenticationPrincipal CustomUserDetails user) {
+        Long memberId = user.getId();
+        PostGetResponse response = postService.getPost(postId, memberId);
+
         return ResponseEntity.ok(response);
     }
 

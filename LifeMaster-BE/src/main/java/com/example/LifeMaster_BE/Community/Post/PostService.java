@@ -1,6 +1,7 @@
 package com.example.LifeMaster_BE.Community.Post;
 
 import com.example.LifeMaster_BE.Community.Post.Dto.AllPostsDto;
+import com.example.LifeMaster_BE.Community.Post.Dto.PostGetResponse;
 import com.example.LifeMaster_BE.Community.Post.Like.PostLikeEntity;
 import com.example.LifeMaster_BE.Community.Post.Like.PostLikeRepository;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
@@ -59,14 +60,27 @@ public class PostService {
                 .toList();
     }
 
-    public PostEntity getPost(Long postId){
+    public PostGetResponse getPost(Long postId, Long memberId){
         PostEntity post = postRepository.findById(postId)
                 .orElseThrow(() -> new EntityNotFoundException("Post not found"));
+        boolean liked = likeRepository.existsByMemberIdAndPostId(memberId, postId);
+        PostGetResponse response = new PostGetResponse(
+                post.getTitle(),
+                post.getContent(),
+                post.getFile(),
+                post.getType(),
+                post.getMember().getId(),
+                post.getMember().getNickname(),
+                liked,
+                post.getViewCount(),
+                post.getLikes().size(),
+                post.getCreatedAt()
+        );
 
         // 게시글 조회 시 조회수 증가 (DB 반영)
         postRepository.increaseViewCount(postId);
         postRepository.save(post); // 변경 감지를 위한 저장
-        return post;
+        return response;
     }
 
     public PostEntity createPost(String title, String content, String fileUrl,

@@ -19,6 +19,11 @@ public class PostGetResponse {
     private PostType type;
     private Long memberId;
     private String nickname;
+
+    private boolean liked;
+    private int viewCount;
+    private int likeCount;
+
     @JsonFormat(pattern = "yyyy.MM.dd HH:mm")
     private LocalDateTime createdAt;
 }
