@@ -15,6 +15,7 @@ public class AllPostsDto {
     private String nickName;
     private int viewCount;
     private int commentCount;
+    private int likeCount;
     @JsonFormat(pattern = "yyyy.MM.dd")
     private LocalDateTime createdAt;
     private boolean liked;

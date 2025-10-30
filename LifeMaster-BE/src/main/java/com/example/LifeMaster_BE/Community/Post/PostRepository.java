@@ -15,7 +15,7 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
 
     List<PostEntity> findByIdIn(List<Long> ids);
 
-    @EntityGraph(attributePaths = {"member"})
+    @EntityGraph(attributePaths = {"member", "likes"})
     List<PostEntity> findByType(PostType type, Sort sort);
 
     @EntityGraph(attributePaths = {"member"})

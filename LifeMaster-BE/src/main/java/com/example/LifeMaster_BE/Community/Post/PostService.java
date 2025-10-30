@@ -52,6 +52,7 @@ public class PostService {
                         post.getMember().getNickname(),
                         post.getViewCount(),
                         post.getCommentCount(),
+                        post.getLikes().size(),
                         post.getCreatedAt(),
                         likedPostIds.contains(post.getId())
                 ))
@@ -136,6 +137,7 @@ public class PostService {
                         post.getMember().getNickname(),
                         post.getViewCount(),
                         post.getCommentCount(),
+                        post.getLikes().size(),
                         post.getCreatedAt(),
                         likedPostIds.contains(post.getId())
                 ))
