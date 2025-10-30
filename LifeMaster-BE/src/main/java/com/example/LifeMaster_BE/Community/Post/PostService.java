@@ -74,6 +74,7 @@ public class PostService {
                 liked,
                 post.getViewCount(),
                 post.getLikes().size(),
+                memberId.equals(post.getMember().getId()),
                 post.getCreatedAt()
         );
 

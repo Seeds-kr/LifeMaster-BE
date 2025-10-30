@@ -54,6 +54,7 @@ public class CommentService {
                         comment.getMember().getNickname(),
                         comment.getLikes().size(),
                         likedCommentIds.contains(comment.getId()),
+                        memberId.equals(comment.getMember().getId()),
                         comment.getCreatedAt()
                 ))
                 .toList();
