@@ -157,6 +157,7 @@ public class SwaggerConfig implements WebMvcConfigurer {
                 .build();
     }
 
+    @Bean
     public GroupedOpenApi pollApi() {
         return GroupedOpenApi.builder()
                 .group("poll")
