@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -100,21 +101,22 @@ public class VoteService {
         List<VoteEntity.PollOption> options = pollOptionRepository.findByPollId(pollId);
         int totalVotes = options.stream().mapToInt(VoteEntity.PollOption::getVotes).sum();
 
+        //LinkedHashMap으로 순서 보장
         List<Map<String, Object>> optionDetails = options.stream().map(option -> {
-            Map<String, Object> optionData = new HashMap<>();
-            optionData.put("optionId", option.getId());                       //추가: 옵션 ID
-            optionData.put("content", option.getContent());
-            optionData.put("votes", option.getVotes());
+            Map<String, Object> optionData = new LinkedHashMap<>();
+            optionData.put("optionId", option.getId());              // id
+            optionData.put("content", option.getContent());          // 내용
+            optionData.put("votes", option.getVotes());              // 투표 수
             optionData.put("votePercentage", totalVotes > 0
-                    ? (option.getVotes() * 100.0 / totalVotes) : 0.0);
+                    ? (option.getVotes() * 100.0 / totalVotes) : 0.0); // 비율
             return optionData;
         }).collect(Collectors.toList());
 
-        // 4) 응답 구성
-        Map<String, Object> pollDetails = new HashMap<>();
+        // 4) 응답 구성도 순서 유지하려면 LinkedHashMap 사용
+        Map<String, Object> pollDetails = new LinkedHashMap<>();
         pollDetails.put("title", poll.getTitle());
         pollDetails.put("isExpired", isExpired);
-        pollDetails.put("totalVotes", totalVotes);                             //추가: 총 투표 수
+        pollDetails.put("totalVotes", totalVotes);
         pollDetails.put("options", optionDetails);
 
         return pollDetails;
