@@ -43,6 +43,7 @@ public class SpringSecurityConfig {
                                 "/v3/api-docs/**",
                                 "/user/register/**",
                                 "/challenge/**",
+                                "/auth/password/reset/**",
                                 "/auth/kakao/**", "/kakao/**").permitAll()
                         // .requestMatchers("/private/**").authenticated()
                         .anyRequest().permitAll()
