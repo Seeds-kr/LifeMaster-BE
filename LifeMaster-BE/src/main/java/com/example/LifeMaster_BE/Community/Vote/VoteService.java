@@ -88,30 +88,34 @@ public class VoteService {
         ));
     }
 
+    // 옵션 id, 투표 인원 추가
     public Map<String, Object> getPollDetails(Long pollId) {
-        // 1. 투표 ID로 투표 정보 조회
+        // 1) 투표 정보 조회
         VoteEntity.Poll poll = pollRepository.findById(pollId)
                 .orElseThrow(() -> new IllegalArgumentException("투표를 찾을 수 없습니다."));
 
-        // 2. 만료 여부 확인
+        // 2) 만료 여부
         boolean isExpired = poll.getEndDate().isBefore(LocalDateTime.now());
 
-        // 3. 투표 항목 및 결과 계산
+        // 3) 옵션/집계
         List<VoteEntity.PollOption> options = pollOptionRepository.findByPollId(pollId);
         int totalVotes = options.stream().mapToInt(VoteEntity.PollOption::getVotes).sum();
 
         List<Map<String, Object>> optionDetails = options.stream().map(option -> {
             Map<String, Object> optionData = new HashMap<>();
+            optionData.put("optionId", option.getId());                       // 추가: 옵션 ID
             optionData.put("content", option.getContent());
             optionData.put("votes", option.getVotes());
-            optionData.put("votePercentage", totalVotes > 0 ? (option.getVotes() * 100.0 / totalVotes) : 0);
+            optionData.put("votePercentage", totalVotes > 0
+                    ? (option.getVotes() * 100.0 / totalVotes) : 0.0);
             return optionData;
         }).collect(Collectors.toList());
 
-        // 4. 결과 데이터 구성
+        // 4) 응답 구성
         Map<String, Object> pollDetails = new HashMap<>();
         pollDetails.put("title", poll.getTitle());
         pollDetails.put("isExpired", isExpired);
+        pollDetails.put("totalVotes", totalVotes);                             // 추가: 총 투표 수
         pollDetails.put("options", optionDetails);
 
         return pollDetails;
