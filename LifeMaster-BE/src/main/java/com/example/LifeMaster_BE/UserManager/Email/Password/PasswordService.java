@@ -24,11 +24,23 @@ public class PasswordService {
                 .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 이메일 정보입니다."));
 
         String token = tokenService.createToken(memberEntity.getId());
-        String resetLink = "http://lifemaster.com/auth/reset-password?token=" + token;
+        String resetLink = "https://api.lifemaster.harvester.kr/auth/password/reset/verify?token=" + token;
+//        String resetLink = "http://localhost:8080/auth/password/reset/verify?token=" + token;
+        // HTML 형식으로 작성
+        String htmlContent = String.format(
+                "<html>" +
+                        "<body>" +
+                        "<h2>비밀번호 재설정</h2>" +
+                        "<p>아래 링크를 클릭하여 비밀번호를 재설정하세요:</p>" +
+                        "<a href='%s' style='display:inline-block; padding:10px 20px; background-color:#4CAF50; color:white; text-decoration:none; border-radius:5px;'>비밀번호 재설정</a>" +
+                        "<p>링크가 작동하지 않으면 다음 URL을 복사하여 브라우저에 붙여넣으세요:</p>" +
+                        "<p>%s</p>" +
+                        "</body>" +
+                        "</html>",
+                resetLink, resetLink
+        );
 
-        emailService.sendEmail(email, "Reset Password",
-                "Click the link to reset your password: " + resetLink);
-
+        emailService.sendEmail(email, "비밀번호 재설정", htmlContent);
     }
 
     public void verifyToken(String token){

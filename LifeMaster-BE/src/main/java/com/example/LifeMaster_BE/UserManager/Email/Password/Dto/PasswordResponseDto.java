@@ -1,4 +1,4 @@
-package com.example.LifeMaster_BE.UserManager.Email.Password;
+package com.example.LifeMaster_BE.UserManager.Email.Password.Dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
