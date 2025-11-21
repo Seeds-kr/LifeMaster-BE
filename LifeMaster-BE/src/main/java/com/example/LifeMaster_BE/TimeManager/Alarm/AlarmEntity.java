@@ -57,11 +57,11 @@ public class AlarmEntity {
     private boolean reSlept;
     private LocalDateTime reSleptTime;
 
-    // ✅ String → Enum 변경
+    // String → Enum 변경
     @Enumerated(EnumType.STRING)
     private RandomMissionType randomMissionType;
 
-    // ✅ DTO → Entity 변환
+    // DTO → Entity 변환
     public static AlarmEntity fromDto(NewAlarmDto dto) {
         AlarmEntity alarm = new AlarmEntity();
 
@@ -84,7 +84,7 @@ public class AlarmEntity {
         alarm.reSlept = dto.isReSlept();
         alarm.reSleptTime = dto.getReSleptTime();
 
-        // ✅ 문자열로 들어온 경우 Enum 변환 처리
+        // 문자열로 들어온 경우 Enum 변환 처리
         if (dto.getRandomMissionType() != null) {
             alarm.randomMissionType = RandomMissionType.fromString(dto.getRandomMissionType().name());
         } else {
