@@ -1,5 +1,6 @@
 package com.example.LifeMaster_BE.TimeManager.Alarm.Dto;
 
+import com.example.LifeMaster_BE.TimeManager.Alarm.AlarmMission.Enum.RandomMissionType;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -28,7 +29,7 @@ public class NewAlarmDto {
     private boolean reSlept;
     private LocalDateTime reSleptTime;
 
-    private String randomMissionType;
+    private RandomMissionType randomMissionType;
 }
 
 

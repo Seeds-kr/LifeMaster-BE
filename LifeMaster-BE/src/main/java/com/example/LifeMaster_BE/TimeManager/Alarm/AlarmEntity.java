@@ -1,6 +1,7 @@
 package com.example.LifeMaster_BE.TimeManager.Alarm;
 
 import com.example.LifeMaster_BE.TimeManager.Alarm.Dto.NewAlarmDto;
+import com.example.LifeMaster_BE.TimeManager.Alarm.AlarmMission.Enum.RandomMissionType;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -25,7 +26,6 @@ public class AlarmEntity {
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     @JsonIgnore
     private MemberEntity member;
-
 
     private LocalDateTime alarmTime;
     private String alarmTitle;
@@ -57,12 +57,17 @@ public class AlarmEntity {
     private boolean reSlept;
     private LocalDateTime reSleptTime;
 
-    private String randomMissionType;
+    // ✅ String → Enum 변경
+    @Enumerated(EnumType.STRING)
+    private RandomMissionType randomMissionType;
 
-    public static AlarmEntity fromDto(NewAlarmDto dto){
+    // ✅ DTO → Entity 변환
+    public static AlarmEntity fromDto(NewAlarmDto dto) {
         AlarmEntity alarm = new AlarmEntity();
+
         alarm.alarmTitle = dto.getAlarmTitle();
         alarm.alarmTime = dto.getAlarmTime();
+
         alarm.alarmMon = dto.isAlarmMon();
         alarm.alarmTue = dto.isAlarmTue();
         alarm.alarmWed = dto.isAlarmWed();
@@ -79,7 +84,12 @@ public class AlarmEntity {
         alarm.reSlept = dto.isReSlept();
         alarm.reSleptTime = dto.getReSleptTime();
 
-        alarm.randomMissionType = dto.getRandomMissionType();
+        // ✅ 문자열로 들어온 경우 Enum 변환 처리
+        if (dto.getRandomMissionType() != null) {
+            alarm.randomMissionType = RandomMissionType.fromString(dto.getRandomMissionType().name());
+        } else {
+            alarm.randomMissionType = RandomMissionType.NONE;
+        }
 
         return alarm;
     }
