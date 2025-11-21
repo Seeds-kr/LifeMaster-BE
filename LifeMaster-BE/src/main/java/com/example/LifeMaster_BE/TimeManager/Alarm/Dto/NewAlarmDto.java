@@ -1,6 +1,7 @@
 package com.example.LifeMaster_BE.TimeManager.Alarm.Dto;
 
 import com.example.LifeMaster_BE.TimeManager.Alarm.AlarmMission.Enum.RandomMissionType;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -29,6 +30,17 @@ public class NewAlarmDto {
     private boolean reSlept;
     private LocalDateTime reSleptTime;
 
+    // ==== 랜덤 미션 ====
+    @Schema(
+            description = """
+        랜덤 미션 유형
+        - MATH_PROBLEM: 수학 문제 풀기
+        - TYPING_SENTENCE: 문장 따라쓰기
+        - FOLLOW_CLICK: 따라 누르기
+        - NONE: 미션 없음
+        """,
+            example = "MATH_PROBLEM"
+    )
     private RandomMissionType randomMissionType;
 }
 
