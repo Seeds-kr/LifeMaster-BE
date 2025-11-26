@@ -1,5 +1,8 @@
 package com.example.LifeMaster_BE.Community.Vote;
 
+import com.example.LifeMaster_BE.Security.CustomUserDetails;
+import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -8,6 +11,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 
 @Service
 public class VoteService {
@@ -15,10 +21,13 @@ public class VoteService {
     private final VoteRepository voteRepository;
     private final PollOptionRepository pollOptionRepository;
 
-    public VoteService(PollRepository voteRepo, VoteRepository voteRepository, PollOptionRepository pollOptionRepository) {
+    private final UserVoteRepository userVoteRepository;
+
+    public VoteService(PollRepository voteRepo, VoteRepository voteRepository, PollOptionRepository pollOptionRepository, UserVoteRepository userVoteRepository) {
         this.pollRepository = voteRepo;
         this.voteRepository = voteRepository;
         this.pollOptionRepository = pollOptionRepository;
+        this.userVoteRepository = userVoteRepository;
     }
 
     public VoteEntity.Poll createPoll(String title, LocalDateTime endDate, List<String> options) {
@@ -101,6 +110,17 @@ public class VoteService {
         List<VoteEntity.PollOption> options = pollOptionRepository.findByPollId(pollId);
         int totalVotes = options.stream().mapToInt(VoteEntity.PollOption::getVotes).sum();
 
+        // (A) 현재 로그인 사용자의 투표 옵션 ID 조회 (없으면 null)
+        Long currentMemberId = getCurrentMemberIdOrNull();
+        Long myVotedOptionId;
+        if (currentMemberId != null) {
+            myVotedOptionId = userVoteRepository
+                    .findMyOptionId(pollId, currentMemberId)
+                    .orElse(null);
+        } else {
+            myVotedOptionId = null;
+        }
+
         //LinkedHashMap으로 순서 보장
         List<Map<String, Object>> optionDetails = options.stream().map(option -> {
             Map<String, Object> optionData = new LinkedHashMap<>();
@@ -109,6 +129,7 @@ public class VoteService {
             optionData.put("votes", option.getVotes());              // 투표 수
             optionData.put("votePercentage", totalVotes > 0
                     ? (option.getVotes() * 100.0 / totalVotes) : 0.0); // 비율
+
             return optionData;
         }).collect(Collectors.toList());
 
@@ -118,6 +139,9 @@ public class VoteService {
         pollDetails.put("isExpired", isExpired);
         pollDetails.put("totalVotes", totalVotes);
         pollDetails.put("options", optionDetails);
+
+        //(B) 요구사항: myVotedOptionId 추가 (미참여 시 null)
+        pollDetails.put("myVotedOptionId", myVotedOptionId);
 
         return pollDetails;
     }
@@ -218,5 +242,24 @@ public class VoteService {
 
             return pollStatus;
         }).collect(Collectors.toList());
+    }
+
+
+    private Long getCurrentMemberIdOrNull() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) return null;
+
+        Object principal = auth.getPrincipal();
+        if (principal == null || "anonymousUser".equals(principal)) return null;
+
+        // principal: CustomUserDetails
+        if (principal instanceof CustomUserDetails cud) {
+            return cud.getId();
+        }
+
+        // (보호용 fallback) 혹시 다른 타입이 들어오는 경우 대비
+        if (principal instanceof MemberEntity me) return me.getId();
+
+        return null;
     }
 }

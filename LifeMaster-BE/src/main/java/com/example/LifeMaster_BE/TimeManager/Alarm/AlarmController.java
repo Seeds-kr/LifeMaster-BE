@@ -25,7 +25,18 @@ public class AlarmController {
 
     private final AlarmService alarmService;
 
-    @Operation(summary = "새 알람 생성", description = "새로운 알람을 생성합니다.")
+    @Operation(
+            summary = "새 알람 생성",
+            description = """
+    새로운 알람을 생성합니다.
+    
+    **랜덤 미션 유형 (randomMissionType)**
+    - `MATH_PROBLEM`: 수학 문제 풀기
+    - `TYPING_SENTENCE`: 문장 따라쓰기
+    - `FOLLOW_CLICK`: 따라 누르기 게임
+    - `NONE`: 미션 없음 (기본값)
+    """
+    )
     @PostMapping
     public ResponseEntity<Void> createAlarm(
             @RequestBody NewAlarmDto alarmDto,
@@ -37,7 +48,19 @@ public class AlarmController {
         return ResponseEntity.created(location).build();
     }
 
-    @Operation(summary = "모든 알람 조회", description = "등록된 모든 알람을 반환합니다.")
+
+    @Operation(
+            summary = "모든 알람 조회",
+            description = """
+    등록된 모든 알람을 반환합니다.
+
+    **랜덤 미션 유형 (randomMissionType)**
+    - `MATH_PROBLEM`: 수학 문제 풀기
+    - `TYPING_SENTENCE`: 문장 따라쓰기
+    - `FOLLOW_CLICK`: 따라 누르기 게임
+    - `NONE`: 미션 없음
+    """
+    )
     @GetMapping
     public ResponseEntity<List<ResponseAlarmDto>> getAllAlarms() {
         List<ResponseAlarmDto> allAlarms = alarmService.getAllAlarms();
