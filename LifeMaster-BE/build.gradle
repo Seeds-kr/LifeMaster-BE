@@ -35,7 +35,7 @@ dependencies {
 
 	// WebSocket
 	implementation 'org.springframework.boot:spring-boot-starter-websocket'
-	implementation 'org.springframework.boot:spring-boot-starter-messaging'
+	// implementation 'org.springframework.boot:spring-boot-starter-messaging'
 
 	// Redis + Cache
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
