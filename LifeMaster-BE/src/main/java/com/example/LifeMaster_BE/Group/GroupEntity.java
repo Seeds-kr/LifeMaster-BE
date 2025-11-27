@@ -49,7 +49,7 @@ public class GroupEntity {
 
     private String password; // 비밀번호(해싱 필요)
 
-    protected GroupEntity() {}
+    public GroupEntity() {}
 
     public GroupEntity(String icon, String name, String description, List<Long> statistics, String password, MemberEntity creator) {
         this.icon = icon;
