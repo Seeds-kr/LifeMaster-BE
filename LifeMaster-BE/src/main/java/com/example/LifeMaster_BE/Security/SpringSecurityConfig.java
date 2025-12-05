@@ -42,11 +42,11 @@ public class SpringSecurityConfig {
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/user/register/**",
-                                "/challenge/**",
+                                //"/challenge/**",
                                 "/auth/password/reset/**",
                                 "/auth/kakao/**", "/kakao/**").permitAll()
-                        // .requestMatchers("/private/**").authenticated()
-                        .anyRequest().permitAll()
+                        .requestMatchers("/private/**").authenticated()
+                        //.anyRequest().permitAll()
                 )
                 .exceptionHandling(e -> e
                         .authenticationEntryPoint((req, res, ex) -> {
