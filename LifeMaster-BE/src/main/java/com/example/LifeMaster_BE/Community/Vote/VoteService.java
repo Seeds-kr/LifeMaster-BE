@@ -20,18 +20,15 @@ public class VoteService {
     private final PollRepository pollRepository;
     private final PollOptionRepository pollOptionRepository;
 
-    private final OldVoteRepository oldVoteRepository;
-
     private final UserVoteRepository userVoteRepository;
 
     private final MemberRepository memberRepository;
 
-    public VoteService(PollRepository voteRepo, PollOptionRepository pollOptionRepository, UserVoteRepository userVoteRepository,MemberRepository memberRepository,OldVoteRepository oldVoteRepository) {
+    public VoteService(PollRepository voteRepo, PollOptionRepository pollOptionRepository, UserVoteRepository userVoteRepository,MemberRepository memberRepository) {
         this.pollRepository = voteRepo;
         this.pollOptionRepository = pollOptionRepository;
         this.userVoteRepository = userVoteRepository;
         this.memberRepository = memberRepository;
-        this.oldVoteRepository = oldVoteRepository;
     }
 
     public VoteEntity.Poll createPoll(String title, LocalDateTime endDate, List<String> options) {
