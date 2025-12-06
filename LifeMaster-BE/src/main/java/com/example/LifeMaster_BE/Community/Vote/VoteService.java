@@ -200,14 +200,19 @@ public class VoteService {
         return pollOptionRepository.save(newOption);
     }
 
+    @Transactional
     public void deletePoll(Long pollId) {
+        // 0) 존재 여부 검증
         VoteEntity.Poll poll = pollRepository.findById(pollId)
                 .orElseThrow(() -> new IllegalArgumentException("투표를 찾을 수 없습니다."));
 
-        // 투표 옵션들 삭제
-        pollOptionRepository.deleteAll(poll.getOptions());
+        // 1) 🔥 해당 투표에 대한 사용자 투표 기록 먼저 삭제
+        userVoteRepository.deleteByPoll_Id(pollId);
 
-        // 투표 삭제
+        // 2) 🔥 이 투표에 속한 옵션들 삭제
+        pollOptionRepository.deleteByPoll_Id(pollId);
+
+        // 3) 🔥 마지막으로 Poll 자체 삭제
         pollRepository.delete(poll);
     }
 

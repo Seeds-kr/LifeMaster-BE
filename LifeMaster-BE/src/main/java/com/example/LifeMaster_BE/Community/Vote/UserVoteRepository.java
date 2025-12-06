@@ -21,4 +21,8 @@ public interface UserVoteRepository extends JpaRepository<UserVote, Long> {
             @Param("pollId") Long pollId,
             @Param("memberId") Long memberId
     );
+
+    // 특정 투표에 대한 유저 투표 전부 삭제
+    void deleteByPoll_Id(Long pollId);
 }
+
