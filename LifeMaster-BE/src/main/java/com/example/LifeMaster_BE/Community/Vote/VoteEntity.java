@@ -53,7 +53,7 @@ public class VoteEntity {
         private int votes = 0;
     }
 
-    @Entity
+    /*@Entity
     @Table(name = "vote_entity$vote")
     @Getter
     @Setter
@@ -69,5 +69,5 @@ public class VoteEntity {
         private Long pollId;
 
         private String userId;
-    }
+    }*/
 }

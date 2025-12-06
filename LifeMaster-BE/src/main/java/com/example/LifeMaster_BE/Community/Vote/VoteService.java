@@ -209,8 +209,9 @@ public class VoteService {
         // 0) Poll 존재 확인
         VoteEntity.Poll poll = pollRepository.findById(pollId)
                 .orElseThrow(() -> new IllegalArgumentException("투표를 찾을 수 없습니다."));
+
         // 1) 과거 vote 테이블 데이터 삭제
-        oldVoteRepository.deleteByPollId(pollId);
+        //oldVoteRepository.deleteByPollId(pollId);
 
         // 1) UserVote 삭제
         userVoteRepository.deleteByPoll_Id(pollId);
@@ -222,10 +223,30 @@ public class VoteService {
         pollRepository.delete(poll);
     }
 
+    @Transactional
     public void deleteExpiredPolls() {
+
         LocalDateTime now = LocalDateTime.now();
-        List<VoteEntity.Poll> expiredPolls = pollRepository.findByEndDateBefore(now);
-        pollRepository.deleteAll(expiredPolls);
+
+        // 1) 만료된 Poll 전체 조회
+        List<VoteEntity.Poll> expiredPolls =
+                pollRepository.findByEndDateBefore(now);
+
+        for (VoteEntity.Poll poll : expiredPolls) {
+            Long pollId = poll.getId();
+
+            // 2) OldVote 삭제 (예전 vote 테이블)
+            //oldVoteRepository.deleteByPollId(pollId);
+
+            // 3) UserVote 삭제
+            userVoteRepository.deleteByPoll_Id(pollId);
+
+            // 4) PollOption 삭제
+            pollOptionRepository.deleteByPoll_Id(pollId);
+
+            // 5) Poll 삭제
+            pollRepository.deleteById(pollId);
+        }
     }
 
     public void deletePollOption(Long pollId, Long optionId) {
