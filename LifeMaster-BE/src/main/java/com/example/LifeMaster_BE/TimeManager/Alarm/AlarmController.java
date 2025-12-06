@@ -64,12 +64,19 @@ public class AlarmController {
             summary = "모든 알람 조회",
             description = """
     등록된 모든 알람을 반환합니다.
-
-    **랜덤 미션 유형 (randomMissionType)**
-    - `MATH_PROBLEM`: 수학 문제 풀기
-    - `TYPING_SENTENCE`: 문장 따라쓰기
-    - `FOLLOW_CLICK`: 따라 누르기 게임
-    - `NONE`: 미션 없음
+    
+    **랜덤 미션 유형 (randomMissionType)**  
+    - `MATH_PROBLEM`: 수학 문제 풀기  
+    - `TYPING_SENTENCE`: 문장 따라쓰기  
+    - `FOLLOW_CLICK`: 따라 누르기 게임  
+    - `NONE`: 미션 없음  
+    
+    **난이도 (missionLevel)**  
+    - `HIGH`: 어려움  
+    - `MEDIUM`: 보통  
+    - `LOW`: 쉬움  
+    
+    ※ 난이도는 `MATH_PROBLEM` 및 `FOLLOW_CLICK` 미션에서만 사용됩니다.
     """
     )
     @GetMapping
