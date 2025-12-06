@@ -50,20 +50,4 @@ public class VoteEntity {
 
         private int votes = 0;
     }
-
-    @Entity
-    @Getter
-    @Setter
-    public static class Vote {
-        @Id
-        @GeneratedValue(strategy = GenerationType.IDENTITY)
-        private Long id;
-
-        @ManyToOne
-        @JoinColumn(name = "poll_id")
-        @JsonIgnore // 순환 참조 방지
-        private Poll poll;
-
-        private String userId;
-    }
 }

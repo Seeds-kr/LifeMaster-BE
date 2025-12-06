@@ -2,7 +2,7 @@ package com.example.LifeMaster_BE.Community.Vote;
 
 import com.example.LifeMaster_BE.Security.CustomUserDetails;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -13,21 +13,22 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class VoteService {
     private final PollRepository pollRepository;
-    private final VoteRepository voteRepository;
     private final PollOptionRepository pollOptionRepository;
 
     private final UserVoteRepository userVoteRepository;
 
-    public VoteService(PollRepository voteRepo, VoteRepository voteRepository, PollOptionRepository pollOptionRepository, UserVoteRepository userVoteRepository) {
+    private final MemberRepository memberRepository;
+
+    public VoteService(PollRepository voteRepo, PollOptionRepository pollOptionRepository, UserVoteRepository userVoteRepository,MemberRepository memberRepository) {
         this.pollRepository = voteRepo;
-        this.voteRepository = voteRepository;
         this.pollOptionRepository = pollOptionRepository;
         this.userVoteRepository = userVoteRepository;
+        this.memberRepository = memberRepository;
     }
 
     public VoteEntity.Poll createPoll(String title, LocalDateTime endDate, List<String> options) {
@@ -47,22 +48,32 @@ public class VoteService {
         return pollRepository.save(poll);
     }
 
+    @Transactional
     public void castVote(Long pollId, Long optionId, String userId) {
-        // 1. 주어진 pollId가 유효한지 확인
+        // 🔹 0. 현재 로그인 유저
+        Long currentMemberId = getCurrentMemberIdOrNull();
+        if (currentMemberId == null) {
+            throw new IllegalStateException("로그인이 필요합니다.");
+        }
+
+        MemberEntity member = memberRepository.findById(currentMemberId)
+                .orElseThrow(() -> new IllegalArgumentException("회원 정보를 찾을 수 없습니다."));
+
+        // 1. poll 조회
         VoteEntity.Poll poll = pollRepository.findById(pollId)
                 .orElseThrow(() -> new IllegalArgumentException("투표 항목이 존재하지 않습니다."));
 
-        // 2. 투표의 유효 기간이 지난 경우 투표 못하게 처리
+        // 2. 투표 종료 여부
         if (poll.getEndDate().isBefore(LocalDateTime.now())) {
             throw new IllegalArgumentException("이 투표는 이미 종료되었습니다.");
         }
 
-        // 3. 해당 pollId와 userId로 중복 투표 여부 확인
-        if (voteRepository.existsByPollIdAndUserId(pollId, userId)) {
+        // 3. 중복 투표 체크 (UserVote 기준)
+        if (userVoteRepository.existsByPoll_IdAndMember_Id(pollId, currentMemberId)) {
             throw new IllegalArgumentException("이미 투표한 사용자입니다.");
         }
 
-        // 4. 선택한 옵션이 해당 poll에 속해 있는지 확인
+        // 4. 옵션이 해당 poll에 속하는지 확인
         VoteEntity.PollOption option = pollOptionRepository.findById(optionId)
                 .orElseThrow(() -> new IllegalArgumentException("투표 옵션이 존재하지 않습니다."));
 
@@ -70,15 +81,18 @@ public class VoteService {
             throw new IllegalArgumentException("해당 투표 옵션은 올바른 투표에 속하지 않습니다.");
         }
 
-        // 5. 옵션의 투표 수 증가 및 저장
+        // 5. 옵션의 투표 수 증가
         option.setVotes(option.getVotes() + 1);
         pollOptionRepository.save(option);
 
-        // 6. 투표 기록 저장
-        VoteEntity.Vote vote = new VoteEntity.Vote();
-        vote.setPoll(poll);
-        vote.setUserId(userId);
-        voteRepository.save(vote);
+        // 6. 🔥 UserVote 테이블에 기록 저장
+        UserVote userVote = UserVote.builder()
+                .member(member)
+                .poll(poll)
+                .option(option)
+                .build();
+
+        userVoteRepository.save(userVote);
     }
 
     public Map<String, Map<String, Object>> getPollResults(Long pollId) {
