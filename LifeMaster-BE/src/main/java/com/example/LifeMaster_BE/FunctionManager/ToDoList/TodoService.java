@@ -120,6 +120,7 @@ public class TodoService {
         if (todoOptional.isPresent()) {
             TodoEntity todo = todoOptional.get();
             todo.setCompleted(!todo.isCompleted());
+            //scheduleCalendarService.addOrUpdateEvent(todo.getDate(), "todo");//이벤트 추가
             return Optional.of(todoRepository.save(todo));
         }
         return Optional.empty();

@@ -1,5 +1,6 @@
 package com.example.LifeMaster_BE.TimeManager.Alarm;
 
+import com.example.LifeMaster_BE.FunctionManager.Calender.ScheduleCalendarService;
 import com.example.LifeMaster_BE.Security.CustomUserDetails;
 import com.example.LifeMaster_BE.TimeManager.Alarm.Dto.NewAlarmDto;
 import com.example.LifeMaster_BE.TimeManager.Alarm.Dto.ResponseAlarmDto;
@@ -14,6 +15,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Slf4j
@@ -24,6 +27,7 @@ import java.util.List;
 public class AlarmController {
 
     private final AlarmService alarmService;
+    private final ScheduleCalendarService scheduleCalendarService;
 
     @Operation(
             summary = "새 알람 생성",
@@ -44,6 +48,13 @@ public class AlarmController {
 
         Long memberId = userDetails.getId();
         Long alarmId = alarmService.createAlarm(alarmDto, memberId);
+
+        // 오늘 날짜 "yyyyMMdd"로 변환
+        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+        // 이벤트 추가
+        scheduleCalendarService.addOrUpdateEvent(today, "alarm");
+
         URI location = URI.create("/time/alarm/" + alarmId);
         return ResponseEntity.created(location).build();
     }
@@ -85,6 +96,13 @@ public class AlarmController {
             @PathVariable("alarmId") Long alarmId,
             @RequestBody StatusDto statusDto) {
         alarmService.updateAlarmDayStatus(alarmId, statusDto.getDay(), statusDto.isStatus());
+
+        // 오늘 날짜 "yyyyMMdd"로 변환
+        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+        // 이벤트 추가
+        scheduleCalendarService.addOrUpdateEvent(today, "alarm");
+
         return ResponseEntity.ok("정상적으로 업데이트 되었습니다.");
     }
 
@@ -104,6 +122,13 @@ public class AlarmController {
     public ResponseEntity<String> activateAlarm(
             @PathVariable("alarmId") Long alarmId) {
         String response = alarmService.activateAlarm(alarmId);
+
+        // 오늘 날짜 "yyyyMMdd"로 변환
+        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+        // 이벤트 추가
+        scheduleCalendarService.addOrUpdateEvent(today, "alarm");
+
         return ResponseEntity.ok(response);
     }
 
@@ -111,6 +136,13 @@ public class AlarmController {
     @PutMapping("/activate")
     public ResponseEntity<String> activateMatchAlarm() {
         String response = alarmService.activateMatchingAlarms();
+
+        // 오늘 날짜 "yyyyMMdd"로 변환
+        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+        // 이벤트 추가
+        scheduleCalendarService.addOrUpdateEvent(today, "alarm");
+
         return ResponseEntity.ok(response);
     }
 
@@ -118,6 +150,13 @@ public class AlarmController {
     @PostMapping("/deactivate")
     public ResponseEntity<String> deactivateActivatedAlarms() {
         String result = alarmService.deactivateActivatedAlarms();
+
+        // 오늘 날짜 "yyyyMMdd"로 변환
+        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+        // 이벤트 추가
+        scheduleCalendarService.addOrUpdateEvent(today, "alarm");
+
         return ResponseEntity.ok(result);
     }
 
@@ -126,6 +165,13 @@ public class AlarmController {
     @DeleteMapping("/{alarmId}")
     public ResponseEntity<String> deleteAlarm(@PathVariable("alarmId") Long alarmId) {
         alarmService.deleteAlarm(alarmId);
+
+        // 오늘 날짜 "yyyyMMdd"로 변환
+        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+        // 이벤트 추가
+        scheduleCalendarService.addOrUpdateEvent(today, "alarm");
+
         return ResponseEntity.ok("Alarm with ID " + alarmId + " has been deleted successfully.");
     }
 }

@@ -10,6 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 
@@ -52,7 +54,13 @@ public class TodoController {
 
         Long memberId = user.getId();
         TodoResponse createdTodo = todoService.createTodo(todoCreateRequest, memberId);
-        scheduleCalendarService.addOrUpdateEvent(todoCreateRequest.getDate(), "todo");
+        //scheduleCalendarService.addOrUpdateEvent(todoCreateRequest.getDate(), "todo");//이벤트 추가
+
+        // 오늘 날짜 "yyyyMMdd"로 변환
+        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+        // 이벤트 추가
+        scheduleCalendarService.addOrUpdateEvent(today, "todo");
 
         return new ResponseEntity<>(createdTodo, HttpStatus.CREATED);
     }
@@ -79,6 +87,14 @@ public class TodoController {
         if (loginCheck != null) return loginCheck;
 
         Optional<TodoEntity> updatedTodo = todoService.updateDateTitle(id, date, title);
+        //scheduleCalendarService.addOrUpdateEvent(date, "todo");//이벤트 추가
+
+        // 오늘 날짜 "yyyyMMdd"로 변환
+        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+        // 이벤트 추가
+        scheduleCalendarService.addOrUpdateEvent(today, "todo");
+
         return updatedTodo.map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
@@ -93,9 +109,15 @@ public class TodoController {
         Optional<TodoEntity> todo = todoService.findById(id);
         todo.ifPresent(t -> {
             String date = t.getDate();
-            scheduleCalendarService.deleteSpecificEvent(date, "todo");
+            //scheduleCalendarService.deleteSpecificEvent(date, "todo");//이벤트 제거
             todoService.deleteById(id);
         });
+
+        // 오늘 날짜 "yyyyMMdd"로 변환
+        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+        // 이벤트 추가
+        scheduleCalendarService.addOrUpdateEvent(today, "todo");
 
         return ResponseEntity.noContent().build();
     }
@@ -108,6 +130,13 @@ public class TodoController {
         if (loginCheck != null) return loginCheck;
 
         Optional<TodoEntity> toggledTodo = todoService.toggleCompleted(id);
+
+        // 오늘 날짜 "yyyyMMdd"로 변환
+        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+        // 이벤트 추가
+        scheduleCalendarService.addOrUpdateEvent(today, "todo");
+
         return toggledTodo.map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
