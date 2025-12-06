@@ -45,8 +45,8 @@ public class SpringSecurityConfig {
                                 //"/challenge/**",
                                 "/auth/password/reset/**",
                                 "/auth/kakao/**", "/kakao/**").permitAll()
-                        .requestMatchers("/private/**").authenticated()
-                        .anyRequest().permitAll() //일단 롤백
+                        .anyRequest().authenticated()
+                        //.anyRequest().permitAll()
                 )
                 .exceptionHandling(e -> e
                         .authenticationEntryPoint((req, res, ex) -> {
