@@ -59,7 +59,7 @@ public class VoteEntity {
     @Setter
     @NoArgsConstructor
     @AllArgsConstructor
-    public class OldVote {
+    public static class OldVote {   // ← 여기 static 추가!!
 
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
