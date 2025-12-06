@@ -31,7 +31,12 @@ public class NewAlarmDto {
     private boolean reSlept;
     private LocalDateTime reSleptTime;
 
+    // ==== 랜덤 미션 ====
+    @Schema(hidden = true)
+    private RandomMissionType randomMissionType;
 
+    @Schema(hidden = true)
+    private AlarmEntity.MissionLevel missionLevel;
 }
 
 
