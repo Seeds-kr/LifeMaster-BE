@@ -101,7 +101,7 @@ public class AlarmController {
         String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
         // 이벤트 추가
-        scheduleCalendarService.addOrUpdateEvent(today, "alarm");
+        scheduleCalendarService.addOrUpdateEvent(today, "Alarm");
 
         return ResponseEntity.ok("정상적으로 업데이트 되었습니다.");
     }
@@ -127,7 +127,7 @@ public class AlarmController {
         String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
         // 이벤트 추가
-        scheduleCalendarService.addOrUpdateEvent(today, "alarm");
+        scheduleCalendarService.addOrUpdateEvent(today, "Alarm");
 
         return ResponseEntity.ok(response);
     }
@@ -141,7 +141,7 @@ public class AlarmController {
         String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
         // 이벤트 추가
-        scheduleCalendarService.addOrUpdateEvent(today, "alarm");
+        scheduleCalendarService.addOrUpdateEvent(today, "Alarm");
 
         return ResponseEntity.ok(response);
     }
@@ -155,7 +155,7 @@ public class AlarmController {
         String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
         // 이벤트 추가
-        scheduleCalendarService.addOrUpdateEvent(today, "alarm");
+        scheduleCalendarService.addOrUpdateEvent(today, "Alarm");
 
         return ResponseEntity.ok(result);
     }
@@ -170,7 +170,7 @@ public class AlarmController {
         String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
         // 이벤트 추가
-        scheduleCalendarService.addOrUpdateEvent(today, "alarm");
+        scheduleCalendarService.addOrUpdateEvent(today, "Alarm");
 
         return ResponseEntity.ok("Alarm with ID " + alarmId + " has been deleted successfully.");
     }

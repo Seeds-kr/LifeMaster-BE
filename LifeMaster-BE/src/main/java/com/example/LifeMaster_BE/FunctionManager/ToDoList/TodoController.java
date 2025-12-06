@@ -60,7 +60,7 @@ public class TodoController {
         String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
         // 이벤트 추가
-        scheduleCalendarService.addOrUpdateEvent(today, "todo");
+        scheduleCalendarService.addOrUpdateEvent(today, "Todo");
 
         return new ResponseEntity<>(createdTodo, HttpStatus.CREATED);
     }
@@ -93,7 +93,7 @@ public class TodoController {
         String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
         // 이벤트 추가
-        scheduleCalendarService.addOrUpdateEvent(today, "todo");
+        scheduleCalendarService.addOrUpdateEvent(today, "Todo");
 
         return updatedTodo.map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
@@ -117,7 +117,7 @@ public class TodoController {
         String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
         // 이벤트 추가
-        scheduleCalendarService.addOrUpdateEvent(today, "todo");
+        scheduleCalendarService.addOrUpdateEvent(today, "Todo");
 
         return ResponseEntity.noContent().build();
     }
@@ -135,7 +135,7 @@ public class TodoController {
         String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
         // 이벤트 추가
-        scheduleCalendarService.addOrUpdateEvent(today, "todo");
+        scheduleCalendarService.addOrUpdateEvent(today, "Todo");
 
         return toggledTodo.map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());

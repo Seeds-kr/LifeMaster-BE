@@ -1,5 +1,6 @@
 package com.example.LifeMaster_BE.Challenge;
 
+import com.example.LifeMaster_BE.FunctionManager.Calender.ScheduleCalendarService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -7,6 +8,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @RestController
@@ -14,12 +17,20 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ChallengeController {
     private final ChallengeService challengeService;
+    private final ScheduleCalendarService scheduleCalendarService;
 
     /** 0. 챌린지 생성 */
     @PostMapping
     @Operation(summary = "챌린지 생성", description = "새로운 챌린지를 생성합니다.")
     public Challenge createChallenge(@RequestBody ChallengeDto.Create challenge, @AuthenticationPrincipal UserDetails userDetails) {
         String email = userDetails.getUsername();
+
+        // 오늘 날짜 "yyyyMMdd"로 변환
+        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+        // 이벤트 추가
+        scheduleCalendarService.addOrUpdateEvent(today, "Challenge");
+
         return challengeService.createChallenge(challenge,email);
     }
 
@@ -57,6 +68,11 @@ public class ChallengeController {
     @PostMapping("/{challId}/join")
     @Operation(summary = "챌린지 참여", description = "사용자가 특정 챌린지에 참여합니다.")
     public String joinChallenge(@PathVariable Long challId, @AuthenticationPrincipal UserDetails userDetails) {
+        // 오늘 날짜 "yyyyMMdd"로 변환
+        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+        // 이벤트 추가
+        scheduleCalendarService.addOrUpdateEvent(today, "Challenge");
         return challengeService.joinChallenge(challId, userDetails);
     }
 
@@ -64,6 +80,11 @@ public class ChallengeController {
     @DeleteMapping("/{challId}/leave")
     @Operation(summary = "챌린지 참여 취소", description = "사용자가 특정 챌린지 참여를 취소합니다.")
     public String leaveChallenge(@PathVariable Long challId, @AuthenticationPrincipal UserDetails userDetails) {
+        // 오늘 날짜 "yyyyMMdd"로 변환
+        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+        // 이벤트 추가
+        scheduleCalendarService.addOrUpdateEvent(today, "Challenge");
         return challengeService.leaveChallenge(challId, userDetails);
     }
 
@@ -71,6 +92,13 @@ public class ChallengeController {
     @DeleteMapping("/{challId}")
     @Operation(summary = "챌린지 삭제", description = "특정 챌린지를 삭제합니다.")
     public String deleteChallenge(@PathVariable Long challId) {
+
+        // 오늘 날짜 "yyyyMMdd"로 변환
+        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+        // 이벤트 추가
+        scheduleCalendarService.addOrUpdateEvent(today, "Challenge");
+
         return challengeService.deleteChallenge(challId);
     }
 }

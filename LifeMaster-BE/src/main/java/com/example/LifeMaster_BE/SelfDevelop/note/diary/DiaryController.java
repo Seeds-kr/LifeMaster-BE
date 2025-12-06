@@ -1,5 +1,6 @@
 package com.example.LifeMaster_BE.SelfDevelop.note.diary;
 
+import com.example.LifeMaster_BE.FunctionManager.Calender.ScheduleCalendarService;
 import com.example.LifeMaster_BE.Security.CustomUserDetails;
 import com.example.LifeMaster_BE.SelfDevelop.note.diary.Dto.CreateDiaryDto;
 import com.example.LifeMaster_BE.SelfDevelop.note.diary.Dto.UpdateDiaryDto;
@@ -10,6 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
 @Slf4j
@@ -19,6 +22,7 @@ import java.util.Map;
 public class DiaryController {
 
     private final DiaryService diaryService;
+    private final ScheduleCalendarService scheduleCalendarService;
 
     @PostMapping
     public ResponseEntity<Map<String, Long>> newDiary(
@@ -27,6 +31,13 @@ public class DiaryController {
 
         Long memberId = user.getId();
         DiaryEntity createdDiary = diaryService.createDiary(diaryDto, memberId);
+
+        // 오늘 날짜 "yyyyMMdd"로 변환
+        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+        // 이벤트 추가
+        scheduleCalendarService.addOrUpdateEvent(today, "Diary");
+
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("diartId", createdDiary.getId()));
     }
@@ -37,6 +48,13 @@ public class DiaryController {
             @PathVariable("diary-id") Long diaryId) {
 
         DiaryEntity updatedDiary = diaryService.updateDiary(diaryId, diaryDto);
+
+        // 오늘 날짜 "yyyyMMdd"로 변환
+        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+        // 이벤트 추가
+        scheduleCalendarService.addOrUpdateEvent(today, "Diary");
+
         return ResponseEntity.ok(updatedDiary);
     }
 
