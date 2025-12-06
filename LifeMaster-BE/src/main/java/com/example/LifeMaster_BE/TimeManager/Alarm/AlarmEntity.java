@@ -56,6 +56,9 @@ public class AlarmEntity {
 
     private boolean reSlept;
     private LocalDateTime reSleptTime;
+    // === 기존 DB 컬럼 is_re_slept 호환용 더미 필드 ===
+    @Column(name = "is_re_slept", nullable = false)
+    private boolean legacyReSlept;  // 실제 로직에서는 안 쓰고, INSERT 시 값 채우기용
 
     @Enumerated(EnumType.STRING)
     private RandomMissionType randomMissionType;
@@ -101,6 +104,8 @@ public class AlarmEntity {
 
         alarm.reSlept = dto.isReSlept();
         alarm.reSleptTime = dto.getReSleptTime();
+
+        alarm.legacyReSlept = alarm.reSlept;
 
         if (dto.getRandomMissionType() != null) {
             alarm.randomMissionType = dto.getRandomMissionType();
