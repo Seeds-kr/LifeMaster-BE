@@ -20,15 +20,18 @@ public class VoteService {
     private final PollRepository pollRepository;
     private final PollOptionRepository pollOptionRepository;
 
+    private final OldVoteRepository oldVoteRepository;
+
     private final UserVoteRepository userVoteRepository;
 
     private final MemberRepository memberRepository;
 
-    public VoteService(PollRepository voteRepo, PollOptionRepository pollOptionRepository, UserVoteRepository userVoteRepository,MemberRepository memberRepository) {
+    public VoteService(PollRepository voteRepo, PollOptionRepository pollOptionRepository, UserVoteRepository userVoteRepository,MemberRepository memberRepository,OldVoteRepository oldVoteRepository) {
         this.pollRepository = voteRepo;
         this.pollOptionRepository = pollOptionRepository;
         this.userVoteRepository = userVoteRepository;
         this.memberRepository = memberRepository;
+        this.oldVoteRepository = oldVoteRepository;
     }
 
     public VoteEntity.Poll createPoll(String title, LocalDateTime endDate, List<String> options) {
@@ -202,17 +205,20 @@ public class VoteService {
 
     @Transactional
     public void deletePoll(Long pollId) {
-        // 0) 존재 여부 검증
+
+        // 0) Poll 존재 확인
         VoteEntity.Poll poll = pollRepository.findById(pollId)
                 .orElseThrow(() -> new IllegalArgumentException("투표를 찾을 수 없습니다."));
+        // 1) 과거 vote 테이블 데이터 삭제
+        oldVoteRepository.deleteByPollId(pollId);
 
-        // 1) 🔥 해당 투표에 대한 사용자 투표 기록 먼저 삭제
+        // 1) UserVote 삭제
         userVoteRepository.deleteByPoll_Id(pollId);
 
-        // 2) 🔥 이 투표에 속한 옵션들 삭제
+        // 3) PollOption 삭제
         pollOptionRepository.deleteByPoll_Id(pollId);
 
-        // 3) 🔥 마지막으로 Poll 자체 삭제
+        // 4) Poll 삭제
         pollRepository.delete(poll);
     }
 
