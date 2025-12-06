@@ -2,6 +2,7 @@ package com.example.LifeMaster_BE.TimeManager.Alarm.AlarmMission;
 
 import com.example.LifeMaster_BE.TimeManager.Alarm.AlarmEntity;
 import com.example.LifeMaster_BE.TimeManager.Alarm.AlarmMission.Enum.RandomMissionType;
+import com.example.LifeMaster_BE.TimeManager.Alarm.AlarmRepository;
 import com.example.LifeMaster_BE.TimeManager.Alarm.AlarmService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,6 +16,8 @@ import java.util.Random;
 public class AlarmMissionService {
 
     private final AlarmService alarmService;
+
+    private final AlarmRepository alarmRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public static final String LEVEL_HIGH = "상";
@@ -24,8 +27,9 @@ public class AlarmMissionService {
 
     private final Random random = new Random();
 
-    public AlarmMissionService(AlarmService alarmService) {
+    public AlarmMissionService(AlarmService alarmService, AlarmRepository alarmRepository) {
         this.alarmService = alarmService;
+        this.alarmRepository = alarmRepository;
     }
 
     // ========== 공통: level 문자열 → MissionLevel 변환 ==========
@@ -58,14 +62,30 @@ public class AlarmMissionService {
     public MathProblem generateMathProblem(Long alarmId, String level) {
         AlarmEntity alarm = getAlarmOrThrow(alarmId);
 
+        RandomMissionType current = alarm.getRandomMissionType();
+
+        // 이미 다른 종류의 미션이 존재하면 수학 문제 생성 금지
+        if (current != null &&
+                current != RandomMissionType.NONE &&
+                current != RandomMissionType.MATH_PROBLEM) {
+
+            return new MathProblem(
+                    "이미 다른 미션이 생성되어 있습니다.",
+                    -1,
+                    level
+            );
+        }
+
+        // 수학 문제 생성
         MathProblem problem = internalGenerateMathProblem(level);
 
+        // 미션 저장
         alarm.setRandomMissionType(RandomMissionType.MATH_PROBLEM);
         alarm.setMissionLevel(toMissionLevel(level));
         alarm.setMathQuestion(problem.question);
         alarm.setMathAnswer(problem.correctAnswer);
 
-        alarmService.saveAlarm(alarm); // AlarmService에 이런 메소드 하나 추가해두면 편함
+        alarmService.saveAlarm(alarm);
 
         return problem;
     }
@@ -148,7 +168,7 @@ public class AlarmMissionService {
      * @param userAnswer 사용자가 입력한 정답
      * @return 통과 여부 메시지
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public String checkMathProblemAnswer(Long alarmId, int userAnswer) {
         AlarmEntity alarm = getAlarmOrThrow(alarmId);
 
@@ -159,9 +179,26 @@ public class AlarmMissionService {
             return "잘못된 접근, 먼저 수학 문제를 생성해야 합니다.";
         }
 
-        return userAnswer == correct
-                ? "문제: " + question + " = " + userAnswer + " (정답입니다!)"
-                : "문제: " + question + " = " + userAnswer + " (틀렸습니다. 정답은 " + correct + "입니다.)";
+        // ---- 정답 처리 ----
+        if (userAnswer == correct) {
+
+            // 미션 초기화
+            alarm.setRandomMissionType(RandomMissionType.NONE);
+            alarm.setMissionLevel(null);
+
+            alarm.setTypingSentence(null);
+            alarm.setMathQuestion(null);
+            alarm.setMathAnswer(null);
+            alarm.setFollowClickGridJson(null);
+
+            alarmRepository.save(alarm); // 업데이트 저장
+
+            return "문제: " + question + " = " + userAnswer + " (정답입니다!)";
+        }
+
+        // ---- 오답 처리 ----
+        return "문제: " + question + " = " + userAnswer +
+                " (틀렸습니다. 정답은 " + correct + "입니다.)";
     }
 
     // ========== 문장 따라쓰기 ==========
@@ -176,10 +213,22 @@ public class AlarmMissionService {
     public String generateTypingSentence(Long alarmId) {
         AlarmEntity alarm = getAlarmOrThrow(alarmId);
 
+        RandomMissionType current = alarm.getRandomMissionType();
+
+        // 현재 미션 타입 확인
+        if (current != null &&
+                current != RandomMissionType.NONE &&
+                current != RandomMissionType.TYPING_SENTENCE) {
+
+            return "이미 다른 미션이 생성되어 있습니다.";
+        }
+
+        // 랜덤 문장 생성
         String sentence = CreateRandomSentences.generateRandomSentence();
 
+        // 미션 적용
         alarm.setRandomMissionType(RandomMissionType.TYPING_SENTENCE);
-        alarm.setMissionLevel(null);         // 난이도 사용 X
+        alarm.setMissionLevel(null);         // 난이도 없음
         alarm.setTypingSentence(sentence);
 
         alarmService.saveAlarm(alarm);
@@ -194,7 +243,7 @@ public class AlarmMissionService {
      * @param userInput 사용자가 입력한 문장
      * @return 통과 여부 메시지
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public String checkTypingAnswer(Long alarmId, String userInput) {
         AlarmEntity alarm = getAlarmOrThrow(alarmId);
 
@@ -203,9 +252,25 @@ public class AlarmMissionService {
             return "잘못된 접근, 문장 생성이 선행되어야 합니다.";
         }
 
-        return targetSentence.equals(userInput)
-                ? "문장: \"" + targetSentence + "\"\n입력: \"" + userInput + "\" (성공! 알람이 꺼졌습니다.)"
-                : "문장: \"" + targetSentence + "\"\n입력: \"" + userInput + "\" (틀렸습니다. 다시 시도하세요.)";
+        // --- 정답 ---
+        if (targetSentence.equals(userInput)) {
+
+            // 미션 초기화
+            alarm.setRandomMissionType(RandomMissionType.NONE);
+            alarm.setMissionLevel(null);
+
+            alarm.setTypingSentence(null);
+            alarm.setMathQuestion(null);
+            alarm.setMathAnswer(null);
+            alarm.setFollowClickGridJson(null);
+
+            alarmRepository.save(alarm);
+
+            return "문장: \"" + targetSentence + "\"\n입력: \"" + userInput + "\" (성공! 알람이 꺼졌습니다.)";
+        }
+
+        // --- 오답 ---
+        return "문장: \"" + targetSentence + "\"\n입력: \"" + userInput + "\" (틀렸습니다. 다시 시도하세요.)";
     }
 
     // ========== 따라 누르기 ==========
@@ -221,10 +286,21 @@ public class AlarmMissionService {
     public int[][] generateFollowClickGrid(Long alarmId, String level) {
         AlarmEntity alarm = getAlarmOrThrow(alarmId);
 
+        RandomMissionType current = alarm.getRandomMissionType();
+
+        // 🔒 이미 다른 종류의 미션이 걸려 있으면 생성 불가
+        if (current != null &&
+                current != RandomMissionType.NONE &&
+                current != RandomMissionType.FOLLOW_CLICK) {
+
+            throw new IllegalStateException("이미 다른 미션이 생성되어 있습니다.");
+        }
+
         int[][] grid = internalGenerateFollowClickGrid(level);
 
         try {
             String json = objectMapper.writeValueAsString(grid);
+
             alarm.setRandomMissionType(RandomMissionType.FOLLOW_CLICK);
             alarm.setMissionLevel(toMissionLevel(level));
             alarm.setFollowClickGridJson(json);
@@ -269,7 +345,7 @@ public class AlarmMissionService {
      * @param userGrid 사용자가 입력한 그리드
      * @return 통과 여부 메시지
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public String checkFollowClickAnswer(Long alarmId, int[][] userGrid) {
         AlarmEntity alarm = getAlarmOrThrow(alarmId);
 
@@ -281,6 +357,7 @@ public class AlarmMissionService {
         try {
             int[][] generatedGrid = objectMapper.readValue(json, int[][].class);
 
+            // 비교
             for (int i = 0; i < 5; i++) {
                 for (int j = 0; j < 5; j++) {
                     if (generatedGrid[i][j] != userGrid[i][j]) {
@@ -288,7 +365,20 @@ public class AlarmMissionService {
                     }
                 }
             }
+
+            // ========== 정답이면 모든 미션 필드 초기화 ==========
+            alarm.setRandomMissionType(RandomMissionType.NONE);
+            alarm.setMissionLevel(null);
+
+            alarm.setTypingSentence(null);
+            alarm.setMathQuestion(null);
+            alarm.setMathAnswer(null);
+            alarm.setFollowClickGridJson(null);
+
+            alarmRepository.save(alarm);
+
             return "정답입니다! 알람이 꺼졌습니다.";
+
         } catch (JsonProcessingException e) {
             throw new RuntimeException("그리드 역직렬화 실패", e);
         }
