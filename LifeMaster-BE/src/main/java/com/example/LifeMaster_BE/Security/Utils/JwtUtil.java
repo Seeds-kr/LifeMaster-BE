@@ -5,86 +5,76 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.security.Key;
 import java.util.Date;
 
 @Component
 public class JwtUtil {
 
-    private static final SecretKey SECRETE_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    // 고정 시크릿 키 (application.yml 에서 주입)
+    private final Key secretKey;
+    // Access Token 만료 시간(ms)
     private final long EXPIRATION_TIME;
 
-    public JwtUtil() {
-        this(1000 * 60 * 60); // 기본 1시간
+    public JwtUtil(
+            @Value("${jwt.secret}") String secret,
+            @Value("${jwt.expiration-ms:3600000}") long expirationTime // 기본 1시간
+    ) {
+        // HS256용 키 생성 (문자열은 최소 32byte 이상 권장)
+        this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        this.EXPIRATION_TIME = expirationTime;
     }
 
-    // 테스트 편의를 위한 생성자
-    public JwtUtil(long expirationTime) {
-        EXPIRATION_TIME = expirationTime;
-    }
+    // ✅ Access Token 생성
+    public String generateToken(String email) {
+        Date now = new Date();
+        Date expiry = new Date(now.getTime() + EXPIRATION_TIME);
 
-    // 🔑 SecretKey 리턴 메서드 추가
-    public SecretKey getSecretKey() {
-        return SECRETE_KEY;
-    }
-
-    // jwt 생성
-    public String generateToken(String email){
         return Jwts.builder()
                 .setSubject(email)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
-                .signWith(SECRETE_KEY)
+                .setIssuedAt(now)
+                .setExpiration(expiry)
+                .signWith(secretKey, SignatureAlgorithm.HS256)
                 .compact();
     }
 
+    // ✅ Refresh Token 생성 (예: 2주)
     public String generateRefreshToken(String email) {
-        // refresh token은 만료시간 더 길게 (예: 2주)
-        long refreshExpiration = 1000L * 60 * 60 * 24 * 14;
+        long refreshExpiration = 1000L * 60 * 60 * 24 * 14; // 2주
+        Date now = new Date();
+        Date expiry = new Date(now.getTime() + refreshExpiration);
+
         return Jwts.builder()
                 .setSubject(email)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + refreshExpiration))
-                .signWith(getSecretKey())
+                .setIssuedAt(now)
+                .setExpiration(expiry)
+                .signWith(secretKey, SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    // JWT에서 사용자 email 추출.
-    public String extractEmail(String token){
-        return Jwts.parserBuilder()
-                .setSigningKey(SECRETE_KEY)
-                .build()
-                .parseClaimsJws(token)
-                .getBody()
-                .getSubject();
+    // ✅ JWT에서 email(subject) 추출
+    public String extractEmail(String token) {
+        return extractClaims(token).getSubject();
     }
 
-    // 외부에서 호출할 토큰 검증 매서드
-    public boolean isTokenValid(String token){
-        return isTokenSignatureValid(token) && isTokenNotExpired(token);
-    }
-
-    // JWT 서명 및 무결성 검사
-    private boolean isTokenSignatureValid(String token){
-        try{
-            Jwts.parserBuilder().setSigningKey(SECRETE_KEY).build().parseClaimsJws(token);
-            return true;
-        }catch (JwtException | IllegalArgumentException e){
+    // ✅ 토큰 유효성 검사 (서명 + 만료)
+    public boolean isTokenValid(String token) {
+        try {
+            Claims claims = extractClaims(token);
+            return !claims.getExpiration().before(new Date());
+        } catch (JwtException | IllegalArgumentException e) {
             return false;
         }
     }
 
-    // JWT 만료 여부 검증
-    private boolean isTokenNotExpired(String token){
-        return !extractClaims(token).getExpiration().before(new Date());
-    }
-
-    // JWT payload 반환
+    // 내부용: Claims 파싱
     private Claims extractClaims(String token) {
         return Jwts.parserBuilder()
-                .setSigningKey(SECRETE_KEY)
+                .setSigningKey(secretKey)
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
