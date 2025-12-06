@@ -23,7 +23,7 @@ public class VoteController {
         }
 
         //투표 생성
-        @Operation(summary = "새 투표 생성", description = "새로운 투표를 생성합니다.")
+        @Operation(summary = "새 투표 생성 !", description = "새로운 투표를 생성합니다.")
         @ApiResponses(value = {
                 @ApiResponse(responseCode = "200", description = "투표 생성 성공",
                         content = @Content(mediaType = "application/json", schema = @Schema(implementation = VoteEntity.Poll.class))),
