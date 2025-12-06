@@ -51,6 +51,10 @@ public class AlarmEntity {
     private String alarmSound;
 
     private boolean snoozed;
+    //더미
+    @Column(name = "is_snoozed", nullable = false)
+    private boolean legacySnoozed;
+
     private LocalDateTime snoozeTime;
     private Long snoozeCount;
 
@@ -105,7 +109,9 @@ public class AlarmEntity {
         alarm.reSlept = dto.isReSlept();
         alarm.reSleptTime = dto.getReSleptTime();
 
+        //더미
         alarm.legacyReSlept = alarm.reSlept;
+        alarm.legacySnoozed = alarm.snoozed;
 
         if (dto.getRandomMissionType() != null) {
             alarm.randomMissionType = dto.getRandomMissionType();
