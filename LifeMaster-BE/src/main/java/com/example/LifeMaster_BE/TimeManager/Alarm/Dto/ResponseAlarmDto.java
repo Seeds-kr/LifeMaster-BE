@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class ResponseAlarmDto {
 
+    private Long id;
     private String alarmTitle;
     private LocalDateTime alarmTime;
 
