@@ -29,13 +29,15 @@ public class AlarmService {
     //알람 생성 메소드
     public Long createAlarm(NewAlarmDto alarmDto, Long memberId) {
 
-        //랜덤 미션 종류 검증
-        validateMission(alarmDto);
+        // 알람 생성 시에는 미션 정보는 받지 않고, 항상 기본값으로 설정
+        alarmDto.setRandomMissionType(RandomMissionType.NONE);
+        alarmDto.setMissionLevel(null);
 
         MemberEntity member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new EntityNotFoundException("Member " + memberId + " not found"));
 
         AlarmEntity newAlarm = AlarmEntity.fromDto(alarmDto);
+
         member.addAlarm(newAlarm);
         AlarmEntity savedAlarm = alarmRepository.save(newAlarm);
         return savedAlarm.getId();

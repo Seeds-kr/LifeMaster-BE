@@ -30,6 +30,8 @@ public class NewAlarmDto {
 
     private boolean reSlept;
     private LocalDateTime reSleptTime;
+
+
 }
 
 
