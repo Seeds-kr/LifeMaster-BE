@@ -10,13 +10,11 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.jdbc.Sql;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
@@ -32,8 +30,6 @@ class AlarmMissionControllerTest {
     @Autowired private MockMvc mockMvc;
     @Autowired private ObjectMapper objectMapper;
 
-    @Autowired private AlarmMissionController controller;
-
     @MockBean private AlarmMissionService missionService;
 
     // 🔧 메인 클래스(or 다른 빈)에서 요구하는 의존성으로 인한 컨텍스트 로딩 실패 방지
@@ -46,47 +42,39 @@ class AlarmMissionControllerTest {
     @MockBean
     private com.example.LifeMaster_BE.Security.JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    // == 헬퍼: MathProblem 인스턴스 만들기(정적/비정적 둘 다 대응) ==
-    private AlarmMissionService.MathProblem mathProblem(String q, int a) throws Exception {
-        try {
-            // 1) 정적 중첩 클래스인 경우: (String, int)
-            var ctor = AlarmMissionService.MathProblem.class
-                    .getDeclaredConstructor(String.class, int.class);
-            ctor.setAccessible(true);
-            return ctor.newInstance(q, a);
-        } catch (NoSuchMethodException ignore) {
-            // 2) 비정적(Inner) 클래스인 경우: (AlarmMissionService, String, int)
-            var ctor = AlarmMissionService.MathProblem.class
-                    .getDeclaredConstructor(AlarmMissionService.class, String.class, int.class);
-            ctor.setAccessible(true);
-            // missionService는 @MockBean 으로 이미 주입되어 있음
-            return ctor.newInstance(missionService, q, a);
-        }
+    // == 헬퍼: MathProblem 인스턴스 만들기 ==
+    private AlarmMissionService.MathProblem mathProblem(String q, int a, String level) {
+        return new AlarmMissionService.MathProblem(q, a, level);
     }
 
     // ===== 수학 문제 =====
     @Test
-    @DisplayName("수학 문제 생성 - level 파라미터 OK 응답")
+    @DisplayName("수학 문제 생성 - alarmId + level 파라미터 OK 응답")
     void generateMathProblem() throws Exception {
-        // 직렬화 구현(게터 유무)에 덜 민감하도록 본문 구조는 단언하지 않음
-        var problem = mathProblem("3 + 4 = ?", 7);
-        given(missionService.generateMathProblem("상")).willReturn(problem);
+        long alarmId = 1L;
+        var problem = mathProblem("3 + 4 = ?", 7, "상");
 
-        mockMvc.perform(get("/time/alarm/mission/math-problem").param("level", "상"))
+        given(missionService.generateMathProblem(alarmId, "상")).willReturn(problem);
+
+        mockMvc.perform(get("/time/alarm/mission/math-problem")
+                        .param("alarmId", String.valueOf(alarmId))
+                        .param("level", "상"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(APPLICATION_JSON));
-        // 프로덕션에 게터가 있다면 아래 주석 해제
+        // 필요하면 아래처럼 값 검증도 가능 (게터 있으면)
         // .andExpect(jsonPath("$.question").value("3 + 4 = ?"))
-        // .andExpect(jsonPath("$.answer").value(7));
+        // .andExpect(jsonPath("$.correctAnswer").value(7));
     }
 
     // ===== 타이핑 =====
     @Test
-    @DisplayName("랜덤 문장 생성 - 반환 문자열 확인")
+    @DisplayName("랜덤 문장 생성 - alarmId 포함, 반환 문자열 확인")
     void generateTypingSentence() throws Exception {
-        given(missionService.generateTypingSentence()).willReturn("Wake up and shine!");
+        long alarmId = 10L;
+        given(missionService.generateTypingSentence(alarmId)).willReturn("Wake up and shine!");
 
-        mockMvc.perform(get("/time/alarm/mission/typing"))
+        mockMvc.perform(get("/time/alarm/mission/typing")
+                        .param("alarmId", String.valueOf(alarmId)))
                 .andExpect(status().isOk())
                 .andExpect(content().string("Wake up and shine!"));
     }
@@ -94,30 +82,33 @@ class AlarmMissionControllerTest {
     @Test
     @DisplayName("타이핑 정답 확인 - 성공 시 알람 끄기 호출")
     void checkTypingAnswer_success() throws Exception {
-        ReflectionTestUtils.setField(controller, "typingAnswer", "Good morning!");
+        long alarmId = 55L;
 
-        given(missionService.checkTypingAnswer(eq("Good morning!"), eq("Good morning!")))
-                .willReturn("성공!");
+        given(missionService.checkTypingAnswer(alarmId, "Good morning!"))
+                .willReturn("문장: \"Good morning!\"\n입력: \"Good morning!\" (성공! 알람이 꺼졌습니다.)");
 
         mockMvc.perform(post("/time/alarm/mission/typing/check")
                         .param("userInput", "Good morning!")
-                        .param("alarmId", "55"))
+                        .param("alarmId", String.valueOf(alarmId)))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("성공!")));
 
-        verify(missionService).updateAlarmStatus(55L, false);
+        verify(missionService).updateAlarmStatus(alarmId, false);
     }
 
     // ===== 따라 누르기 (5x5 그리드) =====
     @Test
-    @DisplayName("그리드 생성 - 5x5 배열 JSON 반환")
+    @DisplayName("그리드 생성 - alarmId + level, 5x5 배열 JSON 반환")
     void generateFollowClickGrid() throws Exception {
+        long alarmId = 3L;
         int[][] grid = new int[5][5];
         grid[0][0] = 1; grid[1][1] = 1;
 
-        given(missionService.generateFollowClickGrid("중")).willReturn(grid);
+        given(missionService.generateFollowClickGrid(alarmId, "중")).willReturn(grid);
 
-        mockMvc.perform(get("/time/alarm/mission/follow-click").param("level", "중"))
+        mockMvc.perform(get("/time/alarm/mission/follow-click")
+                        .param("alarmId", String.valueOf(alarmId))
+                        .param("level", "중"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(APPLICATION_JSON))
                 .andExpect(jsonPath("$", hasSize(5)))
@@ -128,23 +119,21 @@ class AlarmMissionControllerTest {
     @Test
     @DisplayName("그리드 정답 확인 - 정답 시 알람 끄기 호출")
     void checkFollowClickAnswer_correct() throws Exception {
-        int[][] answer = new int[5][5];
-        answer[2][2] = 1;
-        ReflectionTestUtils.setField(controller, "answerGrid", answer);
+        long alarmId = 777L;
 
         int[][] userGrid = new int[5][5];
         userGrid[2][2] = 1;
 
-        given(missionService.checkFollowClickAnswer(any(int[][].class), any(int[][].class)))
-                .willReturn("정답입니다!");
+        given(missionService.checkFollowClickAnswer(eq(alarmId), any(int[][].class)))
+                .willReturn("정답입니다! 알람이 꺼졌습니다.");
 
         mockMvc.perform(post("/time/alarm/mission/follow-click/check")
+                        .param("alarmId", String.valueOf(alarmId))
                         .contentType(APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(userGrid))
-                        .param("alarmId", "777"))
+                        .content(objectMapper.writeValueAsString(userGrid)))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("정답입니다!")));
 
-        verify(missionService).updateAlarmStatus(777L, false);
+        verify(missionService).updateAlarmStatus(alarmId, false);
     }
 }

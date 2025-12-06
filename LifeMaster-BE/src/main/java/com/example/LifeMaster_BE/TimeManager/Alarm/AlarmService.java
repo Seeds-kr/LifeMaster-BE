@@ -1,5 +1,6 @@
 package com.example.LifeMaster_BE.TimeManager.Alarm;
 
+import com.example.LifeMaster_BE.TimeManager.Alarm.AlarmMission.Enum.RandomMissionType;
 import com.example.LifeMaster_BE.TimeManager.Alarm.Mapper.AlarmMapStruct;
 import com.example.LifeMaster_BE.TimeManager.Alarm.Dto.NewAlarmDto;
 import com.example.LifeMaster_BE.TimeManager.Alarm.Dto.ResponseAlarmDto;
@@ -14,6 +15,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -26,6 +28,10 @@ public class AlarmService {
 
     //알람 생성 메소드
     public Long createAlarm(NewAlarmDto alarmDto, Long memberId) {
+
+        //랜덤 미션 종류 검증
+        validateMission(alarmDto);
+
         MemberEntity member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new EntityNotFoundException("Member " + memberId + " not found"));
 
@@ -207,6 +213,41 @@ public class AlarmService {
         AlarmEntity alarm = alarmRepository.findById(alarmId)
                 .orElseThrow(() -> new EntityNotFoundException("Alarm " + alarmId + " not found"));
         alarmRepository.delete(alarm);
+    }
+
+    private void validateMission(NewAlarmDto dto) {
+        RandomMissionType type = dto.getRandomMissionType();
+        AlarmEntity.MissionLevel level = dto.getMissionLevel();
+
+        if (type == null) {
+            dto.setRandomMissionType(RandomMissionType.NONE);
+            dto.setMissionLevel(null);
+            return;
+        }
+
+        // === 난이도가 필요한 미션 목록 ===
+        boolean needsLevel =
+                type == RandomMissionType.MATH_PROBLEM || type == RandomMissionType.FOLLOW_CLICK;
+
+        // 1) 난이도가 필요한데 level 없음 → 잘못된 요청
+        if (needsLevel && level == null) {
+            throw new IllegalArgumentException(
+                    type + " 미션에는 missionLevel(HIGH/MEDIUM/LOW)이 필요합니다."
+            );
+        }
+
+        // 2) 난이도가 필요 없는데 level 들어온 경우 → 무시
+        if (!needsLevel && level != null) {
+            dto.setMissionLevel(null);
+        }
+    }
+
+    public Optional<AlarmEntity> findAlarmById(Long alarmId) {
+        return alarmRepository.findById(alarmId);
+    }
+
+    public AlarmEntity saveAlarm(AlarmEntity alarm) {
+        return alarmRepository.save(alarm);
     }
 
 

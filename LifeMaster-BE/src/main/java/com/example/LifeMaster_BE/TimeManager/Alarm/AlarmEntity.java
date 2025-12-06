@@ -57,9 +57,27 @@ public class AlarmEntity {
     private boolean reSlept;
     private LocalDateTime reSleptTime;
 
-    // String → Enum 변경
     @Enumerated(EnumType.STRING)
     private RandomMissionType randomMissionType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "mission_level")
+    private MissionLevel missionLevel;
+
+    public enum MissionLevel {
+        HIGH, MEDIUM, LOW
+    }
+
+    // 수학 미션용 문제/정답 필드 추가
+    private String mathQuestion;   // 예: "12 + 8"
+    private Integer mathAnswer;    // 예: 20
+
+    // 문장 따라쓰기 미션용 필드
+    private String typingSentence; // 예: "The quick brown fox jumps over the lazy dog."
+
+    // 따라 누르기 미션용 필드 (5x5 그리드를 JSON 문자열로 저장)
+    @Lob
+    private String followClickGridJson; // 예: "[[0,1,0,...],[...],...]"
 
     // DTO → Entity 변환
     public static AlarmEntity fromDto(NewAlarmDto dto) {
@@ -84,12 +102,19 @@ public class AlarmEntity {
         alarm.reSlept = dto.isReSlept();
         alarm.reSleptTime = dto.getReSleptTime();
 
-        // 문자열로 들어온 경우 Enum 변환 처리
         if (dto.getRandomMissionType() != null) {
-            alarm.randomMissionType = RandomMissionType.fromString(dto.getRandomMissionType().name());
+            alarm.randomMissionType = dto.getRandomMissionType();
         } else {
             alarm.randomMissionType = RandomMissionType.NONE;
         }
+
+        alarm.missionLevel = dto.getMissionLevel();
+
+        // 처음 생성 시에는 아직 문제/정답 없음 → null 로 시작
+        alarm.mathQuestion = null;
+        alarm.mathAnswer = null;
+        alarm.typingSentence = null;
+        alarm.followClickGridJson = null;
 
         return alarm;
     }

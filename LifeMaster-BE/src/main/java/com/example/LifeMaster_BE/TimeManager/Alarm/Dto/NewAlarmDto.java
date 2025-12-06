@@ -1,5 +1,6 @@
 package com.example.LifeMaster_BE.TimeManager.Alarm.Dto;
 
+import com.example.LifeMaster_BE.TimeManager.Alarm.AlarmEntity;
 import com.example.LifeMaster_BE.TimeManager.Alarm.AlarmMission.Enum.RandomMissionType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
@@ -42,6 +43,7 @@ public class NewAlarmDto {
             example = "MATH_PROBLEM"
     )
     private RandomMissionType randomMissionType;
+    private AlarmEntity.MissionLevel missionLevel;
 }
 
 
