@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -21,6 +22,9 @@ public class TimeDetoxService {
     private final RandomPhraseProvider randomPhraseProvider;
 
     private final MemberRepository memberRepository;
+
+    private final DetoxVerificationRepository detoxVerificationRepository;
+    private final TimeDetoxRepository timeDetoxRepository;
 
     @Getter
     private String currentRandomPhrase;
@@ -107,24 +111,65 @@ public class TimeDetoxService {
         return repository.save(schedule);
     }
 
-    // 랜덤 문장 생성
-    public String generateRandomPhrase() {
-        currentRandomPhrase = randomPhraseProvider.getRandomPhrase();
-        return currentRandomPhrase;
+    // 유저별 랜덤 문구 생성
+    public String generateRandomPhrase(Long memberId) {
+        String phrase = randomPhraseProvider.getRandomPhrase();
+
+        // 기존 토큰 있으면 재사용 대신 덮어쓰기
+        DetoxVerificationEntity token = detoxVerificationRepository
+                .findByMember_IdAndUsedFalse(memberId)
+                .orElseGet(() -> {
+                    MemberEntity member = new MemberEntity();
+                    member.setId(memberId);
+                    return DetoxVerificationEntity.create(member, phrase, null);
+                });
+
+        token.setPhrase(phrase);
+        token.setCreatedAt(LocalDateTime.now());
+        token.setUsed(false);
+        // 필요하면 expiresAt도 여기서 설정
+        detoxVerificationRepository.save(token);
+
+        return phrase;
     }
 
     // 디톡스 종료
-    public boolean verifyPhraseAndEndDetox(String inputPhrase) {
-        if (currentRandomPhrase != null && currentRandomPhrase.equals(inputPhrase)) {
-            List<TimeDetoxEntity> activeSchedules = repository.findByIsActiveTrue();
-            activeSchedules.forEach(schedule -> {
-                schedule.setActive(false);
-                repository.save(schedule);
-            });
-            currentRandomPhrase = null;
-            return true;
+    public boolean verifyPhraseAndEndDetox(Long memberId, String inputPhrase) {
+        // 1) 토큰 조회
+        DetoxVerificationEntity token = detoxVerificationRepository
+                .findByMember_IdAndUsedFalse(memberId)
+                .orElse(null);
+
+        if (token == null) {
+            return false;
         }
-        return false;
+
+        // 2) (선택) 만료 시간 체크
+        if (token.getExpiresAt() != null &&
+                token.getExpiresAt().isBefore(LocalDateTime.now())) {
+            // 만료된 토큰이면 실패 처리
+            token.setUsed(true);
+            detoxVerificationRepository.save(token);
+            return false;
+        }
+
+        // 3) 문구 비교
+        if (!token.getPhrase().equals(inputPhrase)) {
+            return false;
+        }
+
+        // 4) 문구 OK → 이 유저의 활성 디톡스 스케줄 종료
+        List<TimeDetoxEntity> activeSchedules =
+                timeDetoxRepository.findByMember_IdAndIsActiveTrue(memberId);
+
+        activeSchedules.forEach(s -> s.setActive(false));
+        timeDetoxRepository.saveAll(activeSchedules);
+
+        // 5) 토큰 사용 처리 (또는 delete)
+        token.setUsed(true);
+        detoxVerificationRepository.save(token);
+
+        return true;
     }
 
     // 앱 잠금 여부 확인 및 잠긴 앱 목록 반환

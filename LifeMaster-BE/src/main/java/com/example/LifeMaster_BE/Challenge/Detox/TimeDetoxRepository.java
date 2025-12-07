@@ -11,4 +11,5 @@ public interface TimeDetoxRepository extends JpaRepository<TimeDetoxEntity, Long
     List<TimeDetoxEntity> findByIsActiveTrue();
 
     List<TimeDetoxEntity> findAllByMember(MemberEntity member);
+    List<TimeDetoxEntity> findByMember_IdAndIsActiveTrue(Long memberId);
 }

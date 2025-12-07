@@ -53,7 +53,7 @@ public class AlarmController {
         String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
         // 이벤트 추가
-        scheduleCalendarService.addOrUpdateEvent(today, "alarm");
+        scheduleCalendarService.addOrUpdateEvent(today, "Alarm");
 
         URI location = URI.create("/time/alarm/" + alarmId);
         return ResponseEntity.created(location).build();

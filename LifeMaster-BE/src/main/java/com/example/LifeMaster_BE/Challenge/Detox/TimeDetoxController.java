@@ -1,5 +1,6 @@
 package com.example.LifeMaster_BE.Challenge.Detox;
 
+import com.example.LifeMaster_BE.FunctionManager.Calender.ScheduleCalendarService;
 import com.example.LifeMaster_BE.Security.CustomUserDetails;
 import com.example.LifeMaster_BE.UserManager.Login;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
@@ -11,13 +12,18 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @RestController
@@ -27,6 +33,7 @@ public class TimeDetoxController {
 
     private final MemberRepository memberRepository;
     private final Login login;
+    private final ScheduleCalendarService scheduleCalendarService;
 
     @Autowired
     private TimeDetoxService service;
@@ -51,6 +58,13 @@ public class TimeDetoxController {
             LocalTime currentTime = now.toLocalTime();
 
             TimeDetoxEntity updatedSchedule = service.toggleActivation(id, currentDay, currentTime);
+
+            // 오늘 날짜 "yyyyMMdd"로 변환
+            String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+            // 이벤트 추가
+            scheduleCalendarService.addOrUpdateEvent(today, "Detox");
+
             return ResponseEntity.ok(updatedSchedule);
         } catch (IllegalStateException e) {
             // 비활성화 불가 사유 반환
@@ -113,6 +127,13 @@ public class TimeDetoxController {
         ResponseEntity<?> loginCheck = login.checkLogin(user);
         if (loginCheck != null) return loginCheck;
         TimeDetoxDTO createdSchedule = service.createSchedule(scheduleDto, memberId);
+
+        // 오늘 날짜 "yyyyMMdd"로 변환
+        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+        // 이벤트 추가
+        scheduleCalendarService.addOrUpdateEvent(today, "Detox");
+
         return ResponseEntity.ok(createdSchedule);
     }
 
@@ -175,6 +196,13 @@ public class TimeDetoxController {
             })
     @PutMapping("/{id}")
     public ResponseEntity<TimeDetoxEntity> updateSchedule(@PathVariable(name = "id") Long id, @RequestBody TimeDetoxEntity updatedSchedule) {
+
+        // 오늘 날짜 "yyyyMMdd"로 변환
+        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+        // 이벤트 추가
+        scheduleCalendarService.addOrUpdateEvent(today, "Detox");
+
         return ResponseEntity.ok(service.updateSchedule(id, updatedSchedule));
     }
 
@@ -188,6 +216,13 @@ public class TimeDetoxController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteSchedule(@PathVariable(name = "id") Long id) {
         service.deleteSchedule(id);
+
+        // 오늘 날짜 "yyyyMMdd"로 변환
+        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+        // 이벤트 추가
+        scheduleCalendarService.addOrUpdateEvent(today, "Detox");
+
         return ResponseEntity.noContent().build();
     }
 
@@ -195,7 +230,16 @@ public class TimeDetoxController {
             description = "디톡스 비상 탈출에 필요한 문장을 생성합니다.")
     @GetMapping("/generate-phrase")
     public ResponseEntity<String> generateRandomPhrase() {
-        String phrase = service.generateRandomPhrase();
+
+        Long memberId = getCurrentMemberIdOrNull();
+        if (memberId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("로그인이 필요합니다.");
+        }
+
+        // 서비스에서 유저별 문장 생성하도록 변경
+        String phrase = service.generateRandomPhrase(memberId);
+
         return ResponseEntity.ok(phrase);
     }
 
@@ -203,10 +247,45 @@ public class TimeDetoxController {
             description = "비상 탈출 문장을 검증하고, 실행 중인 디톡스를 종료합니다.")
     @PostMapping("/verify-phrase")
     public ResponseEntity<String> verifyPhraseAndEndDetox(@RequestBody String inputPhrase) {
-        boolean result = service.verifyPhraseAndEndDetox(inputPhrase);
+
+        // 1) 현재 로그인한 사용자 ID 가져오기
+        Long memberId = getCurrentMemberIdOrNull();
+        if (memberId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("로그인이 필요합니다.");
+        }
+
+        // 2) 서비스에 memberId + 입력 문장 전달
+        boolean result = service.verifyPhraseAndEndDetox(memberId, inputPhrase);
+
         if (result) {
+            // 3) 오늘 날짜 "yyyyMMdd"로 변환
+            String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+            // 4) 디톡스 종료 이벤트 기록 (성공 시에만)
+            scheduleCalendarService.addOrUpdateEvent(today, "Detox");
+
             return ResponseEntity.ok("Detox has been successfully ended.");
         }
+
         return ResponseEntity.badRequest().body("Incorrect phrase. Detox remains active.");
+    }
+
+    private Long getCurrentMemberIdOrNull() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) return null;
+
+        Object principal = auth.getPrincipal();
+        if (principal == null || "anonymousUser".equals(principal)) return null;
+
+        // principal: CustomUserDetails
+        if (principal instanceof CustomUserDetails cud) {
+            return cud.getId();
+        }
+
+        // fallback
+        if (principal instanceof MemberEntity me) return me.getId();
+
+        return null;
     }
 }
