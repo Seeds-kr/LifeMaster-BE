@@ -42,7 +42,7 @@ public class ResponseAlarmDto {
                 - MATH_PROBLEM: 수학 문제 풀기
                 - TYPING_SENTENCE: 문장 따라쓰기
                 - FOLLOW_CLICK: 따라 누르기
-                - NONE: 미션 없음
+                - NULL: 미션 없음
             """,
             example = "MATH_PROBLEM"
     )
