@@ -38,7 +38,7 @@ public class AlarmController {
     - `MATH_PROBLEM`: 수학 문제 풀기
     - `TYPING_SENTENCE`: 문장 따라쓰기
     - `FOLLOW_CLICK`: 따라 누르기 게임
-    - `NONE`: 미션 없음 (기본값)
+    - `NULL`: 미션 없음 (기본값)
     """
     )
     @PostMapping
@@ -69,7 +69,7 @@ public class AlarmController {
     - `MATH_PROBLEM`: 수학 문제 풀기  
     - `TYPING_SENTENCE`: 문장 따라쓰기  
     - `FOLLOW_CLICK`: 따라 누르기 게임  
-    - `NONE`: 미션 없음  
+    - `NULL`: 미션 없음  
     
     **난이도 (missionLevel)**  
     - `HIGH`: 어려움  
