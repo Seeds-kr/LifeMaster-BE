@@ -65,9 +65,7 @@ public class AlarmMissionService {
         RandomMissionType current = alarm.getRandomMissionType();
 
         // 이미 다른 종류의 미션이 존재하면 수학 문제 생성 금지
-        if (current != null &&
-                current != RandomMissionType.NONE &&
-                current != RandomMissionType.MATH_PROBLEM) {
+        if (current != null && current != RandomMissionType.MATH_PROBLEM) {
 
             return new MathProblem(
                     "이미 다른 미션이 생성되어 있습니다.",
@@ -183,7 +181,7 @@ public class AlarmMissionService {
         if (userAnswer == correct) {
 
             // 미션 초기화
-            alarm.setRandomMissionType(RandomMissionType.NONE);
+            alarm.setRandomMissionType(null);
             alarm.setMissionLevel(null);
 
             alarm.setTypingSentence(null);
@@ -216,9 +214,7 @@ public class AlarmMissionService {
         RandomMissionType current = alarm.getRandomMissionType();
 
         // 현재 미션 타입 확인
-        if (current != null &&
-                current != RandomMissionType.NONE &&
-                current != RandomMissionType.TYPING_SENTENCE) {
+        if (current != null && current != RandomMissionType.TYPING_SENTENCE) {
 
             return "이미 다른 미션이 생성되어 있습니다.";
         }
@@ -256,7 +252,7 @@ public class AlarmMissionService {
         if (targetSentence.equals(userInput)) {
 
             // 미션 초기화
-            alarm.setRandomMissionType(RandomMissionType.NONE);
+            alarm.setRandomMissionType(null);
             alarm.setMissionLevel(null);
 
             alarm.setTypingSentence(null);
@@ -290,7 +286,6 @@ public class AlarmMissionService {
 
         // 🔒 이미 다른 종류의 미션이 걸려 있으면 생성 불가
         if (current != null &&
-                current != RandomMissionType.NONE &&
                 current != RandomMissionType.FOLLOW_CLICK) {
 
             throw new IllegalStateException("이미 다른 미션이 생성되어 있습니다.");
@@ -367,7 +362,7 @@ public class AlarmMissionService {
             }
 
             // ========== 정답이면 모든 미션 필드 초기화 ==========
-            alarm.setRandomMissionType(RandomMissionType.NONE);
+            alarm.setRandomMissionType(null);
             alarm.setMissionLevel(null);
 
             alarm.setTypingSentence(null);
