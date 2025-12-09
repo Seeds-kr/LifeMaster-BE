@@ -65,10 +65,11 @@ public class AlarmEntity {
     private boolean legacyReSlept;  // 실제 로직에서는 안 쓰고, INSERT 시 값 채우기용
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = true)
     private RandomMissionType randomMissionType;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "mission_level")
+    @Column(name = "mission_level", nullable = true)
     private MissionLevel missionLevel;
 
     public enum MissionLevel {
@@ -76,14 +77,19 @@ public class AlarmEntity {
     }
 
     // 수학 미션용 문제/정답 필드 추가
+    @JsonIgnore
     private String mathQuestion;   // 예: "12 + 8"
+
+    @JsonIgnore
     private Integer mathAnswer;    // 예: 20
 
     // 문장 따라쓰기 미션용 필드
+    @JsonIgnore
     private String typingSentence; // 예: "The quick brown fox jumps over the lazy dog."
 
     // 따라 누르기 미션용 필드 (5x5 그리드를 JSON 문자열로 저장)
     @Lob
+    @JsonIgnore
     private String followClickGridJson; // 예: "[[0,1,0,...],[...],...]"
 
     // DTO → Entity 변환
@@ -113,13 +119,15 @@ public class AlarmEntity {
         alarm.legacyReSlept = alarm.reSlept;
         alarm.legacySnoozed = alarm.snoozed;
 
-        if (dto.getRandomMissionType() != null) {
-            alarm.randomMissionType = dto.getRandomMissionType();
-        } else {
-            alarm.randomMissionType = RandomMissionType.NONE;
-        }
+        alarm.randomMissionType = dto.getRandomMissionType();
 
-        alarm.missionLevel = dto.getMissionLevel();
+        if (alarm.randomMissionType == null) {
+            // 미션이 없으므로 레벨도 null 처리
+            alarm.missionLevel = null;
+        } else {
+            // 미션이 있을 때만 레벨 세팅
+            alarm.missionLevel = dto.getMissionLevel();
+        }
 
         // 처음 생성 시에는 아직 문제/정답 없음 → null 로 시작
         alarm.mathQuestion = null;
