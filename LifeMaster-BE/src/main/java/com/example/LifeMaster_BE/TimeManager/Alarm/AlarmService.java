@@ -30,7 +30,7 @@ public class AlarmService {
     public Long createAlarm(NewAlarmDto alarmDto, Long memberId) {
 
         // 알람 생성 시에는 미션 정보는 받지 않고, 항상 기본값으로 설정
-        alarmDto.setRandomMissionType(RandomMissionType.NONE);
+        alarmDto.setRandomMissionType(null);
         alarmDto.setMissionLevel(null);
 
         MemberEntity member = memberRepository.findById(memberId)
@@ -222,7 +222,7 @@ public class AlarmService {
         AlarmEntity.MissionLevel level = dto.getMissionLevel();
 
         if (type == null) {
-            dto.setRandomMissionType(RandomMissionType.NONE);
+            dto.setRandomMissionType(null);
             dto.setMissionLevel(null);
             return;
         }
