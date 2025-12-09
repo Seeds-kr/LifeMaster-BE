@@ -2,6 +2,7 @@ package com.example.LifeMaster_BE.TimeManager.Alarm.Dto;
 
 import com.example.LifeMaster_BE.TimeManager.Alarm.AlarmEntity;
 import com.example.LifeMaster_BE.TimeManager.Alarm.AlarmMission.Enum.RandomMissionType;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -53,12 +54,17 @@ public class ResponseAlarmDto {
     private AlarmEntity.MissionLevel missionLevel;
 
     // ==== 수학 문제 미션 ====
+    @JsonIgnore
     private String mathQuestion;   // 예: "12 + 8"
+
+    @JsonIgnore
     private Integer mathAnswer;    // 예: 20
 
     // ==== 문장 따라쓰기 미션 ====
+    @JsonIgnore
     private String typingSentence;
 
     // ==== 따라 누르기(그리드) 미션 ====
+    @JsonIgnore
     private String followClickGridJson;  // JSON 문자열로 저장
 }
