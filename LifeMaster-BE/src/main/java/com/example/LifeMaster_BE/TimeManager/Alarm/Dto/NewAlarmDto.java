@@ -22,6 +22,8 @@ public class NewAlarmDto {
     private boolean alarmSat;
     private boolean alarmSun;
 
+    private boolean alarmStatus;
+
     private String alarmSound;
 
     private boolean snoozed;

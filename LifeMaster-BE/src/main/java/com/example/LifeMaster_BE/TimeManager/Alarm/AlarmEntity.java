@@ -46,7 +46,7 @@ public class AlarmEntity {
     private boolean alarmSun;
 
     @Column(nullable = false)
-    private boolean alarmStatus;
+    private boolean alarmStatus = true;
 
     private String alarmSound;
 
@@ -106,6 +106,8 @@ public class AlarmEntity {
         alarm.alarmFri = dto.isAlarmFri();
         alarm.alarmSat = dto.isAlarmSat();
         alarm.alarmSun = dto.isAlarmSun();
+
+        alarm.alarmStatus = true; // ⭐ 기본 활성화
 
         alarm.alarmSound = dto.getAlarmSound();
         alarm.snoozed = dto.isSnoozed();
