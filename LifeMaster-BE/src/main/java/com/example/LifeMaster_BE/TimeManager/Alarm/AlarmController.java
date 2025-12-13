@@ -121,52 +121,6 @@ public class AlarmController {
         return ResponseEntity.ok(timeDifference);
     }
 
-    @Operation(summary = "특정 알람 활성화", description = "현재 시간을 기준으로 특정 알람을 활성화합니다.")
-    @Parameter(name = "alarmId", description = "활성화할 알람의 ID", required = true)
-    //@Parameter(name = "day", description = "현재 요일 (e.g., Monday, Tuesday)", required = true)
-    //@Parameter(name = "time", description = "현재 시간 (ISO-8601 형식)", required = true)
-    @PutMapping("/{alarmId}/activate")
-    public ResponseEntity<String> activateAlarm(
-            @PathVariable("alarmId") Long alarmId) {
-        String response = alarmService.activateAlarm(alarmId);
-
-        // 오늘 날짜 "yyyyMMdd"로 변환
-        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-
-        // 이벤트 추가
-        scheduleCalendarService.addOrUpdateEvent(today, "Alarm");
-
-        return ResponseEntity.ok(response);
-    }
-
-    @Operation(summary = "알람 활성화", description = "현재 시간을 기준으로 해당하는 알람을 활성화합니다.")
-    @PutMapping("/activate")
-    public ResponseEntity<String> activateMatchAlarm() {
-        String response = alarmService.activateMatchingAlarms();
-
-        // 오늘 날짜 "yyyyMMdd"로 변환
-        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-
-        // 이벤트 추가
-        scheduleCalendarService.addOrUpdateEvent(today, "Alarm");
-
-        return ResponseEntity.ok(response);
-    }
-
-    @Operation(summary = "알람 비활성화", description = "활성화된 알람을 비활성화합니다.")
-    @PostMapping("/deactivate")
-    public ResponseEntity<String> deactivateActivatedAlarms() {
-        String result = alarmService.deactivateActivatedAlarms();
-
-        // 오늘 날짜 "yyyyMMdd"로 변환
-        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-
-        // 이벤트 추가
-        scheduleCalendarService.addOrUpdateEvent(today, "Alarm");
-
-        return ResponseEntity.ok(result);
-    }
-
     @Operation(summary = "알람 삭제", description = "특정 ID를 가진 알람을 삭제합니다.")
     @Parameter(name = "alarmId", description = "삭제할 알람의 ID", required = true)
     @DeleteMapping("/{alarmId}")
