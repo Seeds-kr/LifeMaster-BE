@@ -55,11 +55,11 @@ public class AlarmEntity {
     @Column(name = "is_snoozed", nullable = false)
     private boolean legacySnoozed;
 
-    private LocalDateTime snoozeTime;
+    private int snoozeTime;
     private Long snoozeCount;
 
     private boolean reSleptPrevention;
-    private LocalDateTime reSleptPreventionTime;
+    private int reSleptPreventionTime;
     // === 기존 DB 컬럼 is_re_slept 호환용 더미 필드 ===
     @Column(name = "is_re_slept", nullable = false)
     private boolean legacyReSlept;  // 실제 로직에서는 안 쓰고, INSERT 시 값 채우기용

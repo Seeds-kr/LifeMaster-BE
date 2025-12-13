@@ -27,11 +27,11 @@ public class NewAlarmDto {
     private String alarmSound;
 
     private boolean snoozed;
-    private LocalDateTime snoozeTime;
+    private int snoozeTime;
     private Long snoozeCount;
 
     private boolean reSleptPrevention;
-    private LocalDateTime reSleptPreventionTime;
+    private int reSleptPreventionTime;
 
     // ==== 랜덤 미션 ====
     private RandomMissionType randomMissionType;
