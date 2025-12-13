@@ -160,6 +160,52 @@ public class AlarmService {
         }
     }
 
+    // 특정 알람 상태 토글
+    public boolean toggleAlarm(Long alarmId) {
+        AlarmEntity alarm = alarmRepository.findById(alarmId)
+                .orElseThrow(() -> new EntityNotFoundException("Alarm " + alarmId + " not found"));
+
+        boolean newStatus = !alarm.isAlarmStatus();
+        alarm.setAlarmStatus(newStatus);
+
+        alarmRepository.save(alarm);
+        return newStatus; // 변경된 상태 반환 (프론트에서 쓰기 좋음)
+    }
+
+    // 전체 알람 활성화 (OFF → ON)
+    public int activateAllAlarms() {
+        List<AlarmEntity> alarms = alarmRepository.findAll();
+        int count = 0;
+
+        for (AlarmEntity alarm : alarms) {
+            if (!alarm.isAlarmStatus()) {
+                alarm.setAlarmStatus(true);
+                count++;
+            }
+        }
+
+        alarmRepository.saveAll(alarms);
+        log.info("Activated {} alarms.", count);
+        return count;
+    }
+
+    // 전체 알람 비활성화 (ON → OFF)
+    public int deactivateAllAlarms() {
+        List<AlarmEntity> alarms = alarmRepository.findAll();
+        int count = 0;
+
+        for (AlarmEntity alarm : alarms) {
+            if (alarm.isAlarmStatus()) {
+                alarm.setAlarmStatus(false);
+                count++;
+            }
+        }
+
+        alarmRepository.saveAll(alarms);
+        log.info("Deactivated {} alarms.", count);
+        return count;
+    }
+
     public Optional<AlarmEntity> findAlarmById(Long alarmId) {
         return alarmRepository.findById(alarmId);
     }

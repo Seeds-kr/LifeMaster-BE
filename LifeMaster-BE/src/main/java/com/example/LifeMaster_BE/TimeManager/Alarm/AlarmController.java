@@ -7,6 +7,8 @@ import com.example.LifeMaster_BE.TimeManager.Alarm.Dto.ResponseAlarmDto;
 import com.example.LifeMaster_BE.TimeManager.Alarm.Dto.StatusDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -134,5 +136,56 @@ public class AlarmController {
         scheduleCalendarService.addOrUpdateEvent(today, "Alarm");
 
         return ResponseEntity.ok("Alarm with ID " + alarmId + " has been deleted successfully.");
+    }
+
+    /**
+     * 특정 알람 상태 토글 (ON ↔ OFF)
+     */
+    @Operation(
+            summary = "특정 알람 상태 토글",
+            description = "지정한 알람의 상태를 활성화/비활성화로 전환합니다."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "알람 상태 변경 성공"),
+            @ApiResponse(responseCode = "404", description = "알람을 찾을 수 없음")
+    })
+    @PatchMapping("/{alarmId}/toggle")
+    public ResponseEntity<Boolean> toggleAlarm(
+            @PathVariable Long alarmId
+    ) {
+        boolean newStatus = alarmService.toggleAlarm(alarmId);
+        return ResponseEntity.ok(newStatus);
+    }
+
+    /**
+     * 전체 알람 활성화 (OFF → ON)
+     */
+    @Operation(
+            summary = "전체 알람 활성화",
+            description = "비활성화된 모든 알람을 활성화합니다."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "전체 알람 활성화 완료")
+    })
+    @PatchMapping("/activate-all")
+    public ResponseEntity<Integer> activateAllAlarms() {
+        int activatedCount = alarmService.activateAllAlarms();
+        return ResponseEntity.ok(activatedCount);
+    }
+
+    /**
+     * 전체 알람 비활성화 (ON → OFF)
+     */
+    @Operation(
+            summary = "전체 알람 비활성화",
+            description = "활성화된 모든 알람을 비활성화합니다."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "전체 알람 비활성화 완료")
+    })
+    @PatchMapping("/deactivate-all")
+    public ResponseEntity<Integer> deactivateAllAlarms() {
+        int deactivatedCount = alarmService.deactivateAllAlarms();
+        return ResponseEntity.ok(deactivatedCount);
     }
 }
