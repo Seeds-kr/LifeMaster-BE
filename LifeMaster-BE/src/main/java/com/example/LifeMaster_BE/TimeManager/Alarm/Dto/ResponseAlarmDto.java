@@ -27,6 +27,8 @@ public class ResponseAlarmDto {
     private boolean alarmSat;
     private boolean alarmSun;
 
+    private boolean alarmStatus;
+
     private String alarmSound;
 
     private boolean snoozed;
