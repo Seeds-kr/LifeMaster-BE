@@ -58,8 +58,8 @@ public class AlarmEntity {
     private LocalDateTime snoozeTime;
     private Long snoozeCount;
 
-    private boolean reSlept;
-    private LocalDateTime reSleptTime;
+    private boolean reSleptPrevention;
+    private LocalDateTime reSleptPreventionTime;
     // === 기존 DB 컬럼 is_re_slept 호환용 더미 필드 ===
     @Column(name = "is_re_slept", nullable = false)
     private boolean legacyReSlept;  // 실제 로직에서는 안 쓰고, INSERT 시 값 채우기용
@@ -114,11 +114,11 @@ public class AlarmEntity {
         alarm.snoozeTime = dto.getSnoozeTime();
         alarm.snoozeCount = dto.getSnoozeCount();
 
-        alarm.reSlept = dto.isReSlept();
-        alarm.reSleptTime = dto.getReSleptTime();
+        alarm.reSleptPrevention = dto.isReSleptPrevention();
+        alarm.reSleptPreventionTime = dto.getReSleptPreventionTime();
 
         //더미
-        alarm.legacyReSlept = alarm.reSlept;
+        alarm.legacyReSlept = alarm.reSleptPrevention;
         alarm.legacySnoozed = alarm.snoozed;
 
         alarm.randomMissionType = dto.getRandomMissionType();

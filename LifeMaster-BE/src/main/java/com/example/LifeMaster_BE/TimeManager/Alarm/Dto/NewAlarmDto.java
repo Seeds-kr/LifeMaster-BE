@@ -30,8 +30,8 @@ public class NewAlarmDto {
     private LocalDateTime snoozeTime;
     private Long snoozeCount;
 
-    private boolean reSlept;
-    private LocalDateTime reSleptTime;
+    private boolean reSleptPrevention;
+    private LocalDateTime reSleptPreventionTime;
 
     // ==== 랜덤 미션 ====
     private RandomMissionType randomMissionType;
