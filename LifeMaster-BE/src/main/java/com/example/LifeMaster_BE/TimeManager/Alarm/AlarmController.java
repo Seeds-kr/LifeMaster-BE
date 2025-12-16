@@ -99,8 +99,8 @@ public class AlarmController {
     }
 
     @Operation(
-            summary = "알람 전체 수정",
-            description = "알람 생성 시 사용한 정보(NewAlarmDto)를 그대로 사용하여 알람을 전체 수정합니다."
+            summary = "알람 수정",
+            description = "NewAlarmDto 구조 기반으로 알람을 수정합니다."
     )
     @Parameter(name = "alarmId", description = "수정할 알람의 ID", required = true)
     @PutMapping("/{alarmId}")
