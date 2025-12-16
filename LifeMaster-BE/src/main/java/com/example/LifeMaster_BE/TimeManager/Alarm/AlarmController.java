@@ -98,21 +98,26 @@ public class AlarmController {
         return ResponseEntity.ok(alarmDtoById);
     }
 
-    @Operation(summary = "알람 상태 업데이트", description = "알람의 특정 필드(MON~SUN) 상태를 업데이트합니다.(ex day:MON, status:false")
-    @Parameter(name = "alarmId", description = "업데이트할 알람의 ID", required = true)
-    @PutMapping("/{alarmId}/update-status")
-    public ResponseEntity<String> setAlarmStatus(
-            @PathVariable("alarmId") Long alarmId,
-            @RequestBody StatusDto statusDto) {
-        alarmService.updateAlarmDayStatus(alarmId, statusDto.getDay(), statusDto.isStatus());
+    @Operation(
+            summary = "알람 전체 수정",
+            description = "알람 생성 시 사용한 정보(NewAlarmDto)를 그대로 사용하여 알람을 전체 수정합니다."
+    )
+    @Parameter(name = "alarmId", description = "수정할 알람의 ID", required = true)
+    @PutMapping("/{alarmId}")
+    public ResponseEntity<String> updateAlarm(
+            @PathVariable Long alarmId,
+            @RequestBody NewAlarmDto dto
+    ) {
+        alarmService.updateAlarm(alarmId, dto);
 
-        // 오늘 날짜 "yyyyMMdd"로 변환
-        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        // 오늘 날짜 "yyyyMMdd"
+        String today = LocalDate.now()
+                .format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
-        // 이벤트 추가
+        // 캘린더 이벤트 갱신
         scheduleCalendarService.addOrUpdateEvent(today, "Alarm");
 
-        return ResponseEntity.ok("정상적으로 업데이트 되었습니다.");
+        return ResponseEntity.ok("알람이 정상적으로 수정되었습니다.");
     }
 
     @Operation(summary = "알람 시간 차이 조회", description = "알람 시간과 현재 시간의 차이를 계산하여 반환합니다.")

@@ -10,6 +10,7 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -66,21 +67,44 @@ public class AlarmService {
         alarmRepository.save(alarm);
     }
 
-    //알람 날짜 수정 메소드
-    public void updateAlarmDayStatus(Long alarmId, AlarmDay day, boolean status){
+    //알람 수정 메소드
+    @Transactional
+    public void updateAlarm(Long alarmId, NewAlarmDto dto) {
+
         AlarmEntity alarm = alarmRepository.findById(alarmId)
-                .orElseThrow(() -> new EntityNotFoundException("Alarm" + alarmId + "not found"));
+                .orElseThrow(() ->
+                        new EntityNotFoundException("Alarm " + alarmId + " not found")
+                );
 
-        switch (day) {
-            case MON -> alarm.setAlarmMon(status);
-            case TUE -> alarm.setAlarmTue(status);
-            case WED -> alarm.setAlarmWed(status);
-            case THU -> alarm.setAlarmThu(status);
-            case FRI -> alarm.setAlarmFri(status);
-            case SAT -> alarm.setAlarmSat(status);
-            case SUN -> alarm.setAlarmSun(status);
-        }
+        // ===== 기본 정보 =====
+        alarm.setAlarmTitle(dto.getAlarmTitle());
+        alarm.setAlarmTime(dto.getAlarmTime());
+        alarm.setAlarmStatus(dto.isAlarmStatus());
+        alarm.setAlarmSound(dto.getAlarmSound());
 
+        // ===== 요일 =====
+        alarm.setAlarmMon(dto.isAlarmMon());
+        alarm.setAlarmTue(dto.isAlarmTue());
+        alarm.setAlarmWed(dto.isAlarmWed());
+        alarm.setAlarmThu(dto.isAlarmThu());
+        alarm.setAlarmFri(dto.isAlarmFri());
+        alarm.setAlarmSat(dto.isAlarmSat());
+        alarm.setAlarmSun(dto.isAlarmSun());
+
+        // ===== 스누즈 =====
+        alarm.setSnoozed(dto.isSnoozed());
+        alarm.setSnoozeTime(dto.getSnoozeTime());
+        alarm.setSnoozeCount(dto.getSnoozeCount());
+
+        // ===== 재수면 방지 =====
+        alarm.setReSleptPrevention(dto.isReSleptPrevention());
+        alarm.setReSleptPreventionTime(dto.getReSleptPreventionTime());
+
+        // ===== 미션 =====
+        alarm.setRandomMissionType(dto.getRandomMissionType());
+        alarm.setMissionLevel(dto.getMissionLevel());
+
+        // @Transactional → save 생략 가능
         alarmRepository.save(alarm);
     }
 
