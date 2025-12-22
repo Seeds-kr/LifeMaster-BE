@@ -108,22 +108,6 @@ public class AlarmService {
         alarmRepository.save(alarm);
     }
 
-    //알람 남은 시간 계산 메소드
-    public String getTimeDifference(Long alarmId) {
-        AlarmEntity alarm = alarmRepository.findById(alarmId)
-                .orElseThrow(() -> new EntityNotFoundException("Alarm " + alarmId + " not found"));
-
-        LocalDateTime alarmTime = alarm.getAlarmTime();
-        LocalDateTime now = LocalDateTime.now();
-
-        long days = ChronoUnit.DAYS.between(now, alarmTime);
-        long hours = ChronoUnit.HOURS.between(now, alarmTime) % 24;
-        long minutes = ChronoUnit.MINUTES.between(now, alarmTime) % 60;
-
-        return String.format("Time difference: %d days, %d hours, %d minutes", days, hours, minutes);
-    }
-
-
     public String deactivateActivatedAlarms() {
         // 모든 알람 가져오기
         List<AlarmEntity> alarms = alarmRepository.findAll();

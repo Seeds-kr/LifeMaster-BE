@@ -120,14 +120,6 @@ public class AlarmController {
         return ResponseEntity.ok("알람이 정상적으로 수정되었습니다.");
     }
 
-    @Operation(summary = "알람 시간 차이 조회", description = "알람 시간과 현재 시간의 차이를 계산하여 반환합니다.")
-    @Parameter(name = "alarmId", description = "시간 차이를 계산할 알람의 ID", required = true)
-    @GetMapping("/{alarmId}/time-difference")
-    public ResponseEntity<String> getTimeDifference(@PathVariable("alarmId") Long alarmId) {
-        String timeDifference = alarmService.getTimeDifference(alarmId);
-        return ResponseEntity.ok(timeDifference);
-    }
-
     @Operation(summary = "알람 삭제", description = "특정 ID를 가진 알람을 삭제합니다.")
     @Parameter(name = "alarmId", description = "삭제할 알람의 ID", required = true)
     @DeleteMapping("/{alarmId}")
