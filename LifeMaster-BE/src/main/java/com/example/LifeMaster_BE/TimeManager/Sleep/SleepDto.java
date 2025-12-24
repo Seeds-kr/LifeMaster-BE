@@ -41,7 +41,6 @@ public class SleepDto {
         private LocalDateTime sleepEnd;
         private MoodStatus sleepMood;
         private AlarmInfoDto alarmInfo; // ✅ 묶어서 받음
-        private Long userId;
     }
 
     @Builder
