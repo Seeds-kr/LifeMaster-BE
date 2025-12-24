@@ -1,10 +1,12 @@
 package com.example.LifeMaster_BE.Community.Post;
 
 import com.example.LifeMaster_BE.Community.Post.Dto.AllPostsDto;
+import com.example.LifeMaster_BE.Community.Post.Dto.PostCreateResponse;
 import com.example.LifeMaster_BE.Community.Post.Dto.PostGetResponse;
 import com.example.LifeMaster_BE.Community.Post.Like.PostLikeEntity;
 import com.example.LifeMaster_BE.Community.Post.Like.PostLikeRepository;
 import com.example.LifeMaster_BE.Exception.CustomException.ForbiddenActionException;
+import com.example.LifeMaster_BE.FunctionManager.ToDoList.TodoRepository;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -30,6 +32,7 @@ public class PostService {
     private final PostRepository postRepository;
     private final PostLikeRepository likeRepository;
     private final MemberRepository memberRepository;
+    private final TodoRepository todoRepository;
     private final RedisTemplate<String, Object> redisTemplate;
 
     private static final String POPULAR_POSTS_KEY = "popularPosts"; // 인기글 캐싱 키
@@ -65,6 +68,7 @@ public class PostService {
         PostEntity post = postRepository.findById(postId)
                 .orElseThrow(() -> new EntityNotFoundException("Post not found"));
         boolean liked = likeRepository.existsByMemberIdAndPostId(memberId, postId);
+        boolean calendarShared = todoRepository.existsByMemberId(memberId);
         PostGetResponse response = new PostGetResponse(
                 post.getTitle(),
                 post.getContent(),
@@ -76,6 +80,7 @@ public class PostService {
                 post.getViewCount(),
                 post.getLikes().size(),
                 memberId.equals(post.getMember().getId()),
+                calendarShared,
                 post.getCreatedAt()
         );
 
@@ -85,7 +90,7 @@ public class PostService {
         return response;
     }
 
-    public PostEntity createPost(String title, String content, String fileUrl,
+    public PostCreateResponse createPost(String title, String content, String fileUrl,
                                  PostType type, Long memberId) {
 
         MemberEntity member = memberRepository.findById(memberId)
@@ -95,16 +100,23 @@ public class PostService {
         PostEntity postEntity1 = postEntity.toBuilder()
                 .member(member)
                 .build();
-
-        return postRepository.save(postEntity1);
+        postRepository.save(postEntity1);
+        boolean calendarShared = todoRepository.existsByMemberId(memberId);
+        return new PostCreateResponse(postEntity1.getId(), title, content,
+                fileUrl, type, calendarShared);
     }
 
-    public void updatePost(Long postId, String title, String content, String fileUrl, Long memberId){
+    public PostCreateResponse updatePost(Long postId, String title, String content, String fileUrl, Long memberId){
         PostEntity postEntity = postRepository.findByIdAndMemberId(postId, memberId)
                 .orElseThrow(() -> new ForbiddenActionException("본인 게시글만 수정할 수 있습니다."));
 
         postEntity.updatePost(title, content, fileUrl);
         postRepository.save(postEntity);
+
+        boolean calendarShared = todoRepository.existsByMemberId(memberId);
+
+        return new PostCreateResponse(postEntity.getId(), title, content,
+                fileUrl, postEntity.getType(), calendarShared);
     }
 
     public void deletePost(Long postId, Long memberId){

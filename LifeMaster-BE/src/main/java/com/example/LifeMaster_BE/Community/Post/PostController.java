@@ -2,6 +2,7 @@ package com.example.LifeMaster_BE.Community.Post;
 
 import com.example.LifeMaster_BE.Community.Post.Dto.AllPostsDto;
 import com.example.LifeMaster_BE.Community.Post.Dto.PostCreateRequest;
+import com.example.LifeMaster_BE.Community.Post.Dto.PostCreateResponse;
 import com.example.LifeMaster_BE.Community.Post.Dto.PostGetResponse;
 import com.example.LifeMaster_BE.Security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,7 +33,7 @@ public class PostController {
 
     @Operation(summary = "게시글 작성", description = "새로운 게시글을 작성합니다.")
     @PostMapping
-    public ResponseEntity<Map<String, Long>> newPost(@RequestBody PostCreateRequest postDto,
+    public ResponseEntity<PostCreateResponse> newPost(@RequestBody PostCreateRequest postDto,
                                               @AuthenticationPrincipal CustomUserDetails user) {
         Long memberId = user.getId();
         String title = postDto.getTitle();
@@ -40,9 +41,9 @@ public class PostController {
         String fileUrl = postDto.getFile();
         PostType type = postDto.getType();
 
-        PostEntity post = postService.createPost(title, content, fileUrl, type, memberId);
+        PostCreateResponse post = postService.createPost(title, content, fileUrl, type, memberId);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("postId", post.getId()));
+        return ResponseEntity.status(HttpStatus.CREATED).body(post);
     }
 
     @Operation(summary = "게시글 조회", description = "게시글 ID를 통해 단일 게시글을 조회합니다.")
@@ -58,14 +59,15 @@ public class PostController {
 
     @Operation(summary = "게시글 수정", description = "게시글 ID를 통해 특정 게시글을 수정합니다.")
     @PatchMapping("/{postId}")
-    public void updatePost(@PathVariable("postId") Long postId,
-                           @RequestBody PostCreateRequest postDto,
-                           @AuthenticationPrincipal CustomUserDetails user){
+    public ResponseEntity<PostCreateResponse> updatePost(@PathVariable("postId") Long postId,
+                                             @RequestBody PostCreateRequest postDto,
+                                             @AuthenticationPrincipal CustomUserDetails user){
         String title = postDto.getTitle();
         String content = postDto.getContent();
         String fileUrl = postDto.getFile();
 
-        postService.updatePost(postId, title, content, fileUrl, user.getId());
+        PostCreateResponse newPost = postService.updatePost(postId, title, content, fileUrl, user.getId());
+        return ResponseEntity.ok().body(newPost);
     }
 
     @Operation(summary = "게시글 삭제", description = "게시글 ID를 통해 특정 게시글을 삭제합니다.")

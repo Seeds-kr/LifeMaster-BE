@@ -27,6 +27,7 @@ public class PostGetResponse {
     @JsonProperty("isMine")
     private boolean isMine;
 
+    private boolean calendarShared;
     @JsonFormat(pattern = "yyyy.MM.dd HH:mm")
     private LocalDateTime createdAt;
 }
