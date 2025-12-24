@@ -1,10 +1,13 @@
 package com.example.LifeMaster_BE.TimeManager.Sleep;
 
 import com.example.LifeMaster_BE.FunctionManager.Calender.ScheduleCalendarService;
+import com.example.LifeMaster_BE.Security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -30,7 +33,12 @@ public class SleepController {
     @Operation(summary = "수면 시작 기록", description = "사용자가 수면을 시작했을 때 기록을 생성합니다.")
     @PostMapping
     public ResponseEntity<String> makeSleep(@RequestBody SleepDto.Request request) {
-        sleepService.makeSleep(request);
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+
+        Long userId = userDetails.getId(); // 👈 여기서 userId
+
+        sleepService.makeSleep(request, userId);
 
         // 오늘 날짜 "yyyyMMdd"로 변환
         String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
@@ -44,7 +52,12 @@ public class SleepController {
     @Operation(summary = "수면 기록 업데이트", description = "사용자의 수면 기록을 업데이트합니다.")
     @PatchMapping
     public ResponseEntity<SleepDto.Response> updateSleep(@RequestBody SleepDto.Request request) {
-        SleepDto.Response updatedResponse = sleepService.updateSleep(request);
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+
+        Long userId = userDetails.getId(); // 👈 여기서 userId
+
+        SleepDto.Response updatedResponse = sleepService.updateSleep(request, userId);
 
         // 오늘 날짜 "yyyyMMdd"로 변환
         String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
