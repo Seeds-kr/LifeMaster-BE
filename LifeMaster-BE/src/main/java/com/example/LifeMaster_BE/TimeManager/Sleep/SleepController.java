@@ -23,6 +23,16 @@ public class SleepController {
     private final SleepService sleepService;
     private final ScheduleCalendarService scheduleCalendarService;
 
+    @Operation(summary = "유저 본인의 수면 기록 조회", description = "사용자의 ID를 기반으로 수면 기록을 조회합니다.")
+    @GetMapping
+    public ResponseEntity<List<SleepDto.Response>> selectMySleep() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        Long userId = userDetails.getId(); // 👈 여기서 userId
+        List<SleepDto.Response> responses = sleepService.selectSleep(userId);
+        return ResponseEntity.ok(responses);
+    }
+
     @Operation(summary = "유저의 수면 기록 조회", description = "사용자의 ID를 기반으로 수면 기록을 조회합니다.")
     @GetMapping("/{userId}")
     public ResponseEntity<List<SleepDto.Response>> selectSleep(@PathVariable Long userId) {
