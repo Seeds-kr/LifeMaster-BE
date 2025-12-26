@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -33,7 +34,9 @@ public class SleepController {
         sleepService.makeSleep(request);
 
         // 오늘 날짜 "yyyyMMdd"로 변환
-        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String today = LocalDate
+                .now(ZoneId.of("Asia/Seoul"))
+                .format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
         // 이벤트 추가
         scheduleCalendarService.addOrUpdateEvent(today, "Sleep");

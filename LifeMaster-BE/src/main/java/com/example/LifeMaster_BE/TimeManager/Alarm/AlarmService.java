@@ -12,8 +12,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
@@ -28,9 +30,8 @@ public class AlarmService {
     private final AlarmMapStruct alarmMapStruct;
 
     //알람 생성 메소드
-    public Long createAlarm(NewAlarmDto alarmDto, Long memberId) {
+    public AlarmEntity createAlarm(NewAlarmDto alarmDto, Long memberId) {
 
-        // 알람 생성 시에는 미션 정보는 받지 않고, 항상 기본값으로 설정
         alarmDto.setRandomMissionType(null);
         alarmDto.setMissionLevel(null);
 
@@ -40,8 +41,9 @@ public class AlarmService {
         AlarmEntity newAlarm = AlarmEntity.fromDto(alarmDto);
 
         member.addAlarm(newAlarm);
-        AlarmEntity savedAlarm = alarmRepository.save(newAlarm);
-        return savedAlarm.getId();
+
+        // 저장된 엔티티를 그대로 반환
+        return alarmRepository.save(newAlarm);
     }
 
     //알람 전체 조회 메소드
@@ -212,6 +214,15 @@ public class AlarmService {
         alarmRepository.saveAll(alarms);
         log.info("Deactivated {} alarms.", count);
         return count;
+    }
+
+    public long countAlarmsOnDate(Long memberId, String yyyyMMdd) {
+        LocalDate date = LocalDate.parse(yyyyMMdd, DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+        LocalDateTime start = date.atStartOfDay();
+        LocalDateTime end = date.plusDays(1).atStartOfDay();
+
+        return alarmRepository.countByMember_IdAndAlarmTimeBetween(memberId, start, end);
     }
 
     public Optional<AlarmEntity> findAlarmById(Long alarmId) {

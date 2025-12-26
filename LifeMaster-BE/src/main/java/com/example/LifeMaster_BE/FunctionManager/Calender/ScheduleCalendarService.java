@@ -119,12 +119,28 @@ public class ScheduleCalendarService {
     // 특정 항목 삭제
     public ScheduleCalendarEntity deleteSpecificEvent(String date, String event) {
         Optional<ScheduleCalendarEntity> entries = calendarRepository.findByDate(date);
-        if (!entries.isEmpty()) {
-            ScheduleCalendarEntity entry = entries.get();
-            entry.getEvents().remove(event);
-            return calendarRepository.save(entry);
+        if (entries.isEmpty()) {
+            return null;
         }
-        return null;
+
+        ScheduleCalendarEntity entry = entries.get();
+
+        // events가 없으면 제거할 것도 없음
+        if (entry.getEvents() == null) {
+            return entry;
+        }
+
+        // 이벤트 제거
+        entry.getEvents().remove(event);
+
+        // 이벤트가 모두 비었으면 날짜 엔트리 자체를 삭제
+        if (entry.getEvents().isEmpty()) {
+            calendarRepository.delete(entry);
+            return entry;
+        }
+
+        // 아직 이벤트가 남아있으면 저장
+        return calendarRepository.save(entry);
     }
 
     //날짜로 요일을 구하는 메소드

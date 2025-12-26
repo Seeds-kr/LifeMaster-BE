@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -49,13 +50,17 @@ public class AlarmController {
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
         Long memberId = userDetails.getId();
-        Long alarmId = alarmService.createAlarm(alarmDto, memberId);
 
-        // 오늘 날짜 "yyyyMMdd"로 변환
-        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        AlarmEntity savedAlarm = alarmService.createAlarm(alarmDto, memberId);
+        Long alarmId = savedAlarm.getId();
 
-        // 이벤트 추가
-        scheduleCalendarService.addOrUpdateEvent(today, "Alarm");
+        // 알람 설정 날짜를 KST 기준 yyyyMMdd 문자열로 변환
+        LocalDate alarmDateKST = savedAlarm.getAlarmTime()
+                .atZone(ZoneId.of("Asia/Seoul"))
+                .toLocalDate();
+        String dateKey = alarmDateKST.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        // 캘린더 이벤트 갱신(문자열 날짜)
+        scheduleCalendarService.addOrUpdateEvent(dateKey, "Alarm");
 
         URI location = URI.create("/time/alarm/" + alarmId);
         return ResponseEntity.created(location).build();
@@ -106,31 +111,52 @@ public class AlarmController {
     @PutMapping("/{alarmId}")
     public ResponseEntity<String> updateAlarm(
             @PathVariable Long alarmId,
-            @RequestBody NewAlarmDto dto
+            @RequestBody NewAlarmDto dto,
+            @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
+        Long memberId = userDetails.getId();
+
+        // 알람 수정
         alarmService.updateAlarm(alarmId, dto);
 
-        // 오늘 날짜 "yyyyMMdd"
-        String today = LocalDate.now()
+        // 수정된 알람 DTO 조회
+        ResponseAlarmDto updatedAlarm =
+                alarmService.getAlarmById(alarmId, memberId);
+
+        // 알람 설정 날짜를 KST 기준 yyyyMMdd 문자열로 변환
+        String alarmDateKey = updatedAlarm.getAlarmTime()
+                .atZone(ZoneId.of("Asia/Seoul"))
+                .toLocalDate()
                 .format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
-        // 캘린더 이벤트 갱신
-        scheduleCalendarService.addOrUpdateEvent(today, "Alarm");
+        // 캘린더 이벤트 갱신 (String date 기준)
+        scheduleCalendarService.addOrUpdateEvent(alarmDateKey, "Alarm");
 
         return ResponseEntity.ok("알람이 정상적으로 수정되었습니다.");
     }
 
-    @Operation(summary = "알람 삭제", description = "특정 ID를 가진 알람을 삭제합니다.")
-    @Parameter(name = "alarmId", description = "삭제할 알람의 ID", required = true)
     @DeleteMapping("/{alarmId}")
-    public ResponseEntity<String> deleteAlarm(@PathVariable("alarmId") Long alarmId) {
+    public ResponseEntity<String> deleteAlarm(
+            @PathVariable("alarmId") Long alarmId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long memberId = userDetails.getId();
+
+        // 삭제 전: 알람 날짜 확보 (권한 체크 포함)
+        ResponseAlarmDto alarmDto = alarmService.getAlarmById(alarmId, memberId);
+
+        String alarmDateKey = alarmDto.getAlarmTime()
+                .atZone(ZoneId.of("Asia/Seoul"))
+                .toLocalDate()
+                .format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+        // 알람 삭제
         alarmService.deleteAlarm(alarmId);
 
-        // 오늘 날짜 "yyyyMMdd"로 변환
-        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-
-        // 이벤트 추가
-        scheduleCalendarService.addOrUpdateEvent(today, "Alarm");
+        // 같은 memberId의 같은 날짜 알람이 0개면 캘린더에서 Alarm 이벤트 제거
+        if (alarmService.countAlarmsOnDate(memberId, alarmDateKey) == 0) {
+            scheduleCalendarService.deleteSpecificEvent(alarmDateKey, "Alarm");
+        }
 
         return ResponseEntity.ok("Alarm with ID " + alarmId + " has been deleted successfully.");
     }

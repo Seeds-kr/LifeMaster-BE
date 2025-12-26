@@ -12,6 +12,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
@@ -33,7 +34,9 @@ public class DiaryController {
         DiaryEntity createdDiary = diaryService.createDiary(diaryDto, memberId);
 
         // 오늘 날짜 "yyyyMMdd"로 변환
-        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String today = LocalDate
+                .now(ZoneId.of("Asia/Seoul"))
+                .format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
         // 이벤트 추가
         scheduleCalendarService.addOrUpdateEvent(today, "Diary");
