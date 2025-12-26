@@ -54,13 +54,9 @@ public class TodoController {
 
         Long memberId = user.getId();
         TodoResponse createdTodo = todoService.createTodo(todoCreateRequest, memberId);
-        //scheduleCalendarService.addOrUpdateEvent(todoCreateRequest.getDate(), "todo");//이벤트 추가
 
-        // 오늘 날짜 "yyyyMMdd"로 변환
-        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-
-        // 이벤트 추가
-        scheduleCalendarService.addOrUpdateEvent(today, "Todo");
+        // Todo가 생성된 날짜(요청으로 들어온 날짜)에 캘린더 이벤트 추가
+        scheduleCalendarService.addOrUpdateEvent(todoCreateRequest.getDate(), "Todo");
 
         return new ResponseEntity<>(createdTodo, HttpStatus.CREATED);
     }
@@ -86,17 +82,20 @@ public class TodoController {
         ResponseEntity<?> loginCheck = login.checkLogin(user);
         if (loginCheck != null) return loginCheck;
 
-        Optional<TodoEntity> updatedTodo = todoService.updateDateTitle(id, date, title);
-        //scheduleCalendarService.addOrUpdateEvent(date, "todo");//이벤트 추가
+        // 1️⃣ Todo 수정 (수정된 엔티티 반환)
+        Optional<TodoEntity> updatedTodoOpt = todoService.updateDateTitle(id, date, title);
+        if (updatedTodoOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
 
-        // 오늘 날짜 "yyyyMMdd"로 변환
-        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        TodoEntity updatedTodo = updatedTodoOpt.get();
 
-        // 이벤트 추가
-        scheduleCalendarService.addOrUpdateEvent(today, "Todo");
+        // 2️⃣ Todo가 속한 날짜(String yyyyMMdd) 기준으로 캘린더 이벤트 갱신
+        String targetDate = updatedTodo.getDate(); // ← 핵심
 
-        return updatedTodo.map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+        scheduleCalendarService.addOrUpdateEvent(targetDate, "Todo");
+
+        return ResponseEntity.ok(updatedTodo);
     }
 
     @Operation(summary = "To-Do 삭제", description = "ID를 기반으로 To-Do 항목을 삭제합니다.")
@@ -106,18 +105,23 @@ public class TodoController {
         ResponseEntity<?> loginCheck = login.checkLogin(user);
         if (loginCheck != null) return loginCheck;
 
-        Optional<TodoEntity> todo = todoService.findById(id);
-        todo.ifPresent(t -> {
-            String date = t.getDate();
-            //scheduleCalendarService.deleteSpecificEvent(date, "todo");//이벤트 제거
-            todoService.deleteById(id);
-        });
+        Long memberId = user.getId();
 
-        // 오늘 날짜 "yyyyMMdd"로 변환
-        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        Optional<TodoEntity> todoOpt = todoService.findById(id);
+        if (todoOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
 
-        // 이벤트 추가
-        scheduleCalendarService.addOrUpdateEvent(today, "Todo");
+        TodoEntity todo = todoOpt.get();
+        String date = todo.getDate(); // yyyyMMdd
+
+        // 1) Todo 삭제
+        todoService.deleteById(id);
+
+        // 2) 같은 memberId + 같은 date의 Todo가 0개면 캘린더에서 "Todo" 제거
+        if (todoService.countTodosByMemberIdAndDate(memberId, date) == 0) {
+            scheduleCalendarService.deleteSpecificEvent(date, "Todo");
+        }
 
         return ResponseEntity.noContent().build();
     }

@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 @Data
 @NoArgsConstructor
@@ -27,5 +28,12 @@ public class CreateThankDto {
                 .thankFive(thankFive)
                 .thankDate(thankDate)
                 .build();
+    }
+
+    public String getDate() {
+        if (thankDate == null) {
+            throw new IllegalStateException("thankDate가 null입니다.");
+        }
+        return thankDate.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
     }
 }

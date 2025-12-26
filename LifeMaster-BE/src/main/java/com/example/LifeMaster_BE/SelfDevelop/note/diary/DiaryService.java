@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+
 @Slf4j
 @Service
 @Transactional
@@ -35,6 +37,20 @@ public class DiaryService {
 
         diary.setDiaryContent(diaryDto.getDiaryContent());
         return diary;
+    }
+
+    public DiaryEntity getDiaryByIdAndMemberId(Long diaryId, Long memberId) {
+        return diaryRepository.findByIdAndMember_Id(diaryId, memberId)
+                .orElseThrow(() -> new EntityNotFoundException("Diary not found"));
+    }
+
+    public void deleteDiary(Long diaryId, Long memberId) {
+        DiaryEntity diary = getDiaryByIdAndMemberId(diaryId, memberId);
+        diaryRepository.delete(diary);
+    }
+
+    public long countDiaryByMemberIdAndDate(Long memberId, LocalDate diaryDate) {
+        return diaryRepository.countByMember_IdAndDiaryDate(memberId, diaryDate);
     }
 
     public void deleteDiary(Long diaryId){

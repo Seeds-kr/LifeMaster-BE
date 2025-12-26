@@ -2,6 +2,7 @@ package com.example.LifeMaster_BE.Challenge;
 
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -12,6 +13,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -200,5 +203,35 @@ public class ChallengeService {
         emitter.onCompletion(() -> emitters.remove(userId));
         emitter.onTimeout(() -> emitters.remove(userId));
         return emitter;
+    }
+
+    public LocalDate getChallengeDate(Long challId) {
+        Challenge challenge = challengeRepository.findById(challId)
+                .orElseThrow(() -> new EntityNotFoundException("Challenge not found: " + challId));
+
+        if (challenge.getChallDate() == null) {
+            throw new IllegalStateException("challDate가 null입니다. challId=" + challId);
+        }
+        return challenge.getChallDate(); // LocalDate
+    }
+
+    public long countJoinedChallengesOnDate(Long memberId, String yyyyMMdd) {
+        LocalDate date = LocalDate.parse(yyyyMMdd, DateTimeFormatter.ofPattern("yyyyMMdd"));
+        return challengeRepository.countJoinedByMemberIdAndDate(memberId, date);
+    }
+
+    public Challenge getChallengeByIdAndMemberId(Long challId, Long memberId) {
+        return challengeRepository.findByChallIdAndUser_Id(challId, memberId)
+                .orElseThrow(() -> new EntityNotFoundException("Challenge not found"));
+    }
+
+    public String deleteChallenge(Long challId, Long memberId) {
+        Challenge challenge = getChallengeByIdAndMemberId(challId, memberId);
+        challengeRepository.delete(challenge);
+        return "Challenge deleted";
+    }
+
+    public long countChallengesByMemberIdAndDate(Long memberId, LocalDate challDate) {
+        return challengeRepository.countByUser_IdAndChallDate(memberId, challDate);
     }
 }

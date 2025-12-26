@@ -88,18 +88,23 @@ public class ScheduleCalendarService {
         if (entries.isEmpty()) {
             entry = new ScheduleCalendarEntity();
             entry.setDate(date);
+
+            // day 계산해서 넣기
+            LocalDate localDate = LocalDate.parse(date, DateTimeFormatter.ofPattern("yyyyMMdd"));
+            entry.setDay(localDate.getDayOfWeek().name()); // 예: MONDAY
+            // 만약 한글 요일이면 따로 매핑
         } else {
             entry = entries.get();
         }
 
         if (entry.getEvents() == null) {
-            entry.setEvents(new ArrayList<>()); // null 방지
+            entry.setEvents(new ArrayList<>());
         }
 
-        // 중복 검사
         if (!entry.getEvents().contains(event)) {
             entry.getEvents().add(event);
         }
+
         return calendarRepository.save(entry);
     }
 

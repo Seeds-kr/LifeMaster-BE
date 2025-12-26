@@ -8,4 +8,8 @@ import java.util.Optional;
 public interface DiaryRepository extends JpaRepository<DiaryEntity, Long> {
 
     Optional<DiaryEntity> findByDiaryDate(LocalDate date);
+
+    Optional<DiaryEntity> findByIdAndMember_Id(Long diaryId, Long memberId);
+
+    long countByMember_IdAndDiaryDate(Long memberId, LocalDate diaryDate);
 }

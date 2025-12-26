@@ -5,6 +5,8 @@ import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 
 public class SleepDto {
 
@@ -35,12 +37,28 @@ public class SleepDto {
     @AllArgsConstructor
     @NoArgsConstructor
     public static class Request {
+
         private Integer sleepId;
-        private LocalDate sleepDate;
-        private LocalDateTime sleepStart;
+        private LocalDate sleepDate;          // 수면 날짜 (우선 사용)
+        private LocalDateTime sleepStart;     // fallback 용
         private LocalDateTime sleepEnd;
         private MoodStatus sleepMood;
-        private AlarmInfoDto alarmInfo; // ✅ 묶어서 받음
+        private AlarmInfoDto alarmInfo;
+
+        public String getDate() {
+            if (sleepDate != null) {
+                return sleepDate.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+            }
+
+            if (sleepStart != null) {
+                return sleepStart
+                        .atZone(ZoneId.of("Asia/Seoul"))
+                        .toLocalDate()
+                        .format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+            }
+
+            throw new IllegalStateException("Sleep date 정보가 없습니다 (sleepDate, sleepStart 모두 null)");
+        }
     }
 
     @Builder

@@ -33,16 +33,11 @@ public class DiaryController {
         Long memberId = user.getId();
         DiaryEntity createdDiary = diaryService.createDiary(diaryDto, memberId);
 
-        // 오늘 날짜 "yyyyMMdd"로 변환
-        String today = LocalDate
-                .now(ZoneId.of("Asia/Seoul"))
-                .format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-
-        // 이벤트 추가
-        scheduleCalendarService.addOrUpdateEvent(today, "Diary");
+        // 일기 날짜 기준으로 이벤트 추가
+        scheduleCalendarService.addOrUpdateEvent(diaryDto.getDate(), "Diary");
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(Map.of("diartId", createdDiary.getId()));
+                .body(Map.of("diaryId", createdDiary.getId()));
     }
 
     @PutMapping("/{diary-id}")
@@ -52,20 +47,34 @@ public class DiaryController {
 
         DiaryEntity updatedDiary = diaryService.updateDiary(diaryId, diaryDto);
 
-        // 오늘 날짜 "yyyyMMdd"로 변환
-        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-
-        // 이벤트 추가
-        scheduleCalendarService.addOrUpdateEvent(today, "Diary");
+        // 일기 날짜 기준으로 캘린더 이벤트 추가
+        scheduleCalendarService.addOrUpdateEvent(diaryDto.getDate(), "Diary");
 
         return ResponseEntity.ok(updatedDiary);
     }
 
     @DeleteMapping("/{diary-id}")
     public ResponseEntity<Void> deleteDiary(
-            @PathVariable("diary-id") Long diaryId){
+            @PathVariable("diary-id") Long diaryId,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        Long memberId = user.getId();
 
-        diaryService.deleteDiary(diaryId);
+        // 1) 삭제 전: 다이어리 조회해서 날짜 확보(본인 것만)
+        DiaryEntity diary = diaryService.getDiaryByIdAndMemberId(diaryId, memberId);
+
+        String dateKey = diary.getDiaryDate()
+                .format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+        // 2) 다이어리 삭제
+        diaryService.deleteDiary(diaryId, memberId);
+
+        // 3) 같은 memberId + 같은 날짜의 다이어리가 0개면 캘린더 이벤트 제거
+        if (diaryService.countDiaryByMemberIdAndDate(memberId, diary.getDiaryDate()) == 0) {
+            scheduleCalendarService.deleteSpecificEvent(dateKey, "Diary");
+        }
+
         return ResponseEntity.noContent().build();
     }
+
 }

@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 @Data
 @NoArgsConstructor
@@ -18,5 +19,12 @@ public class CreateDiaryDto {
                 .diaryContent(diaryContent)
                 .diaryDate(diaryDate)
                 .build();
+    }
+
+    public String getDate() {
+        if (diaryDate == null) {
+            throw new IllegalStateException("diaryDate가 null입니다.");
+        }
+        return diaryDate.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
     }
 }

@@ -8,4 +8,8 @@ import java.util.Optional;
 public interface ThankRepository extends JpaRepository<ThankEntity, Long> {
 
     Optional<ThankEntity> findByThankDate(LocalDate date);
+
+    Optional<ThankEntity> findByIdAndMember_Id(Long thankId, Long memberId);
+
+    long countByMember_IdAndThankDate(Long memberId, LocalDate thankDate);
 }

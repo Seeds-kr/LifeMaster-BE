@@ -1,6 +1,7 @@
 package com.example.LifeMaster_BE.Challenge;
 
 import com.example.LifeMaster_BE.FunctionManager.Calender.ScheduleCalendarService;
+import com.example.LifeMaster_BE.Security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -9,6 +10,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -22,16 +24,14 @@ public class ChallengeController {
     /** 0. 챌린지 생성 */
     @PostMapping
     @Operation(summary = "챌린지 생성", description = "새로운 챌린지를 생성합니다.")
-    public Challenge createChallenge(@RequestBody ChallengeDto.Create challenge, @AuthenticationPrincipal UserDetails userDetails) {
+    public Challenge createChallenge(@RequestBody ChallengeDto.Create challenge,
+                                     @AuthenticationPrincipal UserDetails userDetails) {
         String email = userDetails.getUsername();
 
-        // 오늘 날짜 "yyyyMMdd"로 변환
-        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        // 챌린지 날짜(yyyyMMdd) 기준으로 이벤트 추가
+        scheduleCalendarService.addOrUpdateEvent(challenge.getDate(), "Challenge");
 
-        // 이벤트 추가
-        scheduleCalendarService.addOrUpdateEvent(today, "Challenge");
-
-        return challengeService.createChallenge(challenge,email);
+        return challengeService.createChallenge(challenge, email);
     }
 
     /** 1. 챌린지 목록 조회 */
@@ -67,38 +67,68 @@ public class ChallengeController {
     /** 5. 챌린지 참여 */
     @PostMapping("/{challId}/join")
     @Operation(summary = "챌린지 참여", description = "사용자가 특정 챌린지에 참여합니다.")
-    public String joinChallenge(@PathVariable Long challId, @AuthenticationPrincipal UserDetails userDetails) {
-        // 오늘 날짜 "yyyyMMdd"로 변환
-        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+    public String joinChallenge(@PathVariable Long challId,
+                                @AuthenticationPrincipal UserDetails userDetails) {
 
-        // 이벤트 추가
-        scheduleCalendarService.addOrUpdateEvent(today, "Challenge");
+        // 참여한 '현재 날짜' 기준 (KST)
+        String dateKey = LocalDate
+                .now(ZoneId.of("Asia/Seoul"))
+                .format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+        // 캘린더 이벤트 추가
+        scheduleCalendarService.addOrUpdateEvent(dateKey, "Challenge");
+
+        // 참여 처리
         return challengeService.joinChallenge(challId, userDetails);
     }
 
     /** 6. 챌린지 참여 취소 */
     @DeleteMapping("/{challId}/leave")
     @Operation(summary = "챌린지 참여 취소", description = "사용자가 특정 챌린지 참여를 취소합니다.")
-    public String leaveChallenge(@PathVariable Long challId, @AuthenticationPrincipal UserDetails userDetails) {
-        // 오늘 날짜 "yyyyMMdd"로 변환
-        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+    public String leaveChallenge(@PathVariable Long challId,
+                                 @AuthenticationPrincipal UserDetails userDetails) {
 
-        // 이벤트 추가
-        scheduleCalendarService.addOrUpdateEvent(today, "Challenge");
-        return challengeService.leaveChallenge(challId, userDetails);
+        // memberId 확보
+        Long memberId = ((CustomUserDetails) userDetails).getId();
+
+        // 오늘 날짜 (참여 취소는 '행동 로그' → 오늘 기준)
+        String today = LocalDate
+                .now(ZoneId.of("Asia/Seoul"))
+                .format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+        // 참여 취소 처리
+        String result = challengeService.leaveChallenge(challId, userDetails);
+
+        // 오늘 기준, 같은 memberId의 챌린지 참여가 0개면 캘린더 이벤트 삭제
+        if (challengeService.countJoinedChallengesOnDate(memberId, today) == 0) {
+            scheduleCalendarService.deleteSpecificEvent(today, "Challenge");
+        }
+
+        return result;
     }
 
     /** 7. 챌린지 삭제 */
     @DeleteMapping("/{challId}")
     @Operation(summary = "챌린지 삭제", description = "특정 챌린지를 삭제합니다.")
-    public String deleteChallenge(@PathVariable Long challId) {
+    public String deleteChallenge(@PathVariable Long challId,
+                                  @AuthenticationPrincipal CustomUserDetails user) {
 
-        // 오늘 날짜 "yyyyMMdd"로 변환
-        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        Long memberId = user.getId();
 
-        // 이벤트 추가
-        scheduleCalendarService.addOrUpdateEvent(today, "Challenge");
+        // 1) 삭제 전: 챌린지 조회(본인 것만) + 날짜 확보
+        Challenge challenge = challengeService.getChallengeByIdAndMemberId(challId, memberId);
 
-        return challengeService.deleteChallenge(challId);
+        LocalDate challDate = challenge.getChallDate();
+        String dateKey = challDate.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+        // 2) 챌린지 삭제 (권한 포함)
+        String result = challengeService.deleteChallenge(challId, memberId);
+
+        // 3) 같은 memberId + 같은 날짜의 챌린지가 0개면 캘린더 이벤트 삭제
+        if (challengeService.countChallengesByMemberIdAndDate(memberId, challDate) == 0) {
+            scheduleCalendarService.deleteSpecificEvent(dateKey, "Challenge");
+        }
+
+        return result;
     }
 }

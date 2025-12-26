@@ -141,6 +141,10 @@ public class TodoService {
         return todoRepository.save(todo);
     }
 
+    public long countTodosByMemberIdAndDate(Long memberId, String date) {
+        return todoRepository.countByMember_IdAndDate(memberId, date);
+    }
+
     public List<TodoEntity> getTodosByMember(Long memberId) {
         return todoRepository.findByMemberId(memberId);
     }

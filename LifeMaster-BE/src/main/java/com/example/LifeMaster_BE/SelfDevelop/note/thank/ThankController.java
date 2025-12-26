@@ -28,17 +28,13 @@ public class ThankController {
     @PostMapping
     public ResponseEntity<Map<String, Long>> newThank(
             @RequestBody CreateThankDto thankDto,
-            @AuthenticationPrincipal CustomUserDetails user){
+            @AuthenticationPrincipal CustomUserDetails user) {
+
         Long memberId = user.getId();
         ThankEntity createdThank = thankService.createThank(thankDto, memberId);
 
-        // 오늘 날짜 "yyyyMMdd"로 변환
-        String today = LocalDate
-                .now(ZoneId.of("Asia/Seoul"))
-                .format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-
-        // 이벤트 추가
-        scheduleCalendarService.addOrUpdateEvent(today, "Thank");
+        // Thank 생성 날짜(yyyyMMdd) 기준으로 이벤트 추가
+        scheduleCalendarService.addOrUpdateEvent(thankDto.getDate(), "Thank");
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("thankId", createdThank.getId()));
@@ -47,22 +43,41 @@ public class ThankController {
     @PutMapping("/{thank-id}")
     public ResponseEntity<ThankEntity> editThank(
             @RequestBody UpdateThankDto thankDto,
-            @PathVariable("thank-id") Long thankId){
+            @PathVariable("thank-id") Long thankId) {
+
         ThankEntity updatedThank = thankService.updateThank(thankId, thankDto);
 
-        // 오늘 날짜 "yyyyMMdd"로 변환
-        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        // Thank의 실제 날짜 기준으로 이벤트 추가 (String yyyyMMdd)
+        String dateKey = updatedThank.getThankDate()
+                .format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
-        // 이벤트 추가
-        scheduleCalendarService.addOrUpdateEvent(today, "Thank");
+        scheduleCalendarService.addOrUpdateEvent(dateKey, "Thank");
 
         return ResponseEntity.ok(updatedThank);
     }
 
     @DeleteMapping("/{thank-id}")
     public ResponseEntity<Void> deleteThank(
-            @PathVariable("thank-id") Long thankId){
-        thankService.deleteThank(thankId);
+            @PathVariable("thank-id") Long thankId,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        Long memberId = user.getId();
+
+        // 1️⃣ 삭제 전: Thank 조회 (본인 것만)
+        ThankEntity thank = thankService.getThankByIdAndMemberId(thankId, memberId);
+
+        // 날짜(String yyyyMMdd)
+        String dateKey = thank.getThankDate()
+                .format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+        // 2️⃣ Thank 삭제
+        thankService.deleteThank(thankId, memberId);
+
+        // 3️⃣ 같은 memberId + 같은 날짜에 Thank가 0개면 캘린더 이벤트 제거
+        if (thankService.countThankByMemberIdAndDate(memberId, thank.getThankDate()) == 0) {
+            scheduleCalendarService.deleteSpecificEvent(dateKey, "Thank");
+        }
+
         return ResponseEntity.noContent().build();
     }
 }

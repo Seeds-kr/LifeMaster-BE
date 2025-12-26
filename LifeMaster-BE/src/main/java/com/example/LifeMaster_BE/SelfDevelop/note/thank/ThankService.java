@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+
 @Slf4j
 @Service
 @Transactional
@@ -48,5 +50,19 @@ public class ThankService {
         thank.setThankFive(thankDto.getThankFive());
 
         return thank;
+    }
+
+    public ThankEntity getThankByIdAndMemberId(Long thankId, Long memberId) {
+        return thankRepository.findByIdAndMember_Id(thankId, memberId)
+                .orElseThrow(() -> new EntityNotFoundException("Thank not found"));
+    }
+
+    public void deleteThank(Long thankId, Long memberId) {
+        ThankEntity thank = getThankByIdAndMemberId(thankId, memberId);
+        thankRepository.delete(thank);
+    }
+
+    public long countThankByMemberIdAndDate(Long memberId, LocalDate thankDate) {
+        return thankRepository.countByMember_IdAndThankDate(memberId, thankDate);
     }
 }

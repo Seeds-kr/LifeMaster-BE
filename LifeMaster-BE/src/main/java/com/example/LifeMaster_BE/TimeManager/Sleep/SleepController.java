@@ -47,17 +47,13 @@ public class SleepController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
 
-        Long userId = userDetails.getId(); // 👈 여기서 userId
+        Long userId = userDetails.getId();
 
+        // 1️⃣ 수면 기록 생성
         sleepService.makeSleep(request, userId);
 
-        // 오늘 날짜 "yyyyMMdd"로 변환
-        String today = LocalDate
-                .now(ZoneId.of("Asia/Seoul"))
-                .format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-
-        // 이벤트 추가
-        scheduleCalendarService.addOrUpdateEvent(today, "Sleep");
+        // 2️⃣ 수면이 기록된 날짜(String yyyyMMdd) 기준으로 캘린더 이벤트 추가
+        scheduleCalendarService.addOrUpdateEvent(request.getDate(), "Sleep");
 
         return ResponseEntity.ok("Sleep started");
     }
@@ -68,15 +64,12 @@ public class SleepController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
 
-        Long userId = userDetails.getId(); // 👈 여기서 userId
+        Long userId = userDetails.getId();
 
         SleepDto.Response updatedResponse = sleepService.updateSleep(request, userId);
 
-        // 오늘 날짜 "yyyyMMdd"로 변환
-        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-
-        // 이벤트 추가
-        scheduleCalendarService.addOrUpdateEvent(today, "Sleep");
+        // ✅ 수면 기록의 날짜(yyyyMMdd) 기준으로 이벤트 추가
+        scheduleCalendarService.addOrUpdateEvent(request.getDate(), "Sleep");
 
         return ResponseEntity.ok(updatedResponse);
     }

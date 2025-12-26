@@ -9,6 +9,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+
 @Entity
 @Table
 @Getter
@@ -38,4 +40,9 @@ public class Challenge extends BaseEntity {
     @Column
     @Builder.Default
     private Integer challCnt = 1;
+
+    // 챌린지 날짜 (시작일 or 생성일)
+    @Getter
+    @Column(nullable = false)
+    private LocalDate challDate;
 }
