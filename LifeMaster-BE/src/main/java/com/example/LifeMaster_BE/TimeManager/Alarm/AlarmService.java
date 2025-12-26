@@ -1,5 +1,6 @@
 package com.example.LifeMaster_BE.TimeManager.Alarm;
 
+import com.example.LifeMaster_BE.FunctionManager.Calender.ScheduleCalendarService;
 import com.example.LifeMaster_BE.TimeManager.Alarm.AlarmMission.Enum.RandomMissionType;
 import com.example.LifeMaster_BE.TimeManager.Alarm.Mapper.AlarmMapStruct;
 import com.example.LifeMaster_BE.TimeManager.Alarm.Dto.NewAlarmDto;
@@ -17,9 +18,11 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
+import java.time.*;
+import java.time.format.DateTimeFormatter;
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -28,6 +31,12 @@ public class AlarmService {
     private final AlarmRepository alarmRepository;
     private final MemberRepository memberRepository;
     private final AlarmMapStruct alarmMapStruct;
+    private final ScheduleCalendarService scheduleCalendarService;
+
+    public AlarmEntity createAlarmAndSyncCalendar(NewAlarmDto alarmDto, Long memberId) {
+        AlarmEntity saved = createAlarm(alarmDto, memberId);
+        return saved;
+    }
 
     //알람 생성 메소드
     public AlarmEntity createAlarm(NewAlarmDto alarmDto, Long memberId) {
@@ -39,11 +48,48 @@ public class AlarmService {
                 .orElseThrow(() -> new EntityNotFoundException("Member " + memberId + " not found"));
 
         AlarmEntity newAlarm = AlarmEntity.fromDto(alarmDto);
-
         member.addAlarm(newAlarm);
 
-        // 저장된 엔티티를 그대로 반환
-        return alarmRepository.save(newAlarm);
+        // 1) 먼저 저장
+        AlarmEntity saved = alarmRepository.save(newAlarm);
+
+        // 2) 캘린더 이벤트 생성: "오늘 포함(nowKST) + 현재시간 이후" ~ "이번 달 말"
+        ZoneId KST = ZoneId.of("Asia/Seoul");
+        ZonedDateTime nowKst = ZonedDateTime.now(KST);
+
+        LocalDate startDate = nowKst.toLocalDate();                 // 생성일(오늘) 포함
+        LocalDate endDate = YearMonth.from(startDate).atEndOfMonth(); // 이번 달 말
+
+        // 알람 시각(오늘 기준 비교용)
+        LocalTime alarmTimeOfDay = saved.getAlarmTime()
+                .atZone(KST)
+                .toLocalTime();
+
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyyMMdd");
+
+        for (LocalDate d = startDate; !d.isAfter(endDate); d = d.plusDays(1)) {
+
+            // 요일 true인 날만
+            DayOfWeek dow = d.getDayOfWeek();
+            boolean enabled = switch (dow) {
+                case MONDAY    -> saved.isAlarmMon();
+                case TUESDAY   -> saved.isAlarmTue();
+                case WEDNESDAY -> saved.isAlarmWed();
+                case THURSDAY  -> saved.isAlarmThu();
+                case FRIDAY    -> saved.isAlarmFri();
+                case SATURDAY  -> saved.isAlarmSat();
+                case SUNDAY    -> saved.isAlarmSun();
+            };
+            if (!enabled) continue;
+
+            // 오늘은 "현재시간 이후"만 포함
+            if (d.equals(startDate) && !alarmTimeOfDay.isAfter(nowKst.toLocalTime())) continue;
+
+            String dateKey = d.format(fmt);
+            scheduleCalendarService.addOrUpdateEvent(dateKey, "Alarm");
+        }
+
+        return saved;
     }
 
     //알람 전체 조회 메소드
@@ -110,6 +156,145 @@ public class AlarmService {
         alarmRepository.save(alarm);
     }
 
+    public void updateAlarmAndSyncCalendar(Long alarmId, NewAlarmDto dto, Long memberId) {
+
+        ZoneId KST = ZoneId.of("Asia/Seoul");
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyyMMdd");
+
+        // 1) 수정 전 알람 로드 (old 스냅샷)
+        AlarmEntity old = alarmRepository.findById(alarmId)
+                .orElseThrow(() -> new EntityNotFoundException("Alarm " + alarmId + " not found"));
+
+        // old 스냅샷 (updateAlarm에서 엔티티를 변경해버리기 전에 저장)
+        LocalTime oldTimeOfDay = old.getAlarmTime().atZone(KST).toLocalTime();
+        boolean oldMon = old.isAlarmMon();
+        boolean oldTue = old.isAlarmTue();
+        boolean oldWed = old.isAlarmWed();
+        boolean oldThu = old.isAlarmThu();
+        boolean oldFri = old.isAlarmFri();
+        boolean oldSat = old.isAlarmSat();
+        boolean oldSun = old.isAlarmSun();
+
+        // 2) 실제 수정(기존 로직 재사용)
+        updateAlarm(alarmId, dto);
+
+        // 3) 수정 후 알람 로드 (new)
+        AlarmEntity updated = alarmRepository.findById(alarmId)
+                .orElseThrow(() -> new EntityNotFoundException("Alarm " + alarmId + " not found after update"));
+
+        LocalTime newTimeOfDay = updated.getAlarmTime().atZone(KST).toLocalTime();
+
+        ZonedDateTime nowKst = ZonedDateTime.now(KST);
+        LocalDate startDate = nowKst.toLocalDate();                 // 오늘 포함
+        LocalDate endDate = YearMonth.from(startDate).atEndOfMonth(); // 이번 달 말
+
+        // 멤버의 다른 알람들(삭제 여부 판단용)
+        // - DB 못 건드린다 했으니, 쿼리 추가 없이 "가져와서 in-memory 필터"로 처리
+        List<AlarmEntity> memberAlarms = alarmRepository.findAllByMemberId(memberId);
+
+        for (LocalDate d = startDate; !d.isAfter(endDate); d = d.plusDays(1)) {
+
+            DayOfWeek dow = d.getDayOfWeek();
+
+            boolean oldEnabled = enabledBySnapshot(dow, oldMon, oldTue, oldWed, oldThu, oldFri, oldSat, oldSun);
+            boolean newEnabled = enabledByEntity(updated, dow);
+
+            // '오늘'은 현재시간 이후만 포함 (old/new 각각의 알람 시각을 기준으로)
+            if (d.equals(startDate)) {
+                boolean oldTimeOk = oldTimeOfDay.isAfter(nowKst.toLocalTime());
+                boolean newTimeOk = newTimeOfDay.isAfter(nowKst.toLocalTime());
+
+                oldEnabled = oldEnabled && oldTimeOk;
+                newEnabled = newEnabled && newTimeOk;
+            }
+
+            // 변동 없음이면 skip
+            if (oldEnabled == newEnabled) continue;
+
+            String dateKey = d.format(fmt);
+
+            if (!oldEnabled && newEnabled) {
+                // false -> true : 이벤트 생성/유지
+                scheduleCalendarService.addOrUpdateEvent(dateKey, "Alarm");
+                continue;
+            }
+
+            if (oldEnabled && !newEnabled) {
+                // true -> false : "그 날짜에 다른 알람이 없으면" 이벤트 삭제
+                boolean hasOtherAlarmThatDay = hasAnyOtherAlarmOnDate(
+                        memberAlarms, alarmId, d, nowKst.toLocalTime()
+                );
+
+                if (!hasOtherAlarmThatDay) {
+                    // 너의 캘린더 서비스에 맞춰 삭제 메서드 구현/호출
+                    scheduleCalendarService.deleteSpecificEvent(dateKey, "Alarm");
+                } else {
+                    // 다른 알람이 있으면 이벤트는 유지(필요하면 갱신)
+                    scheduleCalendarService.addOrUpdateEvent(dateKey, "Alarm");
+                }
+            }
+        }
+    }
+
+    private boolean enabledBySnapshot(
+            DayOfWeek day,
+            boolean mon, boolean tue, boolean wed, boolean thu, boolean fri, boolean sat, boolean sun
+    ) {
+        return switch (day) {
+            case MONDAY -> mon;
+            case TUESDAY -> tue;
+            case WEDNESDAY -> wed;
+            case THURSDAY -> thu;
+            case FRIDAY -> fri;
+            case SATURDAY -> sat;
+            case SUNDAY -> sun;
+        };
+    }
+
+    private boolean enabledByEntity(AlarmEntity alarm, DayOfWeek day) {
+        return switch (day) {
+            case MONDAY    -> alarm.isAlarmMon();
+            case TUESDAY   -> alarm.isAlarmTue();
+            case WEDNESDAY -> alarm.isAlarmWed();
+            case THURSDAY  -> alarm.isAlarmThu();
+            case FRIDAY    -> alarm.isAlarmFri();
+            case SATURDAY  -> alarm.isAlarmSat();
+            case SUNDAY    -> alarm.isAlarmSun();
+        };
+    }
+
+    /**
+     * "해당 날짜에 다른 알람이 있는지" 판단
+     * - 동일 member의 알람 중에서
+     * - (현재 수정중인 alarmId 제외)
+     * - 그 날짜의 요일 플래그가 true
+     * - 그리고 날짜가 '오늘'이면 현재시간 이후인 알람만 인정(생성 로직과 동일 기준)
+     */
+    private boolean hasAnyOtherAlarmOnDate(
+            List<AlarmEntity> memberAlarms,
+            Long excludeAlarmId,
+            LocalDate date,
+            LocalTime nowTimeKst
+    ) {
+        DayOfWeek dow = date.getDayOfWeek();
+        boolean isToday = date.equals(LocalDate.now(ZoneId.of("Asia/Seoul")));
+
+        for (AlarmEntity a : memberAlarms) {
+            if (a.getId() == null) continue;
+            if (a.getId().equals(excludeAlarmId)) continue;
+
+            if (!enabledByEntity(a, dow)) continue;
+
+            if (isToday) {
+                LocalTime t = a.getAlarmTime().atZone(ZoneId.of("Asia/Seoul")).toLocalTime();
+                if (!t.isAfter(nowTimeKst)) continue;
+            }
+
+            return true;
+        }
+        return false;
+    }
+
     public String deactivateActivatedAlarms() {
         // 모든 알람 가져오기
         List<AlarmEntity> alarms = alarmRepository.findAll();
@@ -141,6 +326,54 @@ public class AlarmService {
         AlarmEntity alarm = alarmRepository.findById(alarmId)
                 .orElseThrow(() -> new EntityNotFoundException("Alarm " + alarmId + " not found"));
         alarmRepository.delete(alarm);
+    }
+
+    public void deleteAlarmAndSyncCalendar(Long alarmId, Long memberId) {
+        ZoneId KST = ZoneId.of("Asia/Seoul");
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyyMMdd");
+
+        // 삭제 전: 알람 정보 확보(권한 체크 포함)
+        ResponseAlarmDto alarmDto = getAlarmById(alarmId, memberId);
+
+        // 알람 시각(오늘 now 이후 필터용)
+        LocalTime alarmTimeOfDay = alarmDto.getAlarmTime().atZone(KST).toLocalTime();
+
+        ZonedDateTime nowKst = ZonedDateTime.now(KST);
+        LocalDate startDate = nowKst.toLocalDate();                 // 오늘 포함
+        LocalDate endDate = YearMonth.from(startDate).atEndOfMonth(); // 이번 달 말
+
+        // 이 알람이 영향을 주는 dateKey 목록(삭제 후에는 못 구할 수 있으니 먼저 계산)
+        List<String> affectedDateKeys = new ArrayList<>();
+
+        for (LocalDate d = startDate; !d.isAfter(endDate); d = d.plusDays(1)) {
+            DayOfWeek dow = d.getDayOfWeek();
+
+            boolean enabled = switch (dow) {
+                case MONDAY    -> alarmDto.isAlarmMon();
+                case TUESDAY   -> alarmDto.isAlarmTue();
+                case WEDNESDAY -> alarmDto.isAlarmWed();
+                case THURSDAY  -> alarmDto.isAlarmThu();
+                case FRIDAY    -> alarmDto.isAlarmFri();
+                case SATURDAY  -> alarmDto.isAlarmSat();
+                case SUNDAY    -> alarmDto.isAlarmSun();
+            };
+            if (!enabled) continue;
+
+            // 오늘은 "현재시간 이후"만 포함
+            if (d.equals(startDate) && !alarmTimeOfDay.isAfter(nowKst.toLocalTime())) continue;
+
+            affectedDateKeys.add(d.format(fmt));
+        }
+
+        // 알람 삭제
+        deleteAlarm(alarmId);
+
+        // 각 날짜별: 같은 memberId 기준 해당일에 다른 알람이 0개면 Alarm 이벤트 삭제
+        for (String dateKey : affectedDateKeys) {
+            if (countAlarmsOnDate(memberId, dateKey) == 0) {
+                scheduleCalendarService.deleteSpecificEvent(dateKey, "Alarm");
+            }
+        }
     }
 
     private void validateMission(NewAlarmDto dto) {

@@ -51,18 +51,9 @@ public class AlarmController {
 
         Long memberId = userDetails.getId();
 
-        AlarmEntity savedAlarm = alarmService.createAlarm(alarmDto, memberId);
-        Long alarmId = savedAlarm.getId();
+        AlarmEntity saved = alarmService.createAlarmAndSyncCalendar(alarmDto, memberId);
 
-        // 알람 설정 날짜를 KST 기준 yyyyMMdd 문자열로 변환
-        LocalDate alarmDateKST = savedAlarm.getAlarmTime()
-                .atZone(ZoneId.of("Asia/Seoul"))
-                .toLocalDate();
-        String dateKey = alarmDateKST.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        // 캘린더 이벤트 갱신(문자열 날짜)
-        scheduleCalendarService.addOrUpdateEvent(dateKey, "Alarm");
-
-        URI location = URI.create("/time/alarm/" + alarmId);
+        URI location = URI.create("/time/alarm/" + saved.getId());
         return ResponseEntity.created(location).build();
     }
 
@@ -116,21 +107,8 @@ public class AlarmController {
     ) {
         Long memberId = userDetails.getId();
 
-        // 알람 수정
-        alarmService.updateAlarm(alarmId, dto);
-
-        // 수정된 알람 DTO 조회
-        ResponseAlarmDto updatedAlarm =
-                alarmService.getAlarmById(alarmId, memberId);
-
-        // 알람 설정 날짜를 KST 기준 yyyyMMdd 문자열로 변환
-        String alarmDateKey = updatedAlarm.getAlarmTime()
-                .atZone(ZoneId.of("Asia/Seoul"))
-                .toLocalDate()
-                .format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-
-        // 캘린더 이벤트 갱신 (String date 기준)
-        scheduleCalendarService.addOrUpdateEvent(alarmDateKey, "Alarm");
+        // 알람 수정 + 캘린더 동기화를 서비스에서 처리
+        alarmService.updateAlarmAndSyncCalendar(alarmId, dto, memberId);
 
         return ResponseEntity.ok("알람이 정상적으로 수정되었습니다.");
     }
@@ -142,21 +120,7 @@ public class AlarmController {
     ) {
         Long memberId = userDetails.getId();
 
-        // 삭제 전: 알람 날짜 확보 (권한 체크 포함)
-        ResponseAlarmDto alarmDto = alarmService.getAlarmById(alarmId, memberId);
-
-        String alarmDateKey = alarmDto.getAlarmTime()
-                .atZone(ZoneId.of("Asia/Seoul"))
-                .toLocalDate()
-                .format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-
-        // 알람 삭제
-        alarmService.deleteAlarm(alarmId);
-
-        // 같은 memberId의 같은 날짜 알람이 0개면 캘린더에서 Alarm 이벤트 제거
-        if (alarmService.countAlarmsOnDate(memberId, alarmDateKey) == 0) {
-            scheduleCalendarService.deleteSpecificEvent(alarmDateKey, "Alarm");
-        }
+        alarmService.deleteAlarmAndSyncCalendar(alarmId, memberId);
 
         return ResponseEntity.ok("Alarm with ID " + alarmId + " has been deleted successfully.");
     }

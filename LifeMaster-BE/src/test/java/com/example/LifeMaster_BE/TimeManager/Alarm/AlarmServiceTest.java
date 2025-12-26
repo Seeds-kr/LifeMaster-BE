@@ -1,5 +1,6 @@
 package com.example.LifeMaster_BE.TimeManager.Alarm;
 
+import com.example.LifeMaster_BE.FunctionManager.Calender.ScheduleCalendarService;
 import com.example.LifeMaster_BE.TimeManager.Alarm.Mapper.AlarmMapStruct;
 import com.example.LifeMaster_BE.TimeManager.Alarm.Dto.NewAlarmDto;
 import com.example.LifeMaster_BE.TimeManager.Alarm.Dto.ResponseAlarmDto;
@@ -14,6 +15,9 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -35,10 +39,15 @@ class AlarmServiceTest {
     @InjectMocks
     private AlarmService alarmService;
 
+    private final ScheduleCalendarService scheduleCalendarService;
+
+    AlarmServiceTest(ScheduleCalendarService scheduleCalendarService) {
+        this.scheduleCalendarService = scheduleCalendarService;
+    }
 
     @Test
-    @DisplayName("createAlarm: 멤버가 존재하면 알람을 저장하고 ID를 반환한다")
-    void createAlarm_success_returnsSavedId_andLinksMember() {
+    @DisplayName("createAlarm: 멤버가 존재하면 알람을 저장하고 반환하며, 멤버에 연결하고 캘린더 이벤트를 갱신한다")
+    void createAlarm_success_returnsSavedEntity_andLinksMember_andSyncsCalendar() {
         Long memberId = 10L;
         MemberEntity member = mock(MemberEntity.class);
         when(memberRepository.findById(memberId)).thenReturn(Optional.of(member));
@@ -49,15 +58,38 @@ class AlarmServiceTest {
         AlarmEntity savedAlarm = mock(AlarmEntity.class);
         when(savedAlarm.getId()).thenReturn(123L);
 
+        // ✅ createAlarm 내부에서 alarmTime/요일 플래그를 참조하므로 스텁 필요
+        // alarmTime은 "오늘 + 1시간" 정도로 잡아서 "현재 시간 이후" 조건을 쉽게 통과시키게 함
+        ZoneId kst = ZoneId.of("Asia/Seoul");
+        ZonedDateTime nowKst = ZonedDateTime.now(kst);
+        LocalDateTime alarmTime = nowKst.plusHours(1).toLocalDateTime();
+        when(savedAlarm.getAlarmTime()).thenReturn(alarmTime);
+
+        // 요일 플래그: 전부 true면 이번 달 말까지 여러 번 호출될 수 있음(테스트는 횟수 고정 X)
+        when(savedAlarm.isAlarmMon()).thenReturn(true);
+        when(savedAlarm.isAlarmTue()).thenReturn(true);
+        when(savedAlarm.isAlarmWed()).thenReturn(true);
+        when(savedAlarm.isAlarmThu()).thenReturn(true);
+        when(savedAlarm.isAlarmFri()).thenReturn(true);
+        when(savedAlarm.isAlarmSat()).thenReturn(true);
+        when(savedAlarm.isAlarmSun()).thenReturn(true);
+
         try (MockedStatic<AlarmEntity> mockedStatic = mockStatic(AlarmEntity.class)) {
             mockedStatic.when(() -> AlarmEntity.fromDto(dto)).thenReturn(transientAlarm);
             when(alarmRepository.save(transientAlarm)).thenReturn(savedAlarm);
 
-            Long id = alarmService.createAlarm(dto, memberId);
+            AlarmEntity result = alarmService.createAlarm(dto, memberId);
 
-            assertEquals(123L, id);
+            assertSame(savedAlarm, result);
+            assertEquals(123L, result.getId());
+
             verify(member).addAlarm(transientAlarm);
             verify(alarmRepository).save(transientAlarm);
+
+            // 캘린더 이벤트는 "조건을 만족하는 날짜들"에 대해 여러 번 호출될 수 있으니
+            // 최소 1번 이상 호출만 보장하는 방식으로 검증
+            verify(scheduleCalendarService, atLeastOnce())
+                    .addOrUpdateEvent(anyString(), eq("Alarm"));
         }
     }
 
