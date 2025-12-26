@@ -18,8 +18,8 @@ public class SleepService {
     private final MemberRepository userRepository;
 
     // 수면 시작 기록 생성
-    public void makeSleep(SleepDto.Request request) {
-        MemberEntity user = userRepository.findById(request.getUserId())
+    public void makeSleep(SleepDto.Request request, Long userId) {
+        MemberEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
 
         // ✅ AlarmSettings 변환
@@ -92,11 +92,11 @@ public class SleepService {
     }
 
     // 수면 데이터 수정
-    public SleepDto.Response updateSleep(SleepDto.Request request) {
+    public SleepDto.Response updateSleep(SleepDto.Request request, Long userId) {
         Sleep existingSleep = sleepRepository.findById(request.getSleepId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 수면 데이터입니다."));
 
-        MemberEntity user = userRepository.findById(request.getUserId())
+        MemberEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
 
         // AlarmInfo 업데이트
