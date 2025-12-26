@@ -9,11 +9,10 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ChallengeRepository extends JpaRepository<Challenge, Long> {
+
     Page<Challenge> findByChallNameContaining(String name, Pageable pageable);
 
     List<Challenge> findTop5ByOrderByCreatedAtDesc();
-
-    long countJoinedByMemberIdAndDate(Long memberId, LocalDate date);
 
     Optional<Challenge> findByChallIdAndUser_Id(Long challId, Long memberId);
 

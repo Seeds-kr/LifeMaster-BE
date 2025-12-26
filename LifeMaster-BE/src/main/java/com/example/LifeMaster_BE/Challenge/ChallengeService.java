@@ -217,7 +217,7 @@ public class ChallengeService {
 
     public long countJoinedChallengesOnDate(Long memberId, String yyyyMMdd) {
         LocalDate date = LocalDate.parse(yyyyMMdd, DateTimeFormatter.ofPattern("yyyyMMdd"));
-        return challengeRepository.countJoinedByMemberIdAndDate(memberId, date);
+        return challengeRepository.countByUser_IdAndChallDate(memberId, date);
     }
 
     public Challenge getChallengeByIdAndMemberId(Long challId, Long memberId) {
