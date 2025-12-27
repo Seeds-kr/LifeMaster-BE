@@ -1,5 +1,6 @@
 package com.example.LifeMaster_BE.FunctionManager.Calender;
 
+import com.example.LifeMaster_BE.Security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
@@ -37,12 +38,17 @@ public class ScheduleCalendarController {
      * - 실제로는 CustomUserDetails.getMemberId() 같은 방식일 확률이 높음.
      */
     private Long getMemberId(UserDetails userDetails) {
-        if (userDetails == null) throw new RuntimeException("인증 정보가 없습니다.");
-        try {
-            return Long.parseLong(userDetails.getUsername());
-        } catch (NumberFormatException e) {
-            throw new RuntimeException("memberId 추출 로직을 프로젝트에 맞게 수정하세요. username=" + userDetails.getUsername());
+        if (userDetails == null) {
+            throw new RuntimeException("인증 정보가 없습니다.");
         }
+
+        if (userDetails instanceof CustomUserDetails customUser) {
+            return customUser.getId();
+        }
+
+        throw new RuntimeException(
+                "지원하지 않는 UserDetails 타입입니다: " + userDetails.getClass().getName()
+        );
     }
 
     @Operation(summary = "전체 조회", description = "현재 로그인한 유저의 캘린더 엔트리를 모두 조회합니다.")
