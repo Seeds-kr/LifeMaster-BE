@@ -68,7 +68,8 @@ public class PomodoroTimerService {
 
         LocalDate today = LocalDate.now();
         String formattedDate = today.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        scheduleCalendarService.addOrUpdateEvent(formattedDate, "pomodoroTimer");
+
+        scheduleCalendarService.addOrUpdateEvent(memberId, formattedDate, "pomodoroTimer");
 
         PomodoroTimerEntity pomodoroTimer = new PomodoroTimerEntity();
         pomodoroTimer.setMember(member);

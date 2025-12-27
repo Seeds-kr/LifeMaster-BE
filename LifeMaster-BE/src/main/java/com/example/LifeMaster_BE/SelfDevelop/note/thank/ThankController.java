@@ -28,13 +28,13 @@ public class ThankController {
     @PostMapping
     public ResponseEntity<Map<String, Long>> newThank(
             @RequestBody CreateThankDto thankDto,
-            @AuthenticationPrincipal CustomUserDetails user) {
-
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
         Long memberId = user.getId();
         ThankEntity createdThank = thankService.createThank(thankDto, memberId);
 
-        // Thank 생성 날짜(yyyyMMdd) 기준으로 이벤트 추가
-        scheduleCalendarService.addOrUpdateEvent(thankDto.getDate(), "Thank");
+        // ✅ 오류 해결: memberId 추가
+        scheduleCalendarService.addOrUpdateEvent(memberId, thankDto.getDate(), "Thank");
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("thankId", createdThank.getId()));
@@ -43,15 +43,19 @@ public class ThankController {
     @PutMapping("/{thank-id}")
     public ResponseEntity<ThankEntity> editThank(
             @RequestBody UpdateThankDto thankDto,
-            @PathVariable("thank-id") Long thankId) {
+            @PathVariable("thank-id") Long thankId,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        Long memberId = user.getId();
 
         ThankEntity updatedThank = thankService.updateThank(thankId, thankDto);
 
-        // Thank의 실제 날짜 기준으로 이벤트 추가 (String yyyyMMdd)
+        // Thank의 실제 날짜 기준 (String yyyyMMdd)
         String dateKey = updatedThank.getThankDate()
                 .format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
-        scheduleCalendarService.addOrUpdateEvent(dateKey, "Thank");
+        // ✅ 오류 해결: memberId 추가
+        scheduleCalendarService.addOrUpdateEvent(memberId, dateKey, "Thank");
 
         return ResponseEntity.ok(updatedThank);
     }
@@ -75,7 +79,7 @@ public class ThankController {
 
         // 3️⃣ 같은 memberId + 같은 날짜에 Thank가 0개면 캘린더 이벤트 제거
         if (thankService.countThankByMemberIdAndDate(memberId, thank.getThankDate()) == 0) {
-            scheduleCalendarService.deleteSpecificEvent(dateKey, "Thank");
+            scheduleCalendarService.deleteSpecificEvent(memberId, dateKey, "Thank");
         }
 
         return ResponseEntity.noContent().build();

@@ -86,7 +86,7 @@ public class AlarmService {
             if (d.equals(startDate) && !alarmTimeOfDay.isAfter(nowKst.toLocalTime())) continue;
 
             String dateKey = d.format(fmt);
-            scheduleCalendarService.addOrUpdateEvent(dateKey, "Alarm");
+            scheduleCalendarService.addOrUpdateEvent(memberId,dateKey, "Alarm");
         }
 
         return saved;
@@ -215,7 +215,7 @@ public class AlarmService {
 
             if (!oldEnabled && newEnabled) {
                 // false -> true : 이벤트 생성/유지
-                scheduleCalendarService.addOrUpdateEvent(dateKey, "Alarm");
+                scheduleCalendarService.addOrUpdateEvent(memberId,dateKey, "Alarm");
                 continue;
             }
 
@@ -227,10 +227,10 @@ public class AlarmService {
 
                 if (!hasOtherAlarmThatDay) {
                     // 너의 캘린더 서비스에 맞춰 삭제 메서드 구현/호출
-                    scheduleCalendarService.deleteSpecificEvent(dateKey, "Alarm");
+                    scheduleCalendarService.deleteSpecificEvent(memberId,dateKey, "Alarm");
                 } else {
                     // 다른 알람이 있으면 이벤트는 유지(필요하면 갱신)
-                    scheduleCalendarService.addOrUpdateEvent(dateKey, "Alarm");
+                    scheduleCalendarService.addOrUpdateEvent(memberId,dateKey, "Alarm");
                 }
             }
         }
@@ -371,7 +371,7 @@ public class AlarmService {
         // 각 날짜별: 같은 memberId 기준 해당일에 다른 알람이 0개면 Alarm 이벤트 삭제
         for (String dateKey : affectedDateKeys) {
             if (countAlarmsOnDate(memberId, dateKey) == 0) {
-                scheduleCalendarService.deleteSpecificEvent(dateKey, "Alarm");
+                scheduleCalendarService.deleteSpecificEvent(memberId,dateKey, "Alarm");
             }
         }
     }

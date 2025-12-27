@@ -9,6 +9,7 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Entity
@@ -57,5 +58,11 @@ public class TimeDetoxEntity {
     public void setMemberId(Long memberId) {
         this.member = new MemberEntity();
         this.member.setId(memberId);
+    }
+
+    public String getDate() {
+        return this.createdDate != null
+                ? this.createdDate.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
+                : null;
     }
 }

@@ -5,6 +5,7 @@ import org.springframework.stereotype.Repository;
 
 import java.lang.reflect.Member;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface TimeDetoxRepository extends JpaRepository<TimeDetoxEntity, Long> {
@@ -12,4 +13,6 @@ public interface TimeDetoxRepository extends JpaRepository<TimeDetoxEntity, Long
 
     List<TimeDetoxEntity> findAllByMember(MemberEntity member);
     List<TimeDetoxEntity> findByMember_IdAndIsActiveTrue(Long memberId);
+
+    Optional<TimeDetoxEntity> findByIdAndMember_Id(Long id, Long memberId);
 }

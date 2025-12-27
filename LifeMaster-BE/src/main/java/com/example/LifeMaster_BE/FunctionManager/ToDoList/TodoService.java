@@ -37,10 +37,16 @@ public class TodoService {
     }
 
     public TodoResponse createTodo(TodoCreateRequest dto, Long memberId) {
-        ScheduleCalendarEntity calendar = findOrCreateCalendar(dto.getDate());
 
-        List<TodoEntity> existingTodos = todoRepository.findByDateAndTitle(dto.getDate(), dto.getTitle());
-        if (!existingTodos.isEmpty()) {
+        // 내 캘린더(date + memberId)로 찾거나 생성
+        ScheduleCalendarEntity calendar = findOrCreateCalendar(memberId, dto.getDate());
+
+        // 중복 체크도 memberId 기준으로
+        // 1) TodoEntity에 member 필드가 있으니 이게 제일 깔끔함
+        boolean exists = todoRepository.existsByMemberIdAndDateAndTitle(
+                memberId, dto.getDate(), dto.getTitle()
+        );
+        if (exists) {
             throw new IllegalArgumentException("The Todo with this title already exists for the given date.");
         }
 
@@ -55,7 +61,6 @@ public class TodoService {
         todo.setMember(member);
 
         TodoEntity savedTodo = todoRepository.save(todo);
-
         return convertToResponse(savedTodo);
     }
 
@@ -94,49 +99,57 @@ public class TodoService {
         return false;
     }
 
-    public Optional<TodoEntity> updateDateTitle(Long id, String date, String title) {
+    public Optional<TodoEntity> updateDateTitle(Long memberId, Long id, String date, String title) {
         Optional<TodoEntity> optionalTodo = todoRepository.findById(id);
+        if (optionalTodo.isEmpty()) return Optional.empty();
 
-        if (optionalTodo.isPresent()) {
-            TodoEntity todo = optionalTodo.get();
+        TodoEntity todo = optionalTodo.get();
 
-            ScheduleCalendarEntity calendar = findOrCreateCalendar(date);
+        // 내 Todo인지 검증
+        // 1) TodoEntity에 member 필드가 있으면:
+        // if (!todo.getMember().getId().equals(memberId)) return Optional.empty();
+        //
+        // 2) TodoEntity에 member가 없고 calendar->member로 연결되어 있다면:
+        if (todo.getCalendar() == null
+                || todo.getCalendar().getMember() == null
+                || !todo.getCalendar().getMember().getId().equals(memberId)) {
+            return Optional.empty(); // 또는 403 처리
+        }
 
-            if (title != null)
-                todo.setTitle(title);
-            if (date != null)
-                todo.setDate(date);
-
+        // ✅ 날짜가 바뀌면 해당 날짜의 "내 캘린더"를 찾아/생성해서 연결
+        if (date != null && !date.isBlank()) {
+            ScheduleCalendarEntity calendar = findOrCreateCalendar(memberId, date);
+            todo.setDate(date);
             todo.setCalendar(calendar);
-
-            return Optional.of(todoRepository.save(todo));
         }
 
-        return Optional.empty();
-    }
-
-    public Optional<TodoEntity> toggleCompleted(Long id) {
-        Optional<TodoEntity> todoOptional = todoRepository.findById(id);
-        if (todoOptional.isPresent()) {
-            TodoEntity todo = todoOptional.get();
-            todo.setCompleted(!todo.isCompleted());
-            //scheduleCalendarService.addOrUpdateEvent(todo.getDate(), "todo");//이벤트 추가
-            return Optional.of(todoRepository.save(todo));
+        if (title != null) {
+            todo.setTitle(title);
         }
-        return Optional.empty();
+
+        return Optional.of(todoRepository.save(todo));
     }
 
-    private ScheduleCalendarEntity findOrCreateCalendar(String date) {
-        return calendarRepository.findByDate(date)
+    public Optional<TodoEntity> toggleCompleted(Long memberId, Long todoId) {
+        Optional<TodoEntity> opt = todoRepository.findByIdAndCalendarMemberId(todoId, memberId);
+        if (opt.isEmpty()) return Optional.empty();
+
+        TodoEntity todo = opt.get();
+        todo.setCompleted(!todo.isCompleted());
+        return Optional.of(todoRepository.save(todo));
+    }
+
+    private ScheduleCalendarEntity findOrCreateCalendar(Long memberId, String date) {
+        return calendarRepository.findByMemberIdAndDate(memberId, date)
                 .orElseGet(() -> {
                     ScheduleCalendarEntity newCalendar = new ScheduleCalendarEntity();
                     newCalendar.setDate(date);
-                    return scheduleCalendarService.createCalendarEntity(newCalendar);
+                    return scheduleCalendarService.createCalendarEntity(memberId, newCalendar);
                 });
     }
 
-    public TodoEntity addTodoToCalendar(String date, TodoEntity todo) {
-        ScheduleCalendarEntity calendar = findOrCreateCalendar(date);
+    public TodoEntity addTodoToCalendar(Long memberId, String date, TodoEntity todo) {
+        ScheduleCalendarEntity calendar = findOrCreateCalendar(memberId, date);
         todo.setCalendar(calendar);
         return todoRepository.save(todo);
     }

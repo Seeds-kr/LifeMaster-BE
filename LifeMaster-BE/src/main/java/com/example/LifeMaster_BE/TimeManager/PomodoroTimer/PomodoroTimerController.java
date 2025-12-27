@@ -80,12 +80,25 @@ public class PomodoroTimerController {
     @Operation(summary = "ID로 특정 포모도로 타이머 삭제",
             description = "ID를 사용해 특정 포모도로 타이머를 삭제하고 캘린더에서 해당 항목도 제거합니다.")
     @DeleteMapping("/id/{id}")
-    public ResponseEntity<Void> deleteTimerById(@PathVariable(name = "id") Long id) {
-        Optional<PomodoroTimerEntity> timer = service.findById(id);
-        if (timer.isPresent()) {
-            String date = timer.get().getDate();
-            calendarService.deleteSpecificEvent(date, "pomodoroTimer");
+    public ResponseEntity<Void> deleteTimerById(
+            @PathVariable(name = "id") Long id,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        Long memberId = user.getId();
+
+        Optional<PomodoroTimerEntity> timerOpt = service.findById(id);
+        if (timerOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
         }
+
+        PomodoroTimerEntity timer = timerOpt.get();
+
+        // ✅ (권장) 내 것만 삭제 보장: 엔티티에 memberId/Member가 있다면 체크
+        // if (!timer.getMember().getId().equals(memberId)) return ResponseEntity.status(403).build();
+
+        String dateKey = timer.getDate(); // yyyyMMdd라고 가정
+        calendarService.deleteSpecificEvent(memberId, dateKey, "pomodoroTimer");
+
         service.deleteById(id);
         return ResponseEntity.noContent().build();
     }

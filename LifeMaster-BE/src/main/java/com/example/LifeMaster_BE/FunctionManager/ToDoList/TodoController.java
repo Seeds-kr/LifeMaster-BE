@@ -47,16 +47,20 @@ public class TodoController {
             description = "날짜와 제목을 기반으로 새로운 To-Do 항목을 추가합니다. 날짜 형식은 YYYYMMDD 입니다."
     )
     @PostMapping("/create")
-    public ResponseEntity<?> createTodo(@RequestBody TodoCreateRequest todoCreateRequest,
-                                        @AuthenticationPrincipal CustomUserDetails user) {
+    public ResponseEntity<?> createTodo(
+            @RequestBody TodoCreateRequest todoCreateRequest,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
         ResponseEntity<?> loginCheck = login.checkLogin(user);
         if (loginCheck != null) return loginCheck;
 
         Long memberId = user.getId();
         TodoResponse createdTodo = todoService.createTodo(todoCreateRequest, memberId);
 
-        // Todo가 생성된 날짜(요청으로 들어온 날짜)에 캘린더 이벤트 추가
-        scheduleCalendarService.addOrUpdateEvent(todoCreateRequest.getDate(), "Todo");
+        // ✅ Todo가 생성된 날짜에 "내 캘린더" 이벤트 추가
+        // (권장) 실제 저장된 날짜 기준으로
+        scheduleCalendarService.addOrUpdateEvent(memberId, createdTodo.getDate(), "Todo");
+        // 또는: scheduleCalendarService.addOrUpdateEvent(memberId, todoCreateRequest.getDate(), "Todo");
 
         return new ResponseEntity<>(createdTodo, HttpStatus.CREATED);
     }
@@ -75,25 +79,29 @@ public class TodoController {
 
     @Operation(summary = "To-Do 업데이트", description = "ID를 기반으로 기존의 To-Do 항목을 수정합니다.")
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateTodo(@PathVariable("id") Long id,
-                                        @RequestParam(value = "date", required = false) String date,
-                                        @RequestParam(value = "title", required = false) String title,
-                                        @AuthenticationPrincipal CustomUserDetails user) {
+    public ResponseEntity<?> updateTodo(
+            @PathVariable("id") Long id,
+            @RequestParam(value = "date", required = false) String date,
+            @RequestParam(value = "title", required = false) String title,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
         ResponseEntity<?> loginCheck = login.checkLogin(user);
         if (loginCheck != null) return loginCheck;
 
-        // 1️⃣ Todo 수정 (수정된 엔티티 반환)
-        Optional<TodoEntity> updatedTodoOpt = todoService.updateDateTitle(id, date, title);
+        Long memberId = user.getId();
+
+        // 1️⃣ Todo 수정 (내 것만 수정하도록 memberId 포함)
+        Optional<TodoEntity> updatedTodoOpt = todoService.updateDateTitle(memberId, id, date, title);
         if (updatedTodoOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
+            // 또는 "권한 없음"을 구분하고 싶으면 서비스에서 예외/결과를 분리해서 403 처리
         }
 
         TodoEntity updatedTodo = updatedTodoOpt.get();
 
-        // 2️⃣ Todo가 속한 날짜(String yyyyMMdd) 기준으로 캘린더 이벤트 갱신
-        String targetDate = updatedTodo.getDate(); // ← 핵심
-
-        scheduleCalendarService.addOrUpdateEvent(targetDate, "Todo");
+        // 2️⃣ 수정된 Todo의 날짜 기준으로 캘린더 이벤트 갱신 (내 캘린더만)
+        String targetDate = updatedTodo.getDate(); // yyyyMMdd
+        scheduleCalendarService.addOrUpdateEvent(memberId, targetDate, "Todo");
 
         return ResponseEntity.ok(updatedTodo);
     }
@@ -120,29 +128,37 @@ public class TodoController {
 
         // 2) 같은 memberId + 같은 date의 Todo가 0개면 캘린더에서 "Todo" 제거
         if (todoService.countTodosByMemberIdAndDate(memberId, date) == 0) {
-            scheduleCalendarService.deleteSpecificEvent(date, "Todo");
+            scheduleCalendarService.deleteSpecificEvent(memberId,date, "Todo");
         }
 
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "To-Do 완료 상태 토글", description = "ID를 기반으로 To-Do 항목의 완료 상태를 토글합니다.")
+    @Operation(summary = "To-Do 완료 상태 토글",
+            description = "ID를 기반으로 To-Do 항목의 완료 상태를 토글합니다.")
     @PatchMapping("/{id}/toggle-completed")
-    public ResponseEntity<?> toggleCompleted(@PathVariable("id") Long id,
-                                             @AuthenticationPrincipal CustomUserDetails user) {
+    public ResponseEntity<?> toggleCompleted(
+            @PathVariable("id") Long id,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
         ResponseEntity<?> loginCheck = login.checkLogin(user);
         if (loginCheck != null) return loginCheck;
 
-        Optional<TodoEntity> toggledTodo = todoService.toggleCompleted(id);
+        Long memberId = user.getId();
 
-        // 오늘 날짜 "yyyyMMdd"로 변환
-        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        // 1️⃣ 내 Todo만 완료 상태 토글
+        Optional<TodoEntity> toggledTodoOpt = todoService.toggleCompleted(memberId, id);
+        if (toggledTodoOpt.isEmpty()) {
+            return ResponseEntity.notFound().build(); // 또는 403 처리
+        }
 
-        // 이벤트 추가
-        scheduleCalendarService.addOrUpdateEvent(today, "Todo");
+        TodoEntity toggledTodo = toggledTodoOpt.get();
 
-        return toggledTodo.map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+        // 2️⃣ Todo가 속한 날짜 기준으로 캘린더 이벤트 갱신 (내 캘린더만)
+        String targetDate = toggledTodo.getDate(); // yyyyMMdd
+        scheduleCalendarService.addOrUpdateEvent(memberId, targetDate, "Todo");
+
+        return ResponseEntity.ok(toggledTodo);
     }
 
     @Operation(summary = "현재 유저의 To-Do 조회", description = "유저를 기반으로 To-Do 항목을 조회합니다.")

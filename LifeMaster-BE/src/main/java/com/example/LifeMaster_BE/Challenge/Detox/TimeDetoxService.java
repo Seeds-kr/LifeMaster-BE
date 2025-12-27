@@ -2,6 +2,7 @@ package com.example.LifeMaster_BE.Challenge.Detox;
 
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -73,38 +74,52 @@ public class TimeDetoxService {
         return repository.findById(id).orElseThrow(() -> new RuntimeException("Schedule not found"));
     }
 
-    public TimeDetoxEntity updateSchedule(Long id, TimeDetoxEntity updatedSchedule) {
-        TimeDetoxEntity schedule = getScheduleById(id);
+    public TimeDetoxEntity updateSchedule(Long memberId, Long id, TimeDetoxEntity updatedSchedule) {
+
+        // 내 스케줄만 조회 (소유권 체크)
+        TimeDetoxEntity schedule = repository
+                .findByIdAndMember_Id(id, memberId)
+                .orElseThrow(() -> new EntityNotFoundException("Schedule not found or no permission"));
+
         schedule.setCycle(updatedSchedule.getCycle());
         schedule.setDay(updatedSchedule.getDay());
         schedule.setStartTime(updatedSchedule.getStartTime());
         schedule.setEndTime(updatedSchedule.getEndTime());
         schedule.setLockedApps(updatedSchedule.getLockedApps());
+
         return repository.save(schedule);
     }
+
 
     public void deleteSchedule(Long id) {
         repository.deleteById(id);
     }
 
     // 특정 디톡스 활성화/비활성화 로직 수정
-    public TimeDetoxEntity toggleActivation(Long id, String currentDay, LocalTime currentTime) {
-        TimeDetoxEntity schedule = getScheduleById(id);
+    public TimeDetoxEntity toggleActivation(Long memberId, Long id, String currentDay, LocalTime currentTime) {
+
+        // 내 스케줄만 조회 (소유권 체크)
+        TimeDetoxEntity schedule = repository.findByIdAndMember_Id(id, memberId)
+                .orElseThrow(() -> new EntityNotFoundException("Schedule not found or no permission"));
 
         if (!schedule.isActive()) {
             // 비활성화 상태일 경우 활성화
             schedule.setActive(true);
         } else {
             // 활성화 상태일 경우
-            boolean inTimeRange = !currentTime.isBefore(schedule.getStartTime()) && !currentTime.isAfter(schedule.getEndTime());
-            boolean isMatchingDay = schedule.getDay().equalsIgnoreCase(currentDay);
+            boolean inTimeRange =
+                    !currentTime.isBefore(schedule.getStartTime()) &&
+                            !currentTime.isAfter(schedule.getEndTime());
 
+            boolean isMatchingDay = schedule.getDay() != null &&
+                    schedule.getDay().equalsIgnoreCase(currentDay);
+
+            // 요일이 같고, 시간이 범위 안이면 "비활성화 불가"
             if (isMatchingDay && inTimeRange) {
-                // 현재 시간이 디톡스 시간 범위에 포함된 경우 비활성화 불가
                 throw new IllegalStateException("현재 시간이 디톡스 활성화 시간 범위에 포함되어 있어 비활성화할 수 없습니다.");
             }
 
-            // 현재 시간이 디톡스 시간 범위에 포함되지 않은 경우 비활성화
+            // 현재 시간이 범위 밖이면 비활성화
             schedule.setActive(false);
         }
 

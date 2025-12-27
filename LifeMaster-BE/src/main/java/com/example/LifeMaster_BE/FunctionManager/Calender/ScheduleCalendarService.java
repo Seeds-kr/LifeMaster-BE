@@ -2,175 +2,168 @@ package com.example.LifeMaster_BE.FunctionManager.Calender;
 
 import com.example.LifeMaster_BE.FunctionManager.ToDoList.TodoEntity;
 import com.example.LifeMaster_BE.FunctionManager.ToDoList.TodoRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
+import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Service;
+
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 @Service("scheduleCalendarService")
 public class ScheduleCalendarService {
 
     private final ScheduleCalendarRepository calendarRepository;
+    private final TodoRepository todoRepository;
+    private final EntityManager em;
 
-    @Autowired
-    private TodoRepository todoRepository;
-
-    @Autowired
-    public ScheduleCalendarService(ScheduleCalendarRepository calendarRepository) {
+    public ScheduleCalendarService(
+            ScheduleCalendarRepository calendarRepository,
+            TodoRepository todoRepository,
+            EntityManager em
+    ) {
         this.calendarRepository = calendarRepository;
+        this.todoRepository = todoRepository;
+        this.em = em;
     }
 
-    // 전체 조회
-    public List<ScheduleCalendarEntity> findAll() {
-        return calendarRepository.findAll();
+    // ✅ (중요) memberId 기준 전체 조회
+    public List<ScheduleCalendarEntity> findAll(Long memberId) {
+        return calendarRepository.findAllByMemberId(memberId);
     }
 
-    // 특정 날짜 조회
-    public Optional<ScheduleCalendarEntity> findByDate(String date) {
-        return calendarRepository.findByDate(date);
+    // ✅ memberId + 특정 날짜 조회
+    public Optional<ScheduleCalendarEntity> findByDate(Long memberId, String date) {
+        return calendarRepository.findByMemberIdAndDate(memberId, date);
     }
 
-    // 월별 조회 (yyyy-MM 형식의 month 값)
-    public List<ScheduleCalendarEntity> findByMonth(String date) {
-        // 입력된 date의 'YYYYMMDD' 형식에서 'YYYYMM' 형식으로 변환
-        if (date.length() >= 6) {
-            String month = date.substring(0, 6); // 'YYYYMM'만 추출
-            return calendarRepository.findByDateStartingWith(month);
+    // ✅ memberId + 월별 조회 (date: yyyyMMdd or yyyymm..)
+    public List<ScheduleCalendarEntity> findByMonth(Long memberId, String date) {
+        if (date != null && date.length() >= 6) {
+            String month = date.substring(0, 6); // 'YYYYMM'
+            return calendarRepository.findByMemberIdAndDateStartingWith(memberId, month);
         }
-        // 만약 입력이 'YYYYMMDD' 형식이 아니면 빈 리스트 반환
         return new ArrayList<>();
     }
 
-    // 새 항목 추가 (생성)
-    public ScheduleCalendarEntity createEvent(String date, List<String> events) {
+    // ✅ 새 항목 생성 (memberId 포함)
+    public ScheduleCalendarEntity createEvent(Long memberId, String date, List<String> events) {
         ScheduleCalendarEntity entry = new ScheduleCalendarEntity();
-        String day = getDayOfWeek(date);
-        entry.setDay(day);
-        //날짜가 있으면 해당 날짜로, 아니면 오늘 날짜로 할당
-        entry.setDate(Objects.requireNonNullElseGet(date, ScheduleCalendarService::getTodayDate));
+
+        String realDate = Objects.requireNonNullElseGet(date, ScheduleCalendarService::getTodayDate);
+
+        entry.setMember(getMemberRef(memberId));
+        entry.setDate(realDate);
+        entry.setDay(getDayOfWeek(realDate));
         entry.setEvents(events);
+
         return calendarRepository.save(entry);
     }
 
-    public ScheduleCalendarEntity createCalendarEntity(ScheduleCalendarEntity calendarEntity) {
-        // 날짜 중복 검사
-        Optional<ScheduleCalendarEntity> existingEntry = calendarRepository.findByDate(calendarEntity.getDate());
+    // ✅ 엔티티 통째 생성 (memberId 포함, 날짜 중복: member+date로 검사)
+    public ScheduleCalendarEntity createCalendarEntity(Long memberId, ScheduleCalendarEntity calendarEntity) {
+        String realDate = Objects.requireNonNullElseGet(calendarEntity.getDate(), ScheduleCalendarService::getTodayDate);
+
+        Optional<ScheduleCalendarEntity> existingEntry =
+                calendarRepository.findByMemberIdAndDate(memberId, realDate);
+
         if (existingEntry.isPresent()) {
-            // 날짜가 중복되면 예외를 던지거나 적절한 처리를 할 수 있습니다.
-            throw new IllegalArgumentException("Calendar entry for the given date already exists.");
+            throw new IllegalArgumentException("Calendar entry for the given member/date already exists.");
         }
 
-        // 새로운 CalendarEntity 생성
         ScheduleCalendarEntity entry = new ScheduleCalendarEntity();
-        String day = getDayOfWeek(calendarEntity.getDate());
-        entry.setDay(day);
-
-        // 날짜가 있으면 해당 날짜로, 아니면 오늘 날짜로 할당
-        entry.setDate(Objects.requireNonNullElseGet(calendarEntity.getDate(), ScheduleCalendarService::getTodayDate));
+        entry.setMember(getMemberRef(memberId));
+        entry.setDate(realDate);
+        entry.setDay(getDayOfWeek(realDate));
         entry.setEvents(calendarEntity.getEvents());
         entry.setTodos(calendarEntity.getTodos());
 
-        // 새로운 엔티티 저장
         return calendarRepository.save(entry);
     }
 
-    // 특정 날짜에 항목 추가 또는 업데이트
-    public ScheduleCalendarEntity addOrUpdateEvent(String date, String event) {
-        Optional<ScheduleCalendarEntity> entries = calendarRepository.findByDate(date);
-        ScheduleCalendarEntity entry;
-
-        if (entries.isEmpty()) {
-            entry = new ScheduleCalendarEntity();
-            entry.setDate(date);
-
-            // day 계산해서 넣기
-            LocalDate localDate = LocalDate.parse(date, DateTimeFormatter.ofPattern("yyyyMMdd"));
-            entry.setDay(localDate.getDayOfWeek().name()); // 예: MONDAY
-            // 만약 한글 요일이면 따로 매핑
-        } else {
-            entry = entries.get();
+    // ✅ 특정 날짜에 이벤트 추가/업데이트 (memberId 포함)
+    public ScheduleCalendarEntity addOrUpdateEvent(Long memberId, String date, String event) {
+        if (date == null || date.isBlank()) {
+            date = getTodayDate();
         }
 
-        if (entry.getEvents() == null) {
-            entry.setEvents(new ArrayList<>());
-        }
+        String finalDate = date;
+        ScheduleCalendarEntity entry = calendarRepository
+                .findByMemberIdAndDate(memberId, date)
+                .orElseGet(() -> {
+                    ScheduleCalendarEntity e = new ScheduleCalendarEntity();
+                    e.setMember(getMemberRef(memberId));
+                    e.setDate(finalDate);
 
-        if (!entry.getEvents().contains(event)) {
+                    LocalDate localDate = LocalDate.parse(finalDate, DateTimeFormatter.ofPattern("yyyyMMdd"));
+                    e.setDay(localDate.getDayOfWeek().name()); // 예: MONDAY
+
+                    e.setEvents(new ArrayList<>());
+                    return e;
+                });
+
+        if (entry.getEvents() == null) entry.setEvents(new ArrayList<>());
+
+        if (event != null && !event.isBlank() && !entry.getEvents().contains(event)) {
             entry.getEvents().add(event);
         }
 
         return calendarRepository.save(entry);
     }
 
-    public boolean deleteEventByDate(String date) {
-        Optional<ScheduleCalendarEntity> entries = calendarRepository.findByDate(date);
+    // ✅ 날짜 엔트리 삭제 (memberId 포함)
+    public boolean deleteEventByDate(Long memberId, String date) {
+        Optional<ScheduleCalendarEntity> entries = calendarRepository.findByMemberIdAndDate(memberId, date);
         if (entries.isPresent()) {
-            ScheduleCalendarEntity entry = entries.get();
-
-            // CascadeType.ALL로 설정되어 있으므로, 캘린더를 삭제할 때 관련된 TodoEntity도 함께 삭제됩니다.
-            calendarRepository.delete(entry);  // 캘린더 삭제
-
+            calendarRepository.delete(entries.get());
             return true;
         }
         return false;
     }
 
-    // 특정 항목 삭제
-    public ScheduleCalendarEntity deleteSpecificEvent(String date, String event) {
-        Optional<ScheduleCalendarEntity> entries = calendarRepository.findByDate(date);
-        if (entries.isEmpty()) {
-            return null;
-        }
+    // ✅ 특정 이벤트만 삭제 (memberId 포함)
+    public ScheduleCalendarEntity deleteSpecificEvent(Long memberId, String date, String event) {
+        Optional<ScheduleCalendarEntity> entries = calendarRepository.findByMemberIdAndDate(memberId, date);
+        if (entries.isEmpty()) return null;
 
         ScheduleCalendarEntity entry = entries.get();
 
-        // events가 없으면 제거할 것도 없음
-        if (entry.getEvents() == null) {
-            return entry;
-        }
+        if (entry.getEvents() == null) return entry;
 
-        // 이벤트 제거
         entry.getEvents().remove(event);
 
-        // 이벤트가 모두 비었으면 날짜 엔트리 자체를 삭제
         if (entry.getEvents().isEmpty()) {
             calendarRepository.delete(entry);
             return entry;
         }
 
-        // 아직 이벤트가 남아있으면 저장
         return calendarRepository.save(entry);
     }
 
-    //날짜로 요일을 구하는 메소드
+    // ✅ 날짜로 요일 구하기
     public static String getDayOfWeek(String date) {
-        // "YYYYMMDD" 형식의 문자열을 LocalDate 객체로 변환
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
         LocalDate localDate = LocalDate.parse(date, formatter);
-
-        // 요일 구하기
         DayOfWeek dayOfWeek = localDate.getDayOfWeek();
-
-        // 요일 이름 반환 (한국어 요일로 반환하려면 아래 주석 참고)
         return dayOfWeek.toString();
     }
 
-    // 오늘 날짜를 "YYYYMMDD" 형식의 문자열로 반환하는 메서드
+    // ✅ 오늘 날짜 yyyyMMdd
     public static String getTodayDate() {
-        LocalDate today = LocalDate.now(); // 오늘 날짜 가져오기
+        LocalDate today = LocalDate.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
         return today.format(formatter);
     }
 
-    //특정 날짜의 ToDoList를 반환하는 메소드
-    public List<TodoEntity> getTodosForDate(String date) {
-        return todoRepository.findByDate(date);
+    // ✅ 특정 날짜의 todo (memberId 포함)
+    public List<TodoEntity> getTodosForDate(Long memberId, String date) {
+        return todoRepository.findByMemberIdAndDate(memberId, date);
+    }
+
+    // ✅ FK 연결용 Member 프록시
+    private MemberEntity getMemberRef(Long memberId) {
+        // DB hit 최소화: 프록시 참조로 연결
+        return em.getReference(MemberEntity.class, memberId);
     }
 }
-

@@ -52,8 +52,8 @@ public class SleepController {
         // 1️⃣ 수면 기록 생성
         sleepService.makeSleep(request, userId);
 
-        // 2️⃣ 수면이 기록된 날짜(String yyyyMMdd) 기준으로 캘린더 이벤트 추가
-        scheduleCalendarService.addOrUpdateEvent(request.getDate(), "Sleep");
+        // 2️⃣ 수면이 기록된 날짜 기준(yyyyMMdd)으로 "내 캘린더" 이벤트 추가
+        scheduleCalendarService.addOrUpdateEvent(userId, request.getDate(), "Sleep");
 
         return ResponseEntity.ok("Sleep started");
     }
@@ -68,8 +68,8 @@ public class SleepController {
 
         SleepDto.Response updatedResponse = sleepService.updateSleep(request, userId);
 
-        // ✅ 수면 기록의 날짜(yyyyMMdd) 기준으로 이벤트 추가
-        scheduleCalendarService.addOrUpdateEvent(request.getDate(), "Sleep");
+        // ✅ 오류 해결: memberId(userId) 추가
+        scheduleCalendarService.addOrUpdateEvent(userId, request.getDate(), "Sleep");
 
         return ResponseEntity.ok(updatedResponse);
     }

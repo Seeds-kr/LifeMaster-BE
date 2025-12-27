@@ -31,9 +31,10 @@ public class DiaryService {
         return diaryRepository.save(newDiary);
     }
 
-    public DiaryEntity updateDiary(Long diaryId, UpdateDiaryDto diaryDto){
-        DiaryEntity diary = diaryRepository.findById(diaryId)
-                .orElseThrow(() -> new EntityNotFoundException("Diary not found"));
+    public DiaryEntity updateDiary(Long diaryId, UpdateDiaryDto diaryDto, Long memberId) {
+        DiaryEntity diary = diaryRepository
+                .findByIdAndMemberId(diaryId, memberId)
+                .orElseThrow(() -> new EntityNotFoundException("Diary not found or no permission"));
 
         diary.setDiaryContent(diaryDto.getDiaryContent());
         return diary;

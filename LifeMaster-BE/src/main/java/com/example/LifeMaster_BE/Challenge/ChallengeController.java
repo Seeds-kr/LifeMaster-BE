@@ -24,12 +24,15 @@ public class ChallengeController {
     /** 0. 챌린지 생성 */
     @PostMapping
     @Operation(summary = "챌린지 생성", description = "새로운 챌린지를 생성합니다.")
-    public Challenge createChallenge(@RequestBody ChallengeDto.Create challenge,
-                                     @AuthenticationPrincipal UserDetails userDetails) {
-        String email = userDetails.getUsername();
+    public Challenge createChallenge(
+            @RequestBody ChallengeDto.Create challenge,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        Long memberId = user.getId();
+        String email = user.getUsername(); // 기존 로직 유지
 
-        // 챌린지 날짜(yyyyMMdd) 기준으로 이벤트 추가
-        scheduleCalendarService.addOrUpdateEvent(challenge.getDate(), "Challenge");
+        // ✅ 챌린지 날짜(yyyyMMdd) 기준으로 캘린더 이벤트 추가 (로그인 유저 기준)
+        scheduleCalendarService.addOrUpdateEvent(memberId, challenge.getDate(), "Challenge");
 
         return challengeService.createChallenge(challenge, email);
     }
@@ -67,19 +70,23 @@ public class ChallengeController {
     /** 5. 챌린지 참여 */
     @PostMapping("/{challId}/join")
     @Operation(summary = "챌린지 참여", description = "사용자가 특정 챌린지에 참여합니다.")
-    public String joinChallenge(@PathVariable Long challId,
-                                @AuthenticationPrincipal UserDetails userDetails) {
+    public String joinChallenge(
+            @PathVariable Long challId,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        Long memberId = user.getId();
 
         // 참여한 '현재 날짜' 기준 (KST)
         String dateKey = LocalDate
                 .now(ZoneId.of("Asia/Seoul"))
                 .format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
-        // 캘린더 이벤트 추가
-        scheduleCalendarService.addOrUpdateEvent(dateKey, "Challenge");
+        // ✅ 캘린더 이벤트 추가 (로그인 유저 기준)
+        scheduleCalendarService.addOrUpdateEvent(memberId, dateKey, "Challenge");
 
-        // 참여 처리
-        return challengeService.joinChallenge(challId, userDetails);
+        // 참여 처리 (필요에 따라 challengeService도 CustomUserDetails 받게 바꾸거나,
+        // user를 UserDetails로 캐스팅/변환해서 넘기기)
+        return challengeService.joinChallenge(challId, user);
     }
 
     /** 6. 챌린지 참여 취소 */
@@ -101,7 +108,7 @@ public class ChallengeController {
 
         // 오늘 기준, 같은 memberId의 챌린지 참여가 0개면 캘린더 이벤트 삭제
         if (challengeService.countJoinedChallengesOnDate(memberId, today) == 0) {
-            scheduleCalendarService.deleteSpecificEvent(today, "Challenge");
+            scheduleCalendarService.deleteSpecificEvent(memberId,today, "Challenge");
         }
 
         return result;
@@ -126,7 +133,7 @@ public class ChallengeController {
 
         // 3) 같은 memberId + 같은 날짜의 챌린지가 0개면 캘린더 이벤트 삭제
         if (challengeService.countChallengesByMemberIdAndDate(memberId, challDate) == 0) {
-            scheduleCalendarService.deleteSpecificEvent(dateKey, "Challenge");
+            scheduleCalendarService.deleteSpecificEvent(memberId, dateKey, "Challenge");
         }
 
         return result;

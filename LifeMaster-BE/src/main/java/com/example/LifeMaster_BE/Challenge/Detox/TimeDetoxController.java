@@ -51,23 +51,31 @@ public class TimeDetoxController {
                     @ApiResponse(responseCode = "404", description = "해당 ID의 스케줄을 찾을 수 없음")
             })
     @PatchMapping("/{id}/toggle-activation")
-    public ResponseEntity<?> toggleActivation(@PathVariable(name = "id") Long id) {
+    public ResponseEntity<?> toggleActivation(
+            @PathVariable(name = "id") Long id,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        ResponseEntity<?> loginCheck = login.checkLogin(user);
+        if (loginCheck != null) return loginCheck;
+
+        Long memberId = user.getId();
+
         try {
             LocalDateTime now = LocalDateTime.now();
             String currentDay = now.getDayOfWeek().name();
             LocalTime currentTime = now.toLocalTime();
 
-            TimeDetoxEntity updatedSchedule = service.toggleActivation(id, currentDay, currentTime);
+            // 내 스케줄만 토글 (memberId 포함)
+            TimeDetoxEntity updatedSchedule = service.toggleActivation(memberId, id, currentDay, currentTime);
 
-            // 오늘 날짜 "yyyyMMdd"로 변환
+            // 오늘 날짜 "yyyyMMdd" (KST로 명확히 하고 싶으면 ZoneId.of("Asia/Seoul") 사용)
             String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
-            // 이벤트 추가
-            scheduleCalendarService.addOrUpdateEvent(today, "Detox");
+            // 내 캘린더에만 이벤트 추가
+            scheduleCalendarService.addOrUpdateEvent(memberId, today, "Detox");
 
             return ResponseEntity.ok(updatedSchedule);
         } catch (IllegalStateException e) {
-            // 비활성화 불가 사유 반환
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
@@ -132,7 +140,7 @@ public class TimeDetoxController {
         String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
         // 이벤트 추가
-        scheduleCalendarService.addOrUpdateEvent(today, "Detox");
+        scheduleCalendarService.addOrUpdateEvent(memberId,today, "Detox");
 
         return ResponseEntity.ok(createdSchedule);
     }
@@ -195,15 +203,29 @@ public class TimeDetoxController {
                     @ApiResponse(responseCode = "400", description = "잘못된 입력 데이터")
             })
     @PutMapping("/{id}")
-    public ResponseEntity<TimeDetoxEntity> updateSchedule(@PathVariable(name = "id") Long id, @RequestBody TimeDetoxEntity updatedSchedule) {
+    public ResponseEntity<TimeDetoxEntity> updateSchedule(
+            @PathVariable(name = "id") Long id,
+            @RequestBody TimeDetoxEntity updatedSchedule,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        Long memberId = user.getId();
 
-        // 오늘 날짜 "yyyyMMdd"로 변환
-        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        // ✅ 이벤트 날짜: 가능한 경우 updatedSchedule의 날짜를 사용, 없으면 오늘
+        String dateKey = todayKey();
+        // 예: updatedSchedule에 date(String yyyyMMdd)가 있다면
+        if (updatedSchedule.getDate() != null && !updatedSchedule.getDate().isBlank()) {
+            dateKey = updatedSchedule.getDate();
+        }
 
-        // 이벤트 추가
-        scheduleCalendarService.addOrUpdateEvent(today, "Detox");
+        // ✅ 내 캘린더에만 이벤트 추가
+        scheduleCalendarService.addOrUpdateEvent(memberId, dateKey, "Detox");
 
-        return ResponseEntity.ok(service.updateSchedule(id, updatedSchedule));
+        return ResponseEntity.ok(service.updateSchedule(memberId, id, updatedSchedule));
+        // ↑ (권장) updateSchedule도 memberId로 소유권 체크하도록 시그니처 변경
+    }
+
+    private String todayKey() {
+        return LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
     }
 
     @Operation(
@@ -214,14 +236,20 @@ public class TimeDetoxController {
                     @ApiResponse(responseCode = "404", description = "일정을 찾을 수 없음")
             })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteSchedule(@PathVariable(name = "id") Long id) {
+    public ResponseEntity<Void> deleteSchedule(
+            @PathVariable(name = "id") Long id,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        Long memberId = user.getId();
+
         service.deleteSchedule(id);
 
-        // 오늘 날짜 "yyyyMMdd"로 변환
-        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        // 오늘 날짜 "yyyyMMdd"
+        String today = LocalDate.now()
+                .format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
-        // 이벤트 추가
-        scheduleCalendarService.addOrUpdateEvent(today, "Detox");
+        // ✅ 오류 원인 2 해결 (파라미터 맞춤)
+        scheduleCalendarService.addOrUpdateEvent(memberId, today, "Detox");
 
         return ResponseEntity.noContent().build();
     }
@@ -246,24 +274,26 @@ public class TimeDetoxController {
     @Operation(summary = "비상 탈출 문장 검증",
             description = "비상 탈출 문장을 검증하고, 실행 중인 디톡스를 종료합니다.")
     @PostMapping("/verify-phrase")
-    public ResponseEntity<String> verifyPhraseAndEndDetox(@RequestBody String inputPhrase) {
-
-        // 1) 현재 로그인한 사용자 ID 가져오기
-        Long memberId = getCurrentMemberIdOrNull();
-        if (memberId == null) {
+    public ResponseEntity<String> verifyPhraseAndEndDetox(
+            @RequestBody String inputPhrase,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        // 1) 현재 로그인한 사용자 ID
+        if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body("로그인이 필요합니다.");
         }
+        Long memberId = user.getId();
 
         // 2) 서비스에 memberId + 입력 문장 전달
         boolean result = service.verifyPhraseAndEndDetox(memberId, inputPhrase);
 
         if (result) {
-            // 3) 오늘 날짜 "yyyyMMdd"로 변환
+            // 3) 오늘 날짜 "yyyyMMdd"
             String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
-            // 4) 디톡스 종료 이벤트 기록 (성공 시에만)
-            scheduleCalendarService.addOrUpdateEvent(today, "Detox");
+            // 4) 디톡스 종료 이벤트 기록 (성공 시에만) - memberId 포함
+            scheduleCalendarService.addOrUpdateEvent(memberId, today, "Detox");
 
             return ResponseEntity.ok("Detox has been successfully ended.");
         }
