@@ -98,6 +98,12 @@ public class AlarmService {
         return alarmMapStruct.toDtoList(allAlarms);
     }
 
+    // 현재 로그인한 사용자의 알람만 조회
+    public List<ResponseAlarmDto> getAlarmsByMember(Long memberId) {
+        List<AlarmEntity> alarms = alarmRepository.findByMember_Id(memberId);
+        return alarmMapStruct.toDtoList(alarms);
+    }
+
     //특정 알람 조회 메소드
     public ResponseAlarmDto getAlarmById(Long alarmId, Long memberId){
         AlarmEntity alarm = alarmRepository.findByIdAndMemberId(alarmId, memberId)
@@ -190,7 +196,7 @@ public class AlarmService {
 
         // 멤버의 다른 알람들(삭제 여부 판단용)
         // - DB 못 건드린다 했으니, 쿼리 추가 없이 "가져와서 in-memory 필터"로 처리
-        List<AlarmEntity> memberAlarms = alarmRepository.findAllByMemberId(memberId);
+        List<AlarmEntity> memberAlarms = alarmRepository.findByMember_Id(memberId);
 
         for (LocalDate d = startDate; !d.isAfter(endDate); d = d.plusDays(1)) {
 
@@ -446,6 +452,40 @@ public class AlarmService {
 
         alarmRepository.saveAll(alarms);
         log.info("Deactivated {} alarms.", count);
+        return count;
+    }
+
+    // 내 알람 전체 활성화 (OFF → ON)
+    public int activateMyAlarms(Long memberId) {
+        List<AlarmEntity> alarms = alarmRepository.findByMember_Id(memberId);
+        int count = 0;
+
+        for (AlarmEntity alarm : alarms) {
+            if (!alarm.isAlarmStatus()) {
+                alarm.setAlarmStatus(true);
+                count++;
+            }
+        }
+
+        alarmRepository.saveAll(alarms);
+        log.info("Activated {} alarms for member {}", count, memberId);
+        return count;
+    }
+
+    // 내 알람 전체 비활성화 (ON → OFF)
+    public int deactivateMyAlarms(Long memberId) {
+        List<AlarmEntity> alarms = alarmRepository.findByMember_Id(memberId);
+        int count = 0;
+
+        for (AlarmEntity alarm : alarms) {
+            if (alarm.isAlarmStatus()) {
+                alarm.setAlarmStatus(false);
+                count++;
+            }
+        }
+
+        alarmRepository.saveAll(alarms);
+        log.info("Deactivated {} alarms for member {}", count, memberId);
         return count;
     }
 

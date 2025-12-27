@@ -59,9 +59,13 @@ public class AlarmController {
 
 
     @Operation(
-            summary = "모든 알람 조회",
+            summary = "모든 알람 조회 (관리자 전용)",
             description = """
     등록된 모든 알람을 반환합니다.
+    
+    ⚠️ **관리자 전용 API**
+    - 모든 사용자의 알람 정보를 조회합니다.
+    - 일반 사용자는 사용하면 안 됩니다.
     
     **랜덤 미션 유형 (randomMissionType)**  
     - `MATH_PROBLEM`: 수학 문제 풀기  
@@ -77,10 +81,41 @@ public class AlarmController {
     ※ 난이도는 `MATH_PROBLEM` 및 `FOLLOW_CLICK` 미션에서만 사용됩니다.
     """
     )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "전체 알람 조회 완료 (관리자)")
+    })
     @GetMapping
     public ResponseEntity<List<ResponseAlarmDto>> getAllAlarms() {
         List<ResponseAlarmDto> allAlarms = alarmService.getAllAlarms();
         return ResponseEntity.ok(allAlarms);
+    }
+
+    @Operation(
+            summary = "내 알람 조회",
+            description = """
+    현재 로그인한 사용자가 등록한 알람만 반환합니다.
+    
+    **랜덤 미션 유형 (randomMissionType)**  
+    - `MATH_PROBLEM`: 수학 문제 풀기  
+    - `TYPING_SENTENCE`: 문장 따라쓰기  
+    - `FOLLOW_CLICK`: 따라 누르기 게임  
+    - `NULL`: 미션 없음  
+    
+    **난이도 (missionLevel)**  
+    - `HIGH`: 어려움  
+    - `MEDIUM`: 보통  
+    - `LOW`: 쉬움  
+    
+    ※ 난이도는 `MATH_PROBLEM` 및 `FOLLOW_CLICK` 미션에서만 사용됩니다.
+    """
+    )
+    @GetMapping("/me")
+    public ResponseEntity<List<ResponseAlarmDto>> getMyAlarms(
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        Long memberId = user.getId();
+        List<ResponseAlarmDto> myAlarms = alarmService.getAlarmsByMember(memberId);
+        return ResponseEntity.ok(myAlarms);
     }
 
     @Operation(summary = "특정 알람 조회", description = "알람 ID를 이용해 특정 알람의 상세 정보를 반환합니다.")
@@ -145,11 +180,17 @@ public class AlarmController {
     }
 
     /**
-     * 전체 알람 활성화 (OFF → ON)
+     * 전체 알람 활성화 (OFF → ON) — 관리자 전용
      */
     @Operation(
-            summary = "전체 알람 활성화",
-            description = "비활성화된 모든 알람을 활성화합니다."
+            summary = "전체 알람 활성화 (관리자 전용)",
+            description = """
+    비활성화된 모든 알람을 활성화합니다.
+    
+    ⚠️ **관리자 전용 API**
+    - 모든 사용자의 알람 상태에 영향을 줍니다.
+    - 일반 사용자는 호출하면 안 됩니다.
+    """
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "전체 알람 활성화 완료")
@@ -161,11 +202,17 @@ public class AlarmController {
     }
 
     /**
-     * 전체 알람 비활성화 (ON → OFF)
+     * 전체 알람 비활성화 (ON → OFF) — 관리자 전용
      */
     @Operation(
-            summary = "전체 알람 비활성화",
-            description = "활성화된 모든 알람을 비활성화합니다."
+            summary = "전체 알람 비활성화 (관리자 전용)",
+            description = """
+    활성화된 모든 알람을 비활성화합니다.
+    
+    ⚠️ **관리자 전용 API**
+    - 모든 사용자의 알람 상태에 영향을 줍니다.
+    - 일반 사용자는 호출하면 안 됩니다.
+    """
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "전체 알람 비활성화 완료")
@@ -173,6 +220,44 @@ public class AlarmController {
     @PatchMapping("/deactivate-all")
     public ResponseEntity<Integer> deactivateAllAlarms() {
         int deactivatedCount = alarmService.deactivateAllAlarms();
+        return ResponseEntity.ok(deactivatedCount);
+    }
+
+    /**
+     * 내 알람 전체 활성화 (OFF → ON)
+     */
+    @Operation(
+            summary = "내 알람 전체 활성화",
+            description = "현재 로그인한 사용자의 비활성화된 알람을 모두 활성화합니다."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "내 알람 전체 활성화 완료")
+    })
+    @PatchMapping("/me/activate-all")
+    public ResponseEntity<Integer> activateMyAlarms(
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        Long memberId = user.getId();
+        int activatedCount = alarmService.activateMyAlarms(memberId);
+        return ResponseEntity.ok(activatedCount);
+    }
+
+    /**
+     * 내 알람 전체 비활성화 (ON → OFF)
+     */
+    @Operation(
+            summary = "내 알람 전체 비활성화",
+            description = "현재 로그인한 사용자의 활성화된 알람을 모두 비활성화합니다."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "내 알람 전체 비활성화 완료")
+    })
+    @PatchMapping("/me/deactivate-all")
+    public ResponseEntity<Integer> deactivateMyAlarms(
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        Long memberId = user.getId();
+        int deactivatedCount = alarmService.deactivateMyAlarms(memberId);
         return ResponseEntity.ok(deactivatedCount);
     }
 }

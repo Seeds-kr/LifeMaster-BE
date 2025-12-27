@@ -12,5 +12,5 @@ public interface AlarmRepository extends JpaRepository<AlarmEntity, Long> {
 
     long countByMember_IdAndAlarmTimeBetween(Long memberId, LocalDateTime start, LocalDateTime end);
 
-    List<AlarmEntity> findAllByMemberId(Long memberId);
+    List<AlarmEntity> findByMember_Id(Long memberId);
 }
