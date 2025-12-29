@@ -148,4 +148,15 @@ public class AlarmEntity {
 
         return alarm;
     }
+
+    public void clearMissionData() {
+        this.randomMissionType = null;
+        this.missionLevel = null;
+
+        this.mathQuestion = null;
+        this.mathAnswer = null;
+
+        this.typingSentence = null;
+        this.followClickGridJson = null;
+    }
 }

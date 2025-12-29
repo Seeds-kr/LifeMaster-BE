@@ -1,10 +1,18 @@
 package com.example.LifeMaster_BE.TimeManager.Alarm.AlarmMission;
 
+import com.example.LifeMaster_BE.Security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.persistence.EntityNotFoundException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @Tag(name = "Alarm Mission API", description = "알람 미션 관련 API")
 @RestController
@@ -87,21 +95,49 @@ public class AlarmMissionController {
     }
 
     @Operation(
-            summary = "그리드 정답 확인",
-            description = "알람에 저장된 정답 그리드와 사용자가 입력한 그리드를 비교하여 결과를 반환합니다."
+            summary = "알람 미션 문제/정답 조회(정답 확인용)",
+            description = """
+    alarmId로 해당 알람의 미션 타입을 확인하고,
+    - 본인(memberId)이면 문제/정답(또는 미션 데이터)을 반환합니다.
+    - 본인 알람이 아니면 '아이디가 다르다'로 반환합니다.
+    - alarmId가 없으면 '없다'로 반환합니다.
+    """
     )
-    @Parameter(name = "alarmId", description = "알람 ID", required = true)
-    @PostMapping("/follow-click/check")
-    public ResponseEntity<String> checkFollowClickAnswer(
-            @RequestBody int[][] userGrid,
-            @RequestParam(name = "alarmId") long alarmId
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "조회 성공(본인 알람)"),
+            @ApiResponse(responseCode = "403", description = "본인 알람 아님"),
+            @ApiResponse(responseCode = "404", description = "alarmId 없음")
+    })
+    @GetMapping("/{alarmId}/mission-answer")
+    public ResponseEntity<?> getMissionAnswer(
+            @PathVariable Long alarmId,
+            @AuthenticationPrincipal CustomUserDetails user
     ) {
-        String result = missionService.checkFollowClickAnswer(alarmId, userGrid);
+        Long memberId = user.getId();
 
-        if (result.contains("정답입니다!")) {
-            missionService.updateAlarmStatus(alarmId, false); // 알람 끄기
+        try {
+            AlarmMissionAnswerResponseDto dto =
+                    missionService.getMissionQuestionAndAnswer(alarmId, memberId);
+
+            return ResponseEntity.ok(dto);
+
+        } catch (EntityNotFoundException e) {
+            // alarmId 없음
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of(
+                            "status", 404,
+                            "message", "해당 알람이 없습니다.",
+                            "alarmId", alarmId
+                    ));
+
+        } catch (SecurityException e) {
+            // memberId 불일치
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of(
+                            "status", 403,
+                            "message", "아이디가 다릅니다.",
+                            "alarmId", alarmId
+                    ));
         }
-
-        return ResponseEntity.ok(result);
     }
 }

@@ -62,22 +62,15 @@ public class AlarmMissionService {
     public MathProblem generateMathProblem(Long alarmId, String level) {
         AlarmEntity alarm = getAlarmOrThrow(alarmId);
 
-        RandomMissionType current = alarm.getRandomMissionType();
-
-        // 이미 다른 종류의 미션이 존재하면 수학 문제 생성 금지
-        if (current != null && current != RandomMissionType.MATH_PROBLEM) {
-
-            return new MathProblem(
-                    "이미 다른 미션이 생성되어 있습니다.",
-                    -1,
-                    level
-            );
+        // 기존 미션 같은 타입 아니면 타입/문제/정답 전부 초기화 (타입 전환/재생성 모두 커버)
+        if (alarm.getRandomMissionType() != RandomMissionType.MATH_PROBLEM) {
+            alarm.clearMissionData();
         }
 
         // 수학 문제 생성
         MathProblem problem = internalGenerateMathProblem(level);
 
-        // 미션 저장
+        // 새 미션 저장(덮어쓰기)
         alarm.setRandomMissionType(RandomMissionType.MATH_PROBLEM);
         alarm.setMissionLevel(toMissionLevel(level));
         alarm.setMathQuestion(problem.question);
@@ -177,20 +170,15 @@ public class AlarmMissionService {
     public String generateTypingSentence(Long alarmId) {
         AlarmEntity alarm = getAlarmOrThrow(alarmId);
 
-        RandomMissionType current = alarm.getRandomMissionType();
-
-        // 현재 미션 타입 확인
-        if (current != null && current != RandomMissionType.TYPING_SENTENCE) {
-
-            return "이미 다른 미션이 생성되어 있습니다.";
+        // 다른 타입이면 기존 미션 데이터 정리
+        if (alarm.getRandomMissionType() != RandomMissionType.TYPING_SENTENCE) {
+            alarm.clearMissionData();
         }
 
-        // 랜덤 문장 생성
         String sentence = CreateRandomSentences.generateRandomSentence();
 
-        // 미션 적용
         alarm.setRandomMissionType(RandomMissionType.TYPING_SENTENCE);
-        alarm.setMissionLevel(null);         // 난이도 없음
+        alarm.setMissionLevel(null);
         alarm.setTypingSentence(sentence);
 
         alarmService.saveAlarm(alarm);
@@ -250,11 +238,9 @@ public class AlarmMissionService {
 
         RandomMissionType current = alarm.getRandomMissionType();
 
-        // 🔒 이미 다른 종류의 미션이 걸려 있으면 생성 불가
-        if (current != null &&
-                current != RandomMissionType.FOLLOW_CLICK) {
-
-            throw new IllegalStateException("이미 다른 미션이 생성되어 있습니다.");
+        // 다른 타입이면 기존 미션 데이터 정리(수학/타이핑 찌꺼기 제거)
+        if (current != RandomMissionType.FOLLOW_CLICK) {
+            alarm.clearMissionData();
         }
 
         int[][] grid = internalGenerateFollowClickGrid(level);
@@ -262,6 +248,7 @@ public class AlarmMissionService {
         try {
             String json = objectMapper.writeValueAsString(grid);
 
+            // 새 미션 적용(덮어쓰기)
             alarm.setRandomMissionType(RandomMissionType.FOLLOW_CLICK);
             alarm.setMissionLevel(toMissionLevel(level));
             alarm.setFollowClickGridJson(json);
@@ -357,6 +344,55 @@ public class AlarmMissionService {
             this.correctAnswer = correctAnswer;
             this.level = level;
         }
+    }
+
+    public AlarmMissionAnswerResponseDto getMissionQuestionAndAnswer(Long alarmId, Long memberId) {
+
+        AlarmEntity alarm = alarmRepository.findById(alarmId)
+                .orElseThrow(() -> new EntityNotFoundException("ALARM_NOT_FOUND"));
+
+        Long ownerId = (alarm.getMember() != null) ? alarm.getMember().getId() : null;
+        if (ownerId == null || !ownerId.equals(memberId)) {
+            throw new SecurityException("NOT_OWNER");
+        }
+
+        RandomMissionType type = alarm.getRandomMissionType();
+
+        // 미션이 없는 경우도 명확히 응답
+        if (type == null) {
+            return new AlarmMissionAnswerResponseDto(
+                    alarm.getId(),
+                    null,
+                    null,
+                    null,
+                    null
+            );
+        }
+
+        // 미션 타입별로 문제/정답 매핑
+        return switch (type) {
+            case MATH_PROBLEM -> new AlarmMissionAnswerResponseDto(
+                    alarm.getId(),
+                    type,
+                    alarm.getMissionLevel(),
+                    alarm.getMathQuestion(),
+                    alarm.getMathAnswer()
+            );
+            case TYPING_SENTENCE -> new AlarmMissionAnswerResponseDto(
+                    alarm.getId(),
+                    type,
+                    null,
+                    alarm.getTypingSentence(),
+                    null
+            );
+            case FOLLOW_CLICK -> new AlarmMissionAnswerResponseDto(
+                    alarm.getId(),
+                    type,
+                    alarm.getMissionLevel(),
+                    alarm.getFollowClickGridJson(), // 문제 데이터(그리드)
+                    null
+            );
+        };
     }
 
     public void updateAlarmStatus(Long alarmId, boolean status) {
