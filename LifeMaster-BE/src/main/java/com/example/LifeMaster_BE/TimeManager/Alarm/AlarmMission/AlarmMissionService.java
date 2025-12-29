@@ -122,6 +122,12 @@ public class AlarmMissionService {
                 question = num1 + " + " + num2;
             }
             case "-" -> {
+                // 항상 양수 결과 보장
+                if (num1 < num2) {
+                    int temp = num1;
+                    num1 = num2;
+                    num2 = temp;
+                }
                 correctAnswer = num1 - num2;
                 question = num1 + " - " + num2;
             }
