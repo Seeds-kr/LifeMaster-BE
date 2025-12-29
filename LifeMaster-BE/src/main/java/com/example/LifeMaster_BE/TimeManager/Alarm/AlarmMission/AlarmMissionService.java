@@ -358,10 +358,11 @@ public class AlarmMissionService {
 
         RandomMissionType type = alarm.getRandomMissionType();
 
-        // 미션이 없는 경우도 명확히 응답
+        // 미션이 없는 경우
         if (type == null) {
             return new AlarmMissionAnswerResponseDto(
                     alarm.getId(),
+                    null,
                     null,
                     null,
                     null,
@@ -369,28 +370,32 @@ public class AlarmMissionService {
             );
         }
 
-        // 미션 타입별로 문제/정답 매핑
         return switch (type) {
             case MATH_PROBLEM -> new AlarmMissionAnswerResponseDto(
                     alarm.getId(),
                     type,
                     alarm.getMissionLevel(),
-                    alarm.getMathQuestion(),
-                    alarm.getMathAnswer()
+                    alarm.getMathQuestion(),     // question
+                    alarm.getMathAnswer(),       // mathAnswer
+                    null                         // payload 없음
             );
+
             case TYPING_SENTENCE -> new AlarmMissionAnswerResponseDto(
                     alarm.getId(),
                     type,
                     null,
-                    alarm.getTypingSentence(),
-                    null
+                    null,                        // question=null
+                    null,                        // mathAnswer=null
+                    alarm.getTypingSentence()    // answerPayload에 문장
             );
+
             case FOLLOW_CLICK -> new AlarmMissionAnswerResponseDto(
                     alarm.getId(),
                     type,
                     alarm.getMissionLevel(),
-                    alarm.getFollowClickGridJson(), // 문제 데이터(그리드)
-                    null
+                    null,                          // question=null
+                    null,                          // mathAnswer=null
+                    alarm.getFollowClickGridJson() // answerPayload에 그리드 JSON
             );
         };
     }

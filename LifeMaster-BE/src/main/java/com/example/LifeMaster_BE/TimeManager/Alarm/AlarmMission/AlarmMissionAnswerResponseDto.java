@@ -13,8 +13,11 @@ public class AlarmMissionAnswerResponseDto {
     private RandomMissionType missionType;
     private AlarmEntity.MissionLevel missionLevel;
 
-    // 문제/정답 (미션별로 사용)
-    private String question;   // mathQuestion / typingSentence / followClickGridJson(문제 데이터)
-    private Integer answer;    // mathAnswer (타이핑/그리드면 null)
+    // 수학만 사용
+    private String question;        // mathQuestion
+    private Integer mathAnswer;     // mathAnswer
+
+    // 타이핑/그리드용 (answer 쪽 역할)
+    private String answerPayload;   // typingSentence or followClickGridJson
 }
 
