@@ -165,46 +165,6 @@ public class AlarmMissionService {
         return new MathProblem(question, correctAnswer, level);
     }
 
-    /**
-     * 수학 문제의 정답을 확인합니다. (DB에 저장된 문제/정답 기준)
-     *
-     * @param alarmId    알람 ID
-     * @param userAnswer 사용자가 입력한 정답
-     * @return 통과 여부 메시지
-     */
-    @Transactional
-    public String checkMathProblemAnswer(Long alarmId, int userAnswer) {
-        AlarmEntity alarm = getAlarmOrThrow(alarmId);
-
-        String question = alarm.getMathQuestion();
-        Integer correct = alarm.getMathAnswer();
-
-        if (question == null || correct == null) {
-            return "잘못된 접근, 먼저 수학 문제를 생성해야 합니다.";
-        }
-
-        // ---- 정답 처리 ----
-        if (userAnswer == correct) {
-
-            // 미션 초기화
-            alarm.setRandomMissionType(null);
-            alarm.setMissionLevel(null);
-
-            alarm.setTypingSentence(null);
-            alarm.setMathQuestion(null);
-            alarm.setMathAnswer(null);
-            alarm.setFollowClickGridJson(null);
-
-            alarmRepository.save(alarm); // 업데이트 저장
-
-            return "문제: " + question + " = " + userAnswer + " (정답입니다!)";
-        }
-
-        // ---- 오답 처리 ----
-        return "문제: " + question + " = " + userAnswer +
-                " (틀렸습니다. 정답은 " + correct + "입니다.)";
-    }
-
     // ========== 문장 따라쓰기 ==========
 
     /**

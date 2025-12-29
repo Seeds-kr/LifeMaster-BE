@@ -34,25 +34,6 @@ public class AlarmMissionController {
         return ResponseEntity.ok(problem);
     }
 
-    @Operation(
-            summary = "수학 문제 정답 확인",
-            description = "알람에 저장된 수학 문제에 대해, 사용자가 입력한 답이 맞는지 확인합니다."
-    )
-    @PostMapping("/math-problem/check")
-    public ResponseEntity<String> checkMathProblemAnswer(
-            @RequestParam(name = "alarmId") Long alarmId,
-            @RequestParam(name = "answer") int answer
-    ) {
-        String result = missionService.checkMathProblemAnswer(alarmId, answer);
-
-        // 정답이면 알람 끄기 (옵션)
-        if (result.contains("정답입니다!")) {
-            missionService.updateAlarmStatus(alarmId, false);
-        }
-
-        return ResponseEntity.ok(result);
-    }
-
     // ========== 문장 따라쓰기 ==========
 
     @Operation(
