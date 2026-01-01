@@ -125,7 +125,7 @@ public class ChallengeController {
         // 1) 삭제 전: 챌린지 조회(본인 것만) + 날짜 확보
         Challenge challenge = challengeService.getChallengeByIdAndMemberId(challId, memberId);
 
-        LocalDate challDate = challenge.getChallDate();
+        LocalDate challDate = challenge.getCreatedAt().toLocalDate();
         String dateKey = challDate.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
         // 2) 챌린지 삭제 (권한 포함)

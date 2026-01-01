@@ -119,7 +119,7 @@ public class ChallengeService {
                 .user(user)
                 .build();
 
-
+        challengeRepository.save(updatedChallenge);
         challengeUserRepository.save(challengeUser);
 
         return "챌린지 참여 완료!";
@@ -209,10 +209,10 @@ public class ChallengeService {
         Challenge challenge = challengeRepository.findById(challId)
                 .orElseThrow(() -> new EntityNotFoundException("Challenge not found: " + challId));
 
-        if (challenge.getChallDate() == null) {
+        if (challenge.getCreatedAt() == null) {
             throw new IllegalStateException("challDate가 null입니다. challId=" + challId);
         }
-        return challenge.getChallDate(); // LocalDate
+        return challenge.getCreatedAt().toLocalDate(); // LocalDate
     }
 
     public long countJoinedChallengesOnDate(Long memberId, String yyyyMMdd) {
