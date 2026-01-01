@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
@@ -216,9 +217,18 @@ public class ChallengeService {
     }
 
     public long countJoinedChallengesOnDate(Long memberId, String yyyyMMdd) {
-        LocalDate date = LocalDate.parse(yyyyMMdd, DateTimeFormatter.ofPattern("yyyyMMdd"));
-        return challengeRepository.countByUser_IdAndChallDate(memberId, date);
+        LocalDate date = LocalDate.parse(
+                yyyyMMdd,
+                DateTimeFormatter.ofPattern("yyyyMMdd")
+        );
+
+        LocalDateTime start = date.atStartOfDay();
+        LocalDateTime end = date.plusDays(1).atStartOfDay();
+
+        return challengeRepository
+                .countByUser_IdAndCreatedAtBetween(memberId, start, end);
     }
+
 
     public Challenge getChallengeByIdAndMemberId(Long challId, Long memberId) {
         return challengeRepository.findByChallIdAndUser_Id(challId, memberId)
@@ -231,7 +241,12 @@ public class ChallengeService {
         return "Challenge deleted";
     }
 
-    public long countChallengesByMemberIdAndDate(Long memberId, LocalDate challDate) {
-        return challengeRepository.countByUser_IdAndChallDate(memberId, challDate);
+    public long countChallengesByMemberIdAndDate(Long memberId, LocalDate date) {
+        LocalDateTime start = date.atStartOfDay();
+        LocalDateTime end = date.plusDays(1).atStartOfDay();
+
+        return challengeRepository
+                .countByUser_IdAndCreatedAtBetween(memberId, start, end);
     }
+
 }
