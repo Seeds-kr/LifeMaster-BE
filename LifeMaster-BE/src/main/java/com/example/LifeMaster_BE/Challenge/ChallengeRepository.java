@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,5 +17,10 @@ public interface ChallengeRepository extends JpaRepository<Challenge, Long> {
 
     Optional<Challenge> findByChallIdAndUser_Id(Long challId, Long memberId);
 
-    long countByUser_IdAndChallDate(Long memberId, LocalDate challDate);
+    long countByUser_IdAndCreatedAtBetween(
+            Long memberId,
+            LocalDateTime start,
+            LocalDateTime end
+    );
+
 }
