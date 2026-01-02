@@ -6,6 +6,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -39,5 +41,13 @@ public class GroupChatService {
             messageEntity.getReadBy().add(reader);
             chatMessageRepository.save(messageEntity);
         });
+    }
+
+    public List<GroupChatDto.ChatMessage> getChatsByGroup(Long groupId) {
+        return chatMessageRepository
+                .findByGroupIdOrderByTimestampAsc(groupId)
+                .stream()
+                .map(GroupChatDto.ChatMessage::from)
+                .collect(Collectors.toList());
     }
 }

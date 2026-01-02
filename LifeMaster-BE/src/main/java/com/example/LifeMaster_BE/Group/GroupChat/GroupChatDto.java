@@ -18,6 +18,16 @@ public class GroupChatDto {
         private String senderName;
         private String message;
         private LocalDateTime timestamp;
+        public static ChatMessage from(GroupChatEntity entity) {
+            return ChatMessage.builder()
+                    .id(entity.getId())
+                    .groupId(entity.getGroup().getId())
+                    .senderId(entity.getSender().getId())
+                    .senderName(entity.getSender().getNickname())
+                    .message(entity.getMessage())
+                    .timestamp(entity.getTimestamp())
+                    .build();
+        }
     }
 
     @Builder(toBuilder = true)
