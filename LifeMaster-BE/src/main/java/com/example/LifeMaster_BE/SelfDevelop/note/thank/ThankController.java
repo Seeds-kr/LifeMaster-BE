@@ -3,6 +3,7 @@ package com.example.LifeMaster_BE.SelfDevelop.note.thank;
 import com.example.LifeMaster_BE.FunctionManager.Calender.ScheduleCalendarService;
 import com.example.LifeMaster_BE.Security.CustomUserDetails;
 import com.example.LifeMaster_BE.SelfDevelop.note.thank.Dto.CreateThankDto;
+import com.example.LifeMaster_BE.SelfDevelop.note.thank.Dto.ThankResponse;
 import com.example.LifeMaster_BE.SelfDevelop.note.thank.Dto.UpdateThankDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,12 +41,18 @@ public class ThankController {
                 .body(Map.of("thankId", createdThank.getId()));
     }
 
+    @GetMapping("/{thank-id}")
+    public ResponseEntity<ThankResponse> getThank(
+            @PathVariable("thank-id") Long thankId){
+        ThankResponse thank = thankService.getThank(thankId);
+        return ResponseEntity.ok(thank);
+    }
+
     @PutMapping("/{thank-id}")
     public ResponseEntity<ThankEntity> editThank(
             @RequestBody UpdateThankDto thankDto,
             @PathVariable("thank-id") Long thankId,
-            @AuthenticationPrincipal CustomUserDetails user
-    ) {
+            @AuthenticationPrincipal CustomUserDetails user) {
         Long memberId = user.getId();
 
         ThankEntity updatedThank = thankService.updateThank(thankId, thankDto);
@@ -63,8 +70,7 @@ public class ThankController {
     @DeleteMapping("/{thank-id}")
     public ResponseEntity<Void> deleteThank(
             @PathVariable("thank-id") Long thankId,
-            @AuthenticationPrincipal CustomUserDetails user
-    ) {
+            @AuthenticationPrincipal CustomUserDetails user) {
         Long memberId = user.getId();
 
         // 1️⃣ 삭제 전: Thank 조회 (본인 것만)

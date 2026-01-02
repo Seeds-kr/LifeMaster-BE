@@ -1,6 +1,7 @@
 package com.example.LifeMaster_BE.SelfDevelop.note.thank;
 
 import com.example.LifeMaster_BE.SelfDevelop.note.thank.Dto.CreateThankDto;
+import com.example.LifeMaster_BE.SelfDevelop.note.thank.Dto.ThankResponse;
 import com.example.LifeMaster_BE.SelfDevelop.note.thank.Dto.UpdateThankDto;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
@@ -32,6 +33,19 @@ public class ThankService {
         return thankRepository.save(newThank);
     }
 
+    public ThankResponse getThank(Long thankId){
+        ThankEntity thank = thankRepository.findById(thankId)
+                .orElseThrow(() -> new EntityNotFoundException("Thank not found"));
+
+        return ThankResponse.builder()
+                .thankOne(thank.getThankOne())
+                .thankTwo(thank.getThankTwo())
+                .thankThree(thank.getThankThree())
+                .thankFour(thank.getThankFour())
+                .thankFive(thank.getThankFive())
+                .thankDate(thank.getThankDate())
+                .build();
+    }
     public ThankEntity updateThank(Long thankId, UpdateThankDto thankDto){
         ThankEntity thank = thankRepository.findById(thankId)
                 .orElseThrow(() -> new EntityNotFoundException("Thank not found"));

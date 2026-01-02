@@ -3,6 +3,7 @@ package com.example.LifeMaster_BE.SelfDevelop.note.diary;
 import com.example.LifeMaster_BE.FunctionManager.Calender.ScheduleCalendarService;
 import com.example.LifeMaster_BE.Security.CustomUserDetails;
 import com.example.LifeMaster_BE.SelfDevelop.note.diary.Dto.CreateDiaryDto;
+import com.example.LifeMaster_BE.SelfDevelop.note.diary.Dto.DiaryResponse;
 import com.example.LifeMaster_BE.SelfDevelop.note.diary.Dto.UpdateDiaryDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +39,13 @@ public class DiaryController {
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("diaryId", createdDiary.getId()));
+    }
+
+    @GetMapping("/{diary-id}")
+    public ResponseEntity<DiaryResponse> getDiary(
+            @PathVariable("diary-id") Long diaryId){
+        DiaryResponse diary = diaryService.getDiary(diaryId);
+        return ResponseEntity.ok(diary);
     }
 
     @PutMapping("/{diary-id}")

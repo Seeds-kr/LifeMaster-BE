@@ -1,6 +1,7 @@
 package com.example.LifeMaster_BE.SelfDevelop.note.diary;
 
 import com.example.LifeMaster_BE.SelfDevelop.note.diary.Dto.CreateDiaryDto;
+import com.example.LifeMaster_BE.SelfDevelop.note.diary.Dto.DiaryResponse;
 import com.example.LifeMaster_BE.SelfDevelop.note.diary.Dto.UpdateDiaryDto;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
@@ -29,6 +30,16 @@ public class DiaryService {
 
         DiaryEntity newDiary = newDiary1.toBuilder() .member(member) .build();
         return diaryRepository.save(newDiary);
+    }
+
+    public DiaryResponse getDiary(Long diaryId){
+        DiaryEntity diary = diaryRepository.findById(diaryId)
+                .orElseThrow(() -> new EntityNotFoundException("Diary not found"));
+
+        return DiaryResponse.builder()
+                .diaryContent(diary.getDiaryContent())
+                .diaryDate(diary.getDiaryDate())
+                .build();
     }
 
     public DiaryEntity updateDiary(Long diaryId, UpdateDiaryDto diaryDto, Long memberId) {
