@@ -35,6 +35,7 @@ public class PostEntity {
     private String title;
     private String content;
     private String file;
+    private Boolean calendarShared;
     // 게시글 유형
     @Enumerated(EnumType.STRING)
     private PostType type;
@@ -60,17 +61,19 @@ public class PostEntity {
 
     private int commentCount = 0;
 
-    public PostEntity(String title, String content, String file, PostType type) {
+    public PostEntity(String title, String content, String file, PostType type, Boolean calendarShared) {
         this.title = title;
         this.content = content;
         this.file = file;
         this.type = type;
+        this.calendarShared = calendarShared;
     }
 
-    public void updatePost(String title, String content, String fileUrl) {
+    public void updatePost(String title, String content, String fileUrl, Boolean calendarShared) {
         this.title = title;
         this.content = content;
         this.file = fileUrl;
+        this.calendarShared = calendarShared;
     }
 
     public void increaseCommentCount() {

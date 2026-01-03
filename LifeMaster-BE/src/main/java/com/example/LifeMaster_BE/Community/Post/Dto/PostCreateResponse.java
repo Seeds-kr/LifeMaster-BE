@@ -15,5 +15,5 @@ public class PostCreateResponse {
     private String content;
     private String file;
     private PostType type;
-    private boolean calendarShared;
+    private Boolean calendarShared;
 }

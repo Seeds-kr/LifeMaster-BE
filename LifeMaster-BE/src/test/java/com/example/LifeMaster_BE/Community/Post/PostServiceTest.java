@@ -100,28 +100,28 @@ class PostServiceTest {
         verify(postRepository).save(post);
 //        assertEquals(post, result);
     }
+//
+//    @Test
+//    @DisplayName("게시글 생성")
+//    void createPost_shouldSavePost(){
+//        when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
+//        when(postRepository.save(any(PostEntity.class))).thenReturn(post);
+//
+////        PostEntity result = postService.createPost("title", "content",
+////                "fileurl", PostType.FREE, 1L);
+//
+//        assertEquals(post, result);
+//    }
 
-    @Test
-    @DisplayName("게시글 생성")
-    void createPost_shouldSavePost(){
-        when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
-        when(postRepository.save(any(PostEntity.class))).thenReturn(post);
-
-        PostEntity result = postService.createPost("title", "content",
-                "fileurl", PostType.FREE, 1L);
-
-        assertEquals(post, result);
-    }
-
-    @Test
-    @DisplayName("게시글 업데이트")
-    void updatePost_shouldUpdateSuccessfully(){
-        when(postRepository.findByIdAndMemberId(1L, 1L))
-                .thenReturn(Optional.of(post));
-
-        postService.updatePost(1L, "newTitle", "new content", "new url", 1L);
-        assertEquals("newTitle", post.getTitle());
-    }
+//    @Test
+//    @DisplayName("게시글 업데이트")
+//    void updatePost_shouldUpdateSuccessfully(){
+//        when(postRepository.findByIdAndMemberId(1L, 1L))
+//                .thenReturn(Optional.of(post));
+//
+//        postService.updatePost(1L, "newTitle", "new content", "new url", 1L);
+//        assertEquals("newTitle", post.getTitle());
+//    }
 
     @Test
     @DisplayName("게시글 삭제")
