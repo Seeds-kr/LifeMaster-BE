@@ -1,6 +1,7 @@
 package com.example.LifeMaster_BE.Community.Post;
 
 import com.example.LifeMaster_BE.Community.Post.Dto.AllPostsDto;
+import com.example.LifeMaster_BE.Community.Post.Dto.PostCreateRequest;
 import com.example.LifeMaster_BE.Community.Post.Dto.PostCreateResponse;
 import com.example.LifeMaster_BE.Community.Post.Dto.PostGetResponse;
 import com.example.LifeMaster_BE.Community.Post.Like.PostLikeEntity;
@@ -90,30 +91,36 @@ public class PostService {
         return response;
     }
 
-    public PostCreateResponse createPost(String title, String content, String fileUrl,
-                                 PostType type, Long memberId) {
+    public PostCreateResponse createPost(PostCreateRequest postDto, Long memberId) {
+        String title = postDto.getTitle();
+        String content = postDto.getContent();
+        String fileUrl = postDto.getFile();
+        PostType type = postDto.getType();
+        Boolean calendarShared = postDto.getCalendarShared();
 
         MemberEntity member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new EntityNotFoundException("Member not found"));
 
-        PostEntity postEntity = new PostEntity(title, content, fileUrl, type);
+        PostEntity postEntity = new PostEntity(title, content, fileUrl, type, calendarShared);
         PostEntity postEntity1 = postEntity.toBuilder()
                 .member(member)
                 .build();
         postRepository.save(postEntity1);
-        boolean calendarShared = todoRepository.existsByMemberId(memberId);
         return new PostCreateResponse(postEntity1.getId(), title, content,
                 fileUrl, type, calendarShared);
     }
 
-    public PostCreateResponse updatePost(Long postId, String title, String content, String fileUrl, Long memberId){
+    public PostCreateResponse updatePost(Long postId, PostCreateRequest postDto, Long memberId){
+
+        String title = postDto.getTitle();
+        String content = postDto.getContent();
+        String fileUrl = postDto.getFile();
+        Boolean calendarShared = postDto.getCalendarShared();
         PostEntity postEntity = postRepository.findByIdAndMemberId(postId, memberId)
                 .orElseThrow(() -> new ForbiddenActionException("본인 게시글만 수정할 수 있습니다."));
 
-        postEntity.updatePost(title, content, fileUrl);
+        postEntity.updatePost(title, content, fileUrl, calendarShared);
         postRepository.save(postEntity);
-
-        boolean calendarShared = todoRepository.existsByMemberId(memberId);
 
         return new PostCreateResponse(postEntity.getId(), title, content,
                 fileUrl, postEntity.getType(), calendarShared);

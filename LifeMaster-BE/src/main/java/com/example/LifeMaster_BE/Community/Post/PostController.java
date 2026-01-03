@@ -36,13 +36,7 @@ public class PostController {
     public ResponseEntity<PostCreateResponse> newPost(@RequestBody PostCreateRequest postDto,
                                               @AuthenticationPrincipal CustomUserDetails user) {
         Long memberId = user.getId();
-        String title = postDto.getTitle();
-        String content = postDto.getContent();
-        String fileUrl = postDto.getFile();
-        PostType type = postDto.getType();
-
-        PostCreateResponse post = postService.createPost(title, content, fileUrl, type, memberId);
-
+        PostCreateResponse post = postService.createPost(postDto, memberId);
         return ResponseEntity.status(HttpStatus.CREATED).body(post);
     }
 
@@ -62,11 +56,8 @@ public class PostController {
     public ResponseEntity<PostCreateResponse> updatePost(@PathVariable("postId") Long postId,
                                              @RequestBody PostCreateRequest postDto,
                                              @AuthenticationPrincipal CustomUserDetails user){
-        String title = postDto.getTitle();
-        String content = postDto.getContent();
-        String fileUrl = postDto.getFile();
 
-        PostCreateResponse newPost = postService.updatePost(postId, title, content, fileUrl, user.getId());
+        PostCreateResponse newPost = postService.updatePost(postId, postDto, user.getId());
         return ResponseEntity.ok().body(newPost);
     }
 

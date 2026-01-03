@@ -12,4 +12,5 @@ public class PostCreateRequest {
     private String content;
     private String file;
     private PostType type;
+    private Boolean calendarShared;
 }
