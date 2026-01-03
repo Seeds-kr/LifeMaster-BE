@@ -69,7 +69,6 @@ public class PostService {
         PostEntity post = postRepository.findById(postId)
                 .orElseThrow(() -> new EntityNotFoundException("Post not found"));
         boolean liked = likeRepository.existsByMemberIdAndPostId(memberId, postId);
-        boolean calendarShared = todoRepository.existsByMemberId(memberId);
         PostGetResponse response = new PostGetResponse(
                 post.getTitle(),
                 post.getContent(),
@@ -81,7 +80,7 @@ public class PostService {
                 post.getViewCount(),
                 post.getLikes().size(),
                 memberId.equals(post.getMember().getId()),
-                calendarShared,
+                post.getCalendarShared(),
                 post.getCreatedAt()
         );
 
