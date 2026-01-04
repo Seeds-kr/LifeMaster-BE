@@ -1,12 +1,15 @@
 package com.example.LifeMaster_BE.FunctionManager.Calender;
 
 import com.example.LifeMaster_BE.Security.CustomUserDetails;
+import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
@@ -18,9 +21,11 @@ import java.util.stream.Collectors;
 public class ScheduleCalendarController {
 
     private final ScheduleCalendarService calendarService;
+    private final MemberRepository memberRepository;
 
-    public ScheduleCalendarController(ScheduleCalendarService calendarService) {
+    public ScheduleCalendarController(ScheduleCalendarService calendarService,MemberRepository memberRepository) {
         this.calendarService = calendarService;
+        this.memberRepository = memberRepository;
     }
 
     private ScheduleCalendarResponseDto toResponse(ScheduleCalendarEntity entity) {
@@ -63,11 +68,22 @@ public class ScheduleCalendarController {
                 .collect(Collectors.toList());
     }
 
-    @Operation(summary = "특정 멤버 전체 조회", description = "입력받은 memberId의 캘린더 엔트리를 모두 조회합니다.")
+    @Operation(
+            summary = "특정 멤버 전체 조회",
+            description = "입력받은 memberId의 캘린더 엔트리를 모두 조회합니다."
+    )
     @GetMapping("/member/{memberId}")
     public List<ScheduleCalendarResponseDto> getAllEntriesByMemberId(
             @PathVariable(name = "memberId") Long memberId
     ) {
+        // ❌ 존재하지 않는 유저
+        if (!memberRepository.existsById(memberId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "존재하지 않는 사용자입니다."
+            );
+        }
+
         return calendarService.findAll(memberId).stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
