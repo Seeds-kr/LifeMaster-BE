@@ -57,26 +57,6 @@ public class AlarmMissionController {
         return ResponseEntity.ok(sentence);
     }
 
-    @Operation(
-            summary = "문장 정답 확인",
-            description = "알람에 저장된 문장과 사용자가 입력한 문장이 일치하는지 확인합니다."
-    )
-    @Parameter(name = "userInput", description = "사용자가 입력한 문장", required = true)
-    @Parameter(name = "alarmId", description = "알람 ID", required = true)
-    @PostMapping("/typing/check")
-    public ResponseEntity<String> checkTypingAnswer(
-            @RequestParam(name = "userInput") String userInput,
-            @RequestParam(name = "alarmId") long alarmId
-    ) {
-        String result = missionService.checkTypingAnswer(alarmId, userInput);
-
-        if (result.contains("성공!")) {
-            missionService.updateAlarmStatus(alarmId, false); // 알람 끄기
-        }
-
-        return ResponseEntity.ok(result);
-    }
-
     // ========== 따라 누르기 ==========
 
     @Operation(

@@ -63,6 +63,16 @@ public class ScheduleCalendarController {
                 .collect(Collectors.toList());
     }
 
+    @Operation(summary = "특정 멤버 전체 조회", description = "입력받은 memberId의 캘린더 엔트리를 모두 조회합니다.")
+    @GetMapping("/member/{memberId}")
+    public List<ScheduleCalendarResponseDto> getAllEntriesByMemberId(
+            @PathVariable(name = "memberId") Long memberId
+    ) {
+        return calendarService.findAll(memberId).stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
     @Operation(summary = "특정 날짜 조회", description = "현재 로그인한 유저의 입력한 날짜(YYYYMMDD) 엔트리를 조회합니다.")
     @GetMapping("/{date}")
     public ResponseEntity<ScheduleCalendarResponseDto> getEntriesByDate(

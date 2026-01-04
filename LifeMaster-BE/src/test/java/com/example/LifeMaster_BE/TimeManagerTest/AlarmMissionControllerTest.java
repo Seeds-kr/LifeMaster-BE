@@ -79,23 +79,6 @@ class AlarmMissionControllerTest {
                 .andExpect(content().string("Wake up and shine!"));
     }
 
-    @Test
-    @DisplayName("타이핑 정답 확인 - 성공 시 알람 끄기 호출")
-    void checkTypingAnswer_success() throws Exception {
-        long alarmId = 55L;
-
-        given(missionService.checkTypingAnswer(alarmId, "Good morning!"))
-                .willReturn("문장: \"Good morning!\"\n입력: \"Good morning!\" (성공! 알람이 꺼졌습니다.)");
-
-        mockMvc.perform(post("/time/alarm/mission/typing/check")
-                        .param("userInput", "Good morning!")
-                        .param("alarmId", String.valueOf(alarmId)))
-                .andExpect(status().isOk())
-                .andExpect(content().string(containsString("성공!")));
-
-        verify(missionService).updateAlarmStatus(alarmId, false);
-    }
-
     // ===== 따라 누르기 (5x5 그리드) =====
     @Test
     @DisplayName("그리드 생성 - alarmId + level, 5x5 배열 JSON 반환")
