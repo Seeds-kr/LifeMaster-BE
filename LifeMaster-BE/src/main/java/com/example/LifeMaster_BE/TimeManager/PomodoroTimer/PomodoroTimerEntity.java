@@ -17,7 +17,7 @@ public class PomodoroTimerEntity {
     private Long id;
 
     private String taskName;
-    private int CurrentTimer;  // 현재 시간 (분 단위)
+    private int CurrentTimer;  // 현재 타이머 값
     private int focusTime;  // 집중 시간 (분 단위)
     private int breakTime;  // 휴식 시간 (분 단위)
     private String date;    // 날짜 (예: "2024-11-14")
