@@ -37,11 +37,6 @@ public class ScheduleCalendarController {
         );
     }
 
-    /**
-     * ✅ 여기만 프로젝트에 맞게 바꾸면 됨.
-     * - 지금은 "username에 memberId가 들어있다"는 가정으로 Long 변환.
-     * - 실제로는 CustomUserDetails.getMemberId() 같은 방식일 확률이 높음.
-     */
     private Long getMemberId(UserDetails userDetails) {
         if (userDetails == null) {
             throw new RuntimeException("인증 정보가 없습니다.");
@@ -85,6 +80,36 @@ public class ScheduleCalendarController {
         }
 
         return calendarService.findAll(memberId).stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Operation(
+            summary = "특정 멤버 월별 조회",
+            description = "입력받은 memberId의 캘린더 엔트리를 특정 월(YYYYMM) 기준으로 조회합니다."
+    )
+    @GetMapping("/member/{memberId}/month/{yyyymm}")
+    public List<ScheduleCalendarResponseDto> getEntriesByMemberIdAndMonth(
+            @PathVariable(name = "memberId") Long memberId,
+            @PathVariable(name = "yyyymm") String yyyymm
+    ) {
+        // 존재하지 않는 유저
+        if (!memberRepository.existsById(memberId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "존재하지 않는 사용자입니다."
+            );
+        }
+
+        // YYYYMM 유효성 검사
+        if (yyyymm == null || !yyyymm.matches("\\d{6}")) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "month 형식이 올바르지 않습니다. 예) 202601"
+            );
+        }
+
+        return calendarService.findByMonth(memberId, yyyymm).stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
