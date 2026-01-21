@@ -60,51 +60,6 @@ public class AlarmService {
         // 1) 먼저 저장 (alarmId 확보)
         AlarmEntity saved = alarmRepository.save(newAlarm);
 
-        // 2) 입력값에 따라 미션 생성 + 알람에 저장
-        var type  = alarmDto.getRandomMissionType();
-        var level = alarmDto.getMissionLevel();
-
-        if (type != null) {
-            switch (type) {
-                case MATH_PROBLEM -> {
-                    if (level == null) {
-                        log.warn("[AlarmMission] MATH_PROBLEM 생성 스킵 - level 필요 (alarmId={})",
-                                saved.getId());
-                    } else {
-                        alarmMissionService.generateMathProblem(
-                                saved.getId(),
-                                level.name()   // enum → String
-                        );
-                    }
-                }
-
-                case TYPING_SENTENCE -> {
-                    alarmMissionService.generateTypingSentence(saved.getId());
-                }
-
-                case FOLLOW_CLICK -> {
-                    if (level == null) {
-                        log.warn("[AlarmMission] FOLLOW_CLICK 생성 스킵 - level 필요 (alarmId={})",
-                                saved.getId());
-                    } else {
-                        alarmMissionService.generateFollowClickGrid(
-                                saved.getId(),
-                                level.name()   // enum → String
-                        );
-                    }
-                }
-
-                default -> {
-                    log.warn("[AlarmMission] 알 수 없는 미션 타입 - 생성 스킵 (alarmId={}, type={})",
-                            saved.getId(), type);
-                }
-            }
-
-        } else {
-            // 타입이 없으면 미션도 없음
-            alarmRepository.save(saved);
-        }
-
         // 3) 캘린더 이벤트 생성 로직은 그대로
         ZoneId KST = ZoneId.of("Asia/Seoul");
         ZonedDateTime nowKst = ZonedDateTime.now(KST);
