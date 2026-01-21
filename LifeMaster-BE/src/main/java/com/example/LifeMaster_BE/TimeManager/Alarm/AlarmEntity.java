@@ -84,10 +84,10 @@ public class AlarmEntity {
     }
 
     // 수학 미션용 문제/정답 필드 추가
-    @JsonIgnore
+    //@JsonIgnore
     private String mathQuestion;   // 예: "12 + 8"
 
-    @JsonIgnore
+    //@JsonIgnore
     private Integer mathAnswer;    // 예: 20
 
     // 문장 따라쓰기 미션용 필드
