@@ -11,6 +11,7 @@ import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,7 +27,6 @@ import java.time.*;
 import java.time.format.DateTimeFormatter;
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class AlarmService {
 
     private final AlarmRepository alarmRepository;
@@ -34,6 +34,14 @@ public class AlarmService {
     private final AlarmMapStruct alarmMapStruct;
     private final ScheduleCalendarService scheduleCalendarService;
     private final AlarmMissionService alarmMissionService;
+
+    public AlarmService(AlarmRepository alarmRepository, MemberRepository memberRepository, AlarmMapStruct alarmMapStruct, ScheduleCalendarService scheduleCalendarService, @Lazy AlarmMissionService alarmMissionService) {
+        this.alarmRepository = alarmRepository;
+        this.memberRepository = memberRepository;
+        this.alarmMapStruct = alarmMapStruct;
+        this.scheduleCalendarService = scheduleCalendarService;
+        this.alarmMissionService = alarmMissionService;
+    }
 
     public AlarmEntity createAlarmAndSyncCalendar(NewAlarmDto alarmDto, Long memberId) {
         AlarmEntity saved = createAlarm(alarmDto, memberId);
