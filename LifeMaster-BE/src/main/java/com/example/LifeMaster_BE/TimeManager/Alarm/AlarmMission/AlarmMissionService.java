@@ -62,23 +62,34 @@ public class AlarmMissionService {
     public MathProblem generateMathProblem(Long alarmId, String level) {
         AlarmEntity alarm = getAlarmOrThrow(alarmId);
 
-        // 기존 미션 같은 타입 아니면 타입/문제/정답 전부 초기화 (타입 전환/재생성 모두 커버)
         if (alarm.getRandomMissionType() != RandomMissionType.MATH_PROBLEM) {
             alarm.clearMissionData();
         }
 
-        // 수학 문제 생성
-        MathProblem problem = internalGenerateMathProblem(level);
+        // enum/영문 입력을 한글 난이도로 정규화
+        String normalizedLevel = normalizeLevel(level);
 
-        // 새 미션 저장(덮어쓰기)
+        MathProblem problem = internalGenerateMathProblem(normalizedLevel);
+
         alarm.setRandomMissionType(RandomMissionType.MATH_PROBLEM);
-        alarm.setMissionLevel(toMissionLevel(level));
+        alarm.setMissionLevel(toMissionLevel(level)); // DB에는 enum 저장(LOW/MEDIUM/HIGH)
         alarm.setMathQuestion(problem.question);
         alarm.setMathAnswer(problem.correctAnswer);
 
         alarmService.saveAlarm(alarm);
-
         return problem;
+    }
+
+    private String normalizeLevel(String level) {
+        if (level == null) return "중";
+
+        String v = level.trim().toUpperCase();
+        return switch (v) {
+            case "HIGH", "상"   -> "상";
+            case "MEDIUM", "중" -> "중";
+            case "LOW", "하"    -> "하";
+            default             -> "중";
+        };
     }
 
     // 기존 generateMathProblem(String level)의 로직을 내부 메서드로 분리
