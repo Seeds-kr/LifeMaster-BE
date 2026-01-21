@@ -143,9 +143,6 @@ public class AlarmService {
 
             String dateKey = d.format(fmt);
 
-            log.info("[createAlarm] dtoLevel={}, dtoType={}", alarmDto.getMissionLevel(), alarmDto.getRandomMissionType());
-            log.info("[createAlarm] beforeCalendar savedLevel={}", saved.getMissionLevel());
-
             scheduleCalendarService.addOrUpdateEvent(memberId, dateKey, "Alarm");
         }
 
