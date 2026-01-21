@@ -92,7 +92,7 @@ public class AlarmService {
 
             String dateKey = d.format(fmt);
 
-            //scheduleCalendarService.addOrUpdateEvent(memberId, dateKey, "Alarm");
+            scheduleCalendarService.addOrUpdateEvent(memberId, dateKey, "Alarm");
         }
 
         return saved;
