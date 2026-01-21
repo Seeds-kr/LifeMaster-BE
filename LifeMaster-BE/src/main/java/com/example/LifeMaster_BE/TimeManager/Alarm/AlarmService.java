@@ -1,6 +1,7 @@
 package com.example.LifeMaster_BE.TimeManager.Alarm;
 
 import com.example.LifeMaster_BE.FunctionManager.Calender.ScheduleCalendarService;
+import com.example.LifeMaster_BE.TimeManager.Alarm.AlarmMission.AlarmMissionService;
 import com.example.LifeMaster_BE.TimeManager.Alarm.AlarmMission.Enum.RandomMissionType;
 import com.example.LifeMaster_BE.TimeManager.Alarm.Mapper.AlarmMapStruct;
 import com.example.LifeMaster_BE.TimeManager.Alarm.Dto.NewAlarmDto;
@@ -32,6 +33,7 @@ public class AlarmService {
     private final MemberRepository memberRepository;
     private final AlarmMapStruct alarmMapStruct;
     private final ScheduleCalendarService scheduleCalendarService;
+    private final AlarmMissionService alarmMissionService;
 
     public AlarmEntity createAlarmAndSyncCalendar(NewAlarmDto alarmDto, Long memberId) {
         AlarmEntity saved = createAlarm(alarmDto, memberId);
@@ -41,26 +43,73 @@ public class AlarmService {
     //알람 생성 메소드
     public AlarmEntity createAlarm(NewAlarmDto alarmDto, Long memberId) {
 
-        alarmDto.setRandomMissionType(null);
-        alarmDto.setMissionLevel(null);
-
         MemberEntity member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new EntityNotFoundException("Member " + memberId + " not found"));
 
         AlarmEntity newAlarm = AlarmEntity.fromDto(alarmDto);
         member.addAlarm(newAlarm);
 
-        // 1) 먼저 저장
+        // 1) 먼저 저장 (alarmId 확보)
         AlarmEntity saved = alarmRepository.save(newAlarm);
 
-        // 2) 캘린더 이벤트 생성: "오늘 포함(nowKST) + 현재시간 이후" ~ "이번 달 말"
+        // 2) 입력값에 따라 미션 생성 + 알람에 저장
+        var type  = alarmDto.getRandomMissionType();
+        var level = alarmDto.getMissionLevel(); // "상/중/하" (null 가능)
+
+        if (type != null) {
+            // 알람에도 타입/난이도 저장
+            saved.setRandomMissionType(type);
+            saved.setMissionLevel(level);
+            alarmRepository.save(saved);
+
+            switch (type) {
+                case MATH_PROBLEM -> {
+                    if (level == null) {
+                        log.warn("[AlarmMission] MATH_PROBLEM 생성 스킵 - level 필요 (alarmId={})",
+                                saved.getId());
+                    } else {
+                        alarmMissionService.generateMathProblem(
+                                saved.getId(),
+                                level.name()   // enum → String
+                        );
+                    }
+                }
+
+                case TYPING_SENTENCE -> {
+                    alarmMissionService.generateTypingSentence(saved.getId());
+                }
+
+                case FOLLOW_CLICK -> {
+                    if (level == null) {
+                        log.warn("[AlarmMission] FOLLOW_CLICK 생성 스킵 - level 필요 (alarmId={})",
+                                saved.getId());
+                    } else {
+                        alarmMissionService.generateFollowClickGrid(
+                                saved.getId(),
+                                level.name()   // enum → String
+                        );
+                    }
+                }
+
+                default -> {
+                    log.warn("[AlarmMission] 알 수 없는 미션 타입 - 생성 스킵 (alarmId={}, type={})",
+                            saved.getId(), type);
+                }
+            }
+
+        } else {
+            // 타입이 없으면 미션도 없음
+            saved.setMissionLevel(null);
+            alarmRepository.save(saved);
+        }
+
+        // 3) 캘린더 이벤트 생성 로직은 그대로
         ZoneId KST = ZoneId.of("Asia/Seoul");
         ZonedDateTime nowKst = ZonedDateTime.now(KST);
 
-        LocalDate startDate = nowKst.toLocalDate();                 // 생성일(오늘) 포함
-        LocalDate endDate = YearMonth.from(startDate).atEndOfMonth(); // 이번 달 말
+        LocalDate startDate = nowKst.toLocalDate();
+        LocalDate endDate = YearMonth.from(startDate).atEndOfMonth();
 
-        // 알람 시각(오늘 기준 비교용)
         LocalTime alarmTimeOfDay = saved.getAlarmTime()
                 .atZone(KST)
                 .toLocalTime();
@@ -69,7 +118,6 @@ public class AlarmService {
 
         for (LocalDate d = startDate; !d.isAfter(endDate); d = d.plusDays(1)) {
 
-            // 요일 true인 날만
             DayOfWeek dow = d.getDayOfWeek();
             boolean enabled = switch (dow) {
                 case MONDAY    -> saved.isAlarmMon();
@@ -86,7 +134,7 @@ public class AlarmService {
             if (d.equals(startDate) && !alarmTimeOfDay.isAfter(nowKst.toLocalTime())) continue;
 
             String dateKey = d.format(fmt);
-            scheduleCalendarService.addOrUpdateEvent(memberId,dateKey, "Alarm");
+            scheduleCalendarService.addOrUpdateEvent(memberId, dateKey, "Alarm");
         }
 
         return saved;
