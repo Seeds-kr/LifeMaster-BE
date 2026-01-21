@@ -28,7 +28,7 @@ public class AlarmMissionController {
     // ========== 수학 문제 ==========
 
     @Operation(
-            summary = "수학 문제 생성 !!",
+            summary = "수학 문제 생성",
             description = "주어진 난이도와 알람 ID에 맞는 수학 문제를 생성하고, 알람에 저장합니다."
     )
     @Parameter(name = "alarmId", description = "문제가 연결될 알람 ID", required = true)
