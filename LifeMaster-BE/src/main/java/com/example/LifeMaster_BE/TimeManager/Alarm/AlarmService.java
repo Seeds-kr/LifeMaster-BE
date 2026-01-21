@@ -142,6 +142,10 @@ public class AlarmService {
             if (d.equals(startDate) && !alarmTimeOfDay.isAfter(nowKst.toLocalTime())) continue;
 
             String dateKey = d.format(fmt);
+
+            log.info("[createAlarm] dtoLevel={}, dtoType={}", alarmDto.getMissionLevel(), alarmDto.getRandomMissionType());
+            log.info("[createAlarm] beforeCalendar savedLevel={}", saved.getMissionLevel());
+
             scheduleCalendarService.addOrUpdateEvent(memberId, dateKey, "Alarm");
         }
 
