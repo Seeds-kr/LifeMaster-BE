@@ -62,7 +62,7 @@ public class AlarmService {
 
         // 2) 입력값에 따라 미션 생성 + 알람에 저장
         var type  = alarmDto.getRandomMissionType();
-        var level = alarmDto.getMissionLevel(); // "상/중/하" (null 가능)
+        var level = alarmDto.getMissionLevel();
 
         if (type != null) {
             // 알람에도 타입/난이도 저장
@@ -143,7 +143,7 @@ public class AlarmService {
 
             String dateKey = d.format(fmt);
 
-            scheduleCalendarService.addOrUpdateEvent(memberId, dateKey, "Alarm");
+            //scheduleCalendarService.addOrUpdateEvent(memberId, dateKey, "Alarm");
         }
 
         return saved;
