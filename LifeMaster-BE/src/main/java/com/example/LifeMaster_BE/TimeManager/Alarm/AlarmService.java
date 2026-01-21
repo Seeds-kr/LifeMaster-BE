@@ -65,11 +65,6 @@ public class AlarmService {
         var level = alarmDto.getMissionLevel();
 
         if (type != null) {
-            // 알람에도 타입/난이도 저장
-            saved.setRandomMissionType(type);
-            saved.setMissionLevel(level);
-            alarmRepository.save(saved);
-
             switch (type) {
                 case MATH_PROBLEM -> {
                     if (level == null) {
@@ -107,7 +102,6 @@ public class AlarmService {
 
         } else {
             // 타입이 없으면 미션도 없음
-            saved.setMissionLevel(null);
             alarmRepository.save(saved);
         }
 
