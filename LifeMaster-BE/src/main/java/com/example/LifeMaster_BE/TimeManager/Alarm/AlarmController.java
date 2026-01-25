@@ -45,16 +45,20 @@ public class AlarmController {
     """
     )
     @PostMapping
-    public ResponseEntity<Void> createAlarm(
+    public ResponseEntity<ResponseAlarmDto> createAlarm(
             @RequestBody NewAlarmDto alarmDto,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
         Long memberId = userDetails.getId();
 
-        AlarmEntity saved = alarmService.createAlarmAndSyncCalendar(alarmDto, memberId);
+        ResponseAlarmDto saved =
+                alarmService.createAlarmAndSyncCalendar(alarmDto, memberId);
 
         URI location = URI.create("/time/alarm/" + saved.getId());
-        return ResponseEntity.created(location).build();
+
+        return ResponseEntity
+                .created(location)
+                .body(saved);
     }
 
 
@@ -135,17 +139,17 @@ public class AlarmController {
     )
     @Parameter(name = "alarmId", description = "수정할 알람의 ID", required = true)
     @PutMapping("/{alarmId}")
-    public ResponseEntity<String> updateAlarm(
+    public ResponseEntity<ResponseAlarmDto> updateAlarm(
             @PathVariable Long alarmId,
             @RequestBody NewAlarmDto dto,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         Long memberId = userDetails.getId();
 
-        // 알람 수정 + 캘린더 동기화를 서비스에서 처리
-        alarmService.updateAlarmAndSyncCalendar(alarmId, dto, memberId);
+        ResponseAlarmDto updated =
+                alarmService.updateAlarmAndSyncCalendar(alarmId, dto, memberId);
 
-        return ResponseEntity.ok("알람이 정상적으로 수정되었습니다.");
+        return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/{alarmId}")

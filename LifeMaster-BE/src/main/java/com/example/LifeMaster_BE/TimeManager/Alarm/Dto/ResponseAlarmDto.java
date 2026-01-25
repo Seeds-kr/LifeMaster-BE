@@ -69,4 +69,39 @@ public class ResponseAlarmDto {
     // ==== 따라 누르기(그리드) 미션 ====
     @JsonIgnore
     private String followClickGridJson;  // JSON 문자열로 저장
+
+    public static ResponseAlarmDto fromEntity(AlarmEntity alarm) {
+        return new ResponseAlarmDto(
+                alarm.getId(),
+                alarm.getAlarmTitle(),
+                alarm.getAlarmTime(),
+
+                alarm.isAlarmMon(),
+                alarm.isAlarmTue(),
+                alarm.isAlarmWed(),
+                alarm.isAlarmThu(),
+                alarm.isAlarmFri(),
+                alarm.isAlarmSat(),
+                alarm.isAlarmSun(),
+
+                alarm.isAlarmStatus(),
+                alarm.getAlarmSound(),
+
+                alarm.isSnoozed(),
+                alarm.getSnoozeTime(),
+                alarm.getSnoozeCount(),
+
+                alarm.isReSleptPrevention(),
+                alarm.getReSleptPreventionTime(),
+
+                alarm.getRandomMissionType(),
+                alarm.getMissionLevel(),
+
+                // JsonIgnore라 응답엔 안 나감 (문제 없음)
+                alarm.getMathQuestion(),
+                alarm.getMathAnswer(),
+                alarm.getTypingSentence(),
+                alarm.getFollowClickGridJson()
+        );
+    }
 }

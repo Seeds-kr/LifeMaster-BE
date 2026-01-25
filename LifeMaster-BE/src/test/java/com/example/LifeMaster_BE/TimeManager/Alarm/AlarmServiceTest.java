@@ -1,9 +1,9 @@
 package com.example.LifeMaster_BE.TimeManager.Alarm;
 
 import com.example.LifeMaster_BE.FunctionManager.Calender.ScheduleCalendarService;
-import com.example.LifeMaster_BE.TimeManager.Alarm.Mapper.AlarmMapStruct;
 import com.example.LifeMaster_BE.TimeManager.Alarm.Dto.NewAlarmDto;
 import com.example.LifeMaster_BE.TimeManager.Alarm.Dto.ResponseAlarmDto;
+import com.example.LifeMaster_BE.TimeManager.Alarm.Mapper.AlarmMapStruct;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -78,18 +78,25 @@ class AlarmServiceTest {
             mockedStatic.when(() -> AlarmEntity.fromDto(dto)).thenReturn(transientAlarm);
             when(alarmRepository.save(transientAlarm)).thenReturn(savedAlarm);
 
-            AlarmEntity result = alarmService.createAlarm(dto, memberId);
+            // ✅ 반환 타입 변경: AlarmEntity -> ResponseAlarmDto
+            ResponseAlarmDto result = alarmService.createAlarm(dto, memberId);
 
-            assertSame(savedAlarm, result);
+            // ✅ DTO 값 검증 (savedAlarm 기준)
+            assertNotNull(result);
             assertEquals(123L, result.getId());
+
+            // 필요하면 더 검증
+            // assertEquals(savedAlarm.getAlarmTitle(), result.getAlarmTitle());
+            // assertEquals(savedAlarm.getAlarmTime(), result.getAlarmTime());
+            // assertEquals(savedAlarm.isAlarmMon(), result.isAlarmMon());
+            // ...
 
             verify(member).addAlarm(transientAlarm);
             verify(alarmRepository).save(transientAlarm);
 
-            // 캘린더 이벤트는 "조건을 만족하는 날짜들"에 대해 여러 번 호출될 수 있으니
-            // 최소 1번 이상 호출만 보장하는 방식으로 검증
+            // ✅ 캘린더 이벤트 verify (시그니처에 맞게)
             verify(scheduleCalendarService, atLeastOnce())
-                    .addOrUpdateEvent(anyString(), eq("Alarm"));
+                    .addOrUpdateEvent(eq(memberId), anyString(), eq("Alarm"));
         }
     }
 

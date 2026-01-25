@@ -35,7 +35,7 @@ public class AlarmService {
     private final ScheduleCalendarService scheduleCalendarService;
     private final AlarmMissionService alarmMissionService;
 
-    public AlarmService(AlarmRepository alarmRepository, MemberRepository memberRepository, AlarmMapStruct alarmMapStruct, ScheduleCalendarService scheduleCalendarService, @Lazy AlarmMissionService alarmMissionService) {
+    public AlarmService(AlarmRepository alarmRepository, MemberRepository memberRepository, AlarmMapStruct alarmMapStruct, ScheduleCalendarService scheduleCalendarService, @Lazy AlarmMissionService alarmMissionService, ResponseAlarmDto responseAlarmDto) {
         this.alarmRepository = alarmRepository;
         this.memberRepository = memberRepository;
         this.alarmMapStruct = alarmMapStruct;
@@ -43,13 +43,14 @@ public class AlarmService {
         this.alarmMissionService = alarmMissionService;
     }
 
-    public AlarmEntity createAlarmAndSyncCalendar(NewAlarmDto alarmDto, Long memberId) {
-        AlarmEntity saved = createAlarm(alarmDto, memberId);
-        return saved;
+    public ResponseAlarmDto createAlarmAndSyncCalendar(
+            NewAlarmDto alarmDto, Long memberId) {
+
+        return createAlarm(alarmDto, memberId);
     }
 
     //알람 생성 메소드
-    public AlarmEntity createAlarm(NewAlarmDto alarmDto, Long memberId) {
+    public ResponseAlarmDto createAlarm(NewAlarmDto alarmDto, Long memberId) {
 
         MemberEntity member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new EntityNotFoundException("Member " + memberId + " not found"));
@@ -95,7 +96,7 @@ public class AlarmService {
             scheduleCalendarService.addOrUpdateEvent(memberId, dateKey, "Alarm");
         }
 
-        return saved;
+        return ResponseAlarmDto.fromEntity(saved);
     }
 
     //알람 전체 조회 메소드
@@ -129,7 +130,7 @@ public class AlarmService {
 
     //알람 수정 메소드
     @Transactional
-    public void updateAlarm(Long alarmId, NewAlarmDto dto) {
+    public ResponseAlarmDto updateAlarm(Long alarmId, NewAlarmDto dto) {
 
         AlarmEntity alarm = alarmRepository.findById(alarmId)
                 .orElseThrow(() ->
@@ -164,11 +165,13 @@ public class AlarmService {
         alarm.setRandomMissionType(dto.getRandomMissionType());
         alarm.setMissionLevel(dto.getMissionLevel());
 
-        // @Transactional → save 생략 가능
-        alarmRepository.save(alarm);
+        // @Transactional 이므로 save 생략 가능 (남겨도 무방)
+        // alarmRepository.save(alarm);
+
+        return ResponseAlarmDto.fromEntity(alarm);
     }
 
-    public void updateAlarmAndSyncCalendar(Long alarmId, NewAlarmDto dto, Long memberId) {
+    public ResponseAlarmDto updateAlarmAndSyncCalendar(Long alarmId, NewAlarmDto dto, Long memberId) {
 
         ZoneId KST = ZoneId.of("Asia/Seoul");
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyyMMdd");
@@ -177,7 +180,7 @@ public class AlarmService {
         AlarmEntity old = alarmRepository.findById(alarmId)
                 .orElseThrow(() -> new EntityNotFoundException("Alarm " + alarmId + " not found"));
 
-        // old 스냅샷 (updateAlarm에서 엔티티를 변경해버리기 전에 저장)
+        // old 스냅샷 (updateAlarm에서 엔티티 변경 전에 저장)
         LocalTime oldTimeOfDay = old.getAlarmTime().atZone(KST).toLocalTime();
         boolean oldMon = old.isAlarmMon();
         boolean oldTue = old.isAlarmTue();
@@ -187,21 +190,20 @@ public class AlarmService {
         boolean oldSat = old.isAlarmSat();
         boolean oldSun = old.isAlarmSun();
 
-        // 2) 실제 수정(기존 로직 재사용)
-        updateAlarm(alarmId, dto);
+        // 2) 실제 수정(기존 로직 재사용) + DTO 받기
+        ResponseAlarmDto updatedDto = updateAlarm(alarmId, dto);
 
-        // 3) 수정 후 알람 로드 (new)
-        AlarmEntity updated = alarmRepository.findById(alarmId)
-                .orElseThrow(() -> new EntityNotFoundException("Alarm " + alarmId + " not found after update"));
+        // 3) 수정 후 알람 엔티티는 old가 같은 영속성 컨텍스트에서 갱신되어 있음
+        //    (= 다시 findById 할 필요 없음)
+        AlarmEntity updated = old;
 
         LocalTime newTimeOfDay = updated.getAlarmTime().atZone(KST).toLocalTime();
 
         ZonedDateTime nowKst = ZonedDateTime.now(KST);
-        LocalDate startDate = nowKst.toLocalDate();                 // 오늘 포함
-        LocalDate endDate = YearMonth.from(startDate).atEndOfMonth(); // 이번 달 말
+        LocalDate startDate = nowKst.toLocalDate();
+        LocalDate endDate = YearMonth.from(startDate).atEndOfMonth();
 
         // 멤버의 다른 알람들(삭제 여부 판단용)
-        // - DB 못 건드린다 했으니, 쿼리 추가 없이 "가져와서 in-memory 필터"로 처리
         List<AlarmEntity> memberAlarms = alarmRepository.findByMember_Id(memberId);
 
         for (LocalDate d = startDate; !d.isAfter(endDate); d = d.plusDays(1)) {
@@ -211,7 +213,7 @@ public class AlarmService {
             boolean oldEnabled = enabledBySnapshot(dow, oldMon, oldTue, oldWed, oldThu, oldFri, oldSat, oldSun);
             boolean newEnabled = enabledByEntity(updated, dow);
 
-            // '오늘'은 현재시간 이후만 포함 (old/new 각각의 알람 시각을 기준으로)
+            // '오늘'은 현재시간 이후만 포함 (old/new 각각의 알람 시각 기준)
             if (d.equals(startDate)) {
                 boolean oldTimeOk = oldTimeOfDay.isAfter(nowKst.toLocalTime());
                 boolean newTimeOk = newTimeOfDay.isAfter(nowKst.toLocalTime());
@@ -226,26 +228,25 @@ public class AlarmService {
             String dateKey = d.format(fmt);
 
             if (!oldEnabled && newEnabled) {
-                // false -> true : 이벤트 생성/유지
-                scheduleCalendarService.addOrUpdateEvent(memberId,dateKey, "Alarm");
+                scheduleCalendarService.addOrUpdateEvent(memberId, dateKey, "Alarm");
                 continue;
             }
 
             if (oldEnabled && !newEnabled) {
-                // true -> false : "그 날짜에 다른 알람이 없으면" 이벤트 삭제
                 boolean hasOtherAlarmThatDay = hasAnyOtherAlarmOnDate(
                         memberAlarms, alarmId, d, nowKst.toLocalTime()
                 );
 
                 if (!hasOtherAlarmThatDay) {
-                    // 너의 캘린더 서비스에 맞춰 삭제 메서드 구현/호출
-                    scheduleCalendarService.deleteSpecificEvent(memberId,dateKey, "Alarm");
+                    scheduleCalendarService.deleteSpecificEvent(memberId, dateKey, "Alarm");
                 } else {
-                    // 다른 알람이 있으면 이벤트는 유지(필요하면 갱신)
-                    scheduleCalendarService.addOrUpdateEvent(memberId,dateKey, "Alarm");
+                    scheduleCalendarService.addOrUpdateEvent(memberId, dateKey, "Alarm");
                 }
             }
         }
+
+        // 컨트롤러가 받도록 최종 DTO 반환
+        return updatedDto;
     }
 
     private boolean enabledBySnapshot(
