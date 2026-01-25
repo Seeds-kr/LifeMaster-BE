@@ -35,7 +35,7 @@ public class AlarmService {
     private final ScheduleCalendarService scheduleCalendarService;
     private final AlarmMissionService alarmMissionService;
 
-    public AlarmService(AlarmRepository alarmRepository, MemberRepository memberRepository, AlarmMapStruct alarmMapStruct, ScheduleCalendarService scheduleCalendarService, @Lazy AlarmMissionService alarmMissionService, ResponseAlarmDto responseAlarmDto) {
+    public AlarmService(AlarmRepository alarmRepository, MemberRepository memberRepository, AlarmMapStruct alarmMapStruct, ScheduleCalendarService scheduleCalendarService, @Lazy AlarmMissionService alarmMissionService) {
         this.alarmRepository = alarmRepository;
         this.memberRepository = memberRepository;
         this.alarmMapStruct = alarmMapStruct;
