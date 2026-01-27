@@ -165,10 +165,9 @@ public class AlarmService {
         alarm.setRandomMissionType(dto.getRandomMissionType());
         alarm.setMissionLevel(dto.getMissionLevel());
 
-        // @Transactional 이므로 save 생략 가능 (남겨도 무방)
-        // alarmRepository.save(alarm);
+        AlarmEntity saved = alarmRepository.saveAndFlush(alarm);
 
-        return ResponseAlarmDto.fromEntity(alarm);
+        return ResponseAlarmDto.fromEntity(saved);
     }
 
     public ResponseAlarmDto updateAlarmAndSyncCalendar(Long alarmId, NewAlarmDto dto, Long memberId) {
