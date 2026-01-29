@@ -200,12 +200,11 @@ public class GroupController {
         return ResponseEntity.ok(updatedGroup);
     }
 
-    // 사용자가 속한 그룹들을 반환하는 API
-    @Operation(summary = "사용자가 속한 그룹들을 반환", description = "사용자가 속한 그룹들을 반환")
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<?> getGroupsByUser(@PathVariable("userId") @AuthenticationPrincipal CustomUserDetails user) {
+    @GetMapping("/user/me")
+    public ResponseEntity<?> getMyGroups(@AuthenticationPrincipal CustomUserDetails user) {
         ResponseEntity<?> loginCheck = login.checkLogin(user);
         if (loginCheck != null) return loginCheck;
+
         Long memberId = user.getId();
         List<GroupEntity> groups = groupService.getGroupsByUser(memberId);
         return ResponseEntity.ok(groups);
