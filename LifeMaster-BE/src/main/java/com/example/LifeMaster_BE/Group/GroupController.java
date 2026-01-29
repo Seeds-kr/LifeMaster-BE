@@ -200,6 +200,7 @@ public class GroupController {
         return ResponseEntity.ok(updatedGroup);
     }
 
+    @Operation(summary = "사용자가 속한 그룹들을 반환", description = "사용자가 속한 그룹들을 반환")
     @GetMapping("/user/me")
     public ResponseEntity<?> getMyGroups(@AuthenticationPrincipal CustomUserDetails user) {
         ResponseEntity<?> loginCheck = login.checkLogin(user);
