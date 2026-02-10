@@ -27,9 +27,7 @@ public class SwaggerConfig implements WebMvcConfigurer {
                         .version("1.0")
                         .description("LifeMaster 백엔드 API 명세서"))
                 .servers(Arrays.asList(
-                        new Server().url("http://ec2-54-180-88-104.ap-northeast-2.compute.amazonaws.com:8080").description("Development Server"),
-                        // 여기 주소만 변경
-                        //new Server().url("https://api.lifemaster.harvester.kr").description("Development Server"),
+                        new Server().url("http://ec2-54-180-88-104.ap-northeast-2.compute.amazonaws.com:7550").description("Development Server"),
                         new Server().url("http://localhost:7550").description("Local Server"),
                         new Server().url("http://localhost:8080").description("Local Server 2")
                 ))
@@ -116,6 +114,14 @@ public class SwaggerConfig implements WebMvcConfigurer {
         return GroupedOpenApi.builder()
                 .group("Sleep")
                 .pathsToMatch("/sleep/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi GroupChatApi() {
+        return GroupedOpenApi.builder()
+                .group("GroupChat")
+                .pathsToMatch("/groups/**")
                 .build();
     }
 
