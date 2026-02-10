@@ -1,19 +1,32 @@
-# ---- Build stage ----
+# =========================
+# 1. Build stage
+# =========================
 FROM gradle:8.10.2-jdk21 AS builder
+
 WORKDIR /app
 
-COPY build.gradle settings.gradle gradlew gradlew.bat /app/
-COPY gradle /app/gradle
-RUN chmod +x /app/gradlew
+# Gradle 캐시 활용
+COPY build.gradle settings.gradle gradlew gradlew.bat ./
+COPY gradle ./gradle
+RUN chmod +x ./gradlew
 
-COPY src /app/src
+# 소스 복사
+COPY src ./src
 
+# 빌드 (테스트 제외)
 RUN ./gradlew clean build -x test
 
-# ---- Run stage ----
+
+# =========================
+# 2. Run stage
+# =========================
 FROM eclipse-temurin:21-jre
+
 WORKDIR /app
-COPY --from=builder /app/build/libs/*.jar /app/app.jar
+
+# 빌드된 jar 복사
+COPY --from=builder /app/build/libs/*.jar app.jar
 
 EXPOSE 8080
+
 ENTRYPOINT ["java","-jar","/app/app.jar"]
