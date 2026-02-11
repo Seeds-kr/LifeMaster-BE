@@ -37,15 +37,15 @@ public class SpringSecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .cors(Customizer.withDefaults()) // CORS 설정 빈 사용
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/user/login",
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**",
-                                "/user/register/**",
-                                //"/challenge/**",
-                                "/auth/password/reset/**",
-                                "/auth/kakao/**", "/kakao/**").permitAll()
-                        .anyRequest().authenticated()
+                                .requestMatchers(
+                                        "/user/login",
+                                        "/swagger-ui/**",
+                                        "/v3/api-docs/**",
+                                        "/user/register/**",
+                                        //"/challenge/**",
+                                        "/auth/password/reset/**",
+                                        "/auth/kakao/**", "/kakao/**").permitAll()
+                                .anyRequest().authenticated()
                         //.anyRequest().permitAll()
                 )
                 .exceptionHandling(e -> e

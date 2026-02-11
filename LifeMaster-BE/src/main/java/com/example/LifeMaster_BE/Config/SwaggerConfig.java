@@ -135,6 +135,14 @@ public class SwaggerConfig implements WebMvcConfigurer {
     }
 
     @Bean
+    public GroupedOpenApi kakaoLoginApi() {
+        return GroupedOpenApi.builder()
+                .group("Challenge")
+                .pathsToMatch("/kakaoLogin/**")
+                .build();
+    }
+
+    @Bean
     public GroupedOpenApi userApi() {
         return GroupedOpenApi.builder()
                 .group("user")
