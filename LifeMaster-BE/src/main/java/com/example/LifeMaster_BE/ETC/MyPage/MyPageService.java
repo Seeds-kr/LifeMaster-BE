@@ -19,7 +19,7 @@ public class MyPageService {
         MemberEntity member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new EntityNotFoundException("Member Not Found"));
 
-        return new MyPageDto(member.getNickname(), member.getEmail());
+        return new MyPageDto(member.getId(), member.getNickname(), member.getEmail());
     }
 
     public MyPageDto updateMemberInfo(Long memberId, String nickName, String email){
@@ -29,7 +29,7 @@ public class MyPageService {
         member.updateByMyPage(nickName, email);
         memberRepository.save(member);
 
-        return new MyPageDto(member.getNickname(), member.getEmail());
+        return new MyPageDto(member.getId(),member.getNickname(), member.getEmail());
     }
 
     public void deleteMemberInfo(Long memberId){
