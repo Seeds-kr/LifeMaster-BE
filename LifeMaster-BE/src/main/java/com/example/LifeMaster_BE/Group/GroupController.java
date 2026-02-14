@@ -67,7 +67,8 @@ public class GroupController {
     public ResponseEntity<?> getAllGroups(@AuthenticationPrincipal CustomUserDetails user) {
         ResponseEntity<?> loginCheck = login.checkLogin(user);
         if (loginCheck != null) return loginCheck;
-        List<GroupEntity> groups = groupService.getAllGroups();
+
+        List<GroupResponseDto> groups = groupService.getAllGroups();
         return ResponseEntity.ok(groups);
     }
 
@@ -77,11 +78,27 @@ public class GroupController {
             @ApiResponse(responseCode = "404", description = "Group not found")
     })
     @GetMapping("/{id}")
-    public ResponseEntity<?> getGroupById(@Parameter(description = "ID of the group") @PathVariable("id") Long id,@AuthenticationPrincipal CustomUserDetails user) {
+    public ResponseEntity<?> getGroupById(
+            @Parameter(description = "ID of the group") @PathVariable("id") Long id,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
         ResponseEntity<?> loginCheck = login.checkLogin(user);
         if (loginCheck != null) return loginCheck;
-        GroupEntity group = groupService.getGroupById(id);
+
+        GroupResponseDto group = groupService.getGroupById(id);
         return ResponseEntity.ok(group);
+    }
+
+    @Operation(summary = "사용자가 속한 그룹들을 반환", description = "사용자가 속한 그룹들을 반환")
+    @GetMapping("/user/me")
+    public ResponseEntity<?> getMyGroups(@AuthenticationPrincipal CustomUserDetails user) {
+        ResponseEntity<?> loginCheck = login.checkLogin(user);
+        if (loginCheck != null) return loginCheck;
+
+        Long memberId = user.getId();
+
+        List<GroupResponseDto> groups = groupService.getGroupsByUser(memberId);
+        return ResponseEntity.ok(groups);
     }
 
     @Operation(summary = "Update group details", description = "Updates the details of a specific group by its ID.")
@@ -198,17 +215,6 @@ public class GroupController {
         if (loginCheck != null) return loginCheck;
         GroupEntity updatedGroup = groupService.addStatisticGoal(groupId, goalId);
         return ResponseEntity.ok(updatedGroup);
-    }
-
-    @Operation(summary = "사용자가 속한 그룹들을 반환", description = "사용자가 속한 그룹들을 반환")
-    @GetMapping("/user/me")
-    public ResponseEntity<?> getMyGroups(@AuthenticationPrincipal CustomUserDetails user) {
-        ResponseEntity<?> loginCheck = login.checkLogin(user);
-        if (loginCheck != null) return loginCheck;
-
-        Long memberId = user.getId();
-        List<GroupEntity> groups = groupService.getGroupsByUser(memberId);
-        return ResponseEntity.ok(groups);
     }
 
     // 그룹에 속한 사용자들을 반환하는 API

@@ -90,14 +90,23 @@ public class GroupService {
     }
 
     // Retrieve all groups
-    public List<GroupEntity> getAllGroups() {
-        return groupRepository.findAll();
+    public List<GroupResponseDto> getAllGroups() {
+        return groupRepository.findAllWithMemberCount();
     }
 
     // Retrieve a group by ID
-    public GroupEntity getGroupById(Long id) {
-        return groupRepository.findById(id)
+    public GroupResponseDto getGroupById(Long id) {
+        return groupRepository.findByIdWithMemberCount(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Group not found with id " + id));
+    }
+
+    // 사용자가 속한 그룹들을 반환하는 메소드
+    public List<GroupResponseDto> getGroupsByUser(Long userId) {
+        // user 존재 확인만 하고(원하면 생략 가능), 실제 그룹은 count 포함 쿼리로 반환
+        memberRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
+
+        return groupRepository.findMyGroupsWithMemberCount(userId);
     }
 
     // Update a group
@@ -274,16 +283,6 @@ public class GroupService {
 
         // 변경된 그룹 저장
         return groupRepository.save(group);
-    }
-
-    // 사용자가 속한 그룹들을 반환하는 메소드
-    public List<GroupEntity> getGroupsByUser(Long userId) {
-        // 사용자를 조회
-        MemberEntity user = memberRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
-
-        // 사용자가 속한 그룹들을 반환
-        return new ArrayList<>(user.getGroups());
     }
 
     // 그룹에 속한 사용자들을 반환하는 메소드
