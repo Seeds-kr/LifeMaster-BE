@@ -45,6 +45,7 @@ public class SpringSecurityConfig {
                                 //"/challenge/**",
                                 "/auth/password/reset/**",
                                 "/auth/kakao/**", "/kakao/**").permitAll()
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                         //.anyRequest().permitAll()
                 )
