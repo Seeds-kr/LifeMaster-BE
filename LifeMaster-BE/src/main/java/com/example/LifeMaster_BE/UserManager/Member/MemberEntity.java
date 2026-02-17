@@ -13,8 +13,11 @@ import com.example.LifeMaster_BE.UserManager.Member.Subscription.SubscriptionPla
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -26,6 +29,7 @@ import java.util.Set;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@EntityListeners(AuditingEntityListener.class)
 @Table(
         name = "member_entity",
         uniqueConstraints = {
@@ -63,6 +67,18 @@ public class MemberEntity {
     @Enumerated(EnumType.STRING)
     @Column
     private LoginRole loginRole = LoginRole.USER;
+
+    // 관리자 기능용 필드
+    @Enumerated(EnumType.STRING)
+    @Column(name = "member_status")
+    private MemberStatus memberStatus = MemberStatus.ACTIVE;
+
+    @Column(name = "warning_count")
+    private int warningCount = 0;
+
+    @Column(name = "created_at", updatable = false)
+    @CreatedDate
+    private LocalDateTime createdAt;
 
     // Many-to-Many 관계 추가
     @ManyToMany
