@@ -67,6 +67,7 @@ public class SpringSecurityConfig {
 
                                         // 실패 URL
                                         "/error").permitAll()
+                                .requestMatchers("/admin/**").hasRole("ADMIN")
                                 .anyRequest().authenticated()
                         //.anyRequest().permitAll()
                 )

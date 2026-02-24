@@ -235,4 +235,12 @@ public class SwaggerConfig implements WebMvcConfigurer {
                 .pathsToMatch("/s3/**")
                 .build();
     }
+
+    @Bean
+    public GroupedOpenApi adminApi() {
+        return GroupedOpenApi.builder()
+                .group("admin")
+                .pathsToMatch("/admin/**")
+                .build();
+    }
 }
