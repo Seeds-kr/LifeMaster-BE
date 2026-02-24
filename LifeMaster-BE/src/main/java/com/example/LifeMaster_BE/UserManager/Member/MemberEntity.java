@@ -121,9 +121,14 @@ public class MemberEntity {
         return this.imageUrl;
     }
 
-    public MemberEntity update(String name, String picture) {
-        this.nickname = name;
-        this.imageUrl = picture;
+    public MemberEntity update(String picture, String nickname) {
+        if (picture != null) this.imageUrl = picture;
+
+        // NOT NULL 방어 (null/blank면 기존 값 유지)
+        if (nickname != null && !nickname.isBlank()) {
+            this.nickname = nickname;
+        }
+
         return this;
     }
 

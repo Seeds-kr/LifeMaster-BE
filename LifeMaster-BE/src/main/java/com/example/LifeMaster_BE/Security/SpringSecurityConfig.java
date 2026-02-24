@@ -37,15 +37,37 @@ public class SpringSecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .cors(Customizer.withDefaults()) // CORS 설정 빈 사용
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/user/login",
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**",
-                                "/user/register/**",
-                                //"/challenge/**",
-                                "/auth/password/reset/**",
-                                "/auth/kakao/**", "/kakao/**").permitAll()
-                        .anyRequest().authenticated()
+                                .requestMatchers(
+                                        "/user/login",
+                                        "/swagger-ui/**",
+                                        "/v3/api-docs/**",
+                                        "/user/register/**",
+                                        //"/challenge/**",
+                                        "/auth/password/reset/**",
+                                        "/auth/kakao/**", "/kakao/**",
+
+                                        // OAuth2 로그인 시작/콜백
+                                        "/oauth2/**",
+                                        "/login/oauth2/**",
+
+                                        //네이버
+                                        "/naverLogin/callback",
+                                        "/naverLogin/public",
+                                        "/naverLogin/authUrl",
+                                        "/naverLogin/refreshToken",
+
+                                        //구글
+                                        "/googleLogin/callback",
+                                        "/googleLogin/public",
+                                        "/googleLogin/authUrl",
+                                        "/googleLogin/refreshToken",
+
+                                        // 커스텀 로그인 페이지
+                                        "/googleLogin/loginForm",
+
+                                        // 실패 URL
+                                        "/error").permitAll()
+                                .anyRequest().authenticated()
                         //.anyRequest().permitAll()
                 )
                 .exceptionHandling(e -> e
@@ -83,7 +105,10 @@ public class SpringSecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("https://api.lifemaster.harvester.kr")); // 모든 도메인 허용
+        configuration.setAllowedOrigins(List.of("http://localhost:7550",
+                "http://127.0.0.1:7550","http://localhost:3000",
+                "http://localhost:8080", "http://127.0.0.1:5500", "https://api.lifemaster.harvester.kr", "http://ec2-3-39-230-176.ap-northeast-2.compute.amazonaws.com:7550"
+        )); // 허용할 API 접근 Origin 목록
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
