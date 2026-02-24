@@ -94,3 +94,11 @@ tasks.withType(JavaCompile) {
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+tasks.named("bootJar") {
+	enabled = true
+}
+
+tasks.named("jar") {
+	enabled = false
+}

@@ -26,6 +26,12 @@ public class OAuthUsersEntity implements OAuth2User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)  // ID 자동 생성 전략
     private Long id;  // id 필드 타입을 Long으로 설정
     private String name;
+
+    @Column(nullable = false)
+    @Setter
+    @Getter
+    private String nickname;
+
     @Setter
     @Getter
     private String email;
@@ -41,12 +47,13 @@ public class OAuthUsersEntity implements OAuth2User {
     }
 
     // 생성자에서 role을 포함시킴
-    public OAuthUsersEntity(String name, String email, String picture, String role, String identifier) {
+    public OAuthUsersEntity(String name, String email, String picture, String role, String identifier, String nickname) {
         this.name = name;
         this.email = email;
         this.picture = picture;
-        this.role = role;  // 역할 설정
-        this.identifier = identifier;  // 개인 식별자 설정
+        this.role = role;
+        this.identifier = identifier;
+        this.nickname = nickname;
     }
 
     @Override
@@ -89,15 +96,23 @@ public class OAuthUsersEntity implements OAuth2User {
     }
 
     // update 메서드에서 role 추가
-    public OAuthUsersEntity update(String name, String picture) {
+    public OAuthUsersEntity update(String name, String picture, String nickname) {
         this.name = name;
         this.picture = picture;
+        this.nickname = nickname;
         return this;
     }
 
     // toEntity 메서드에서 role을 포함하여 엔티티를 반환
     public OAuthUsersEntity toEntity() {
-        return new OAuthUsersEntity(this.name, this.email, this.picture, "User", this.identifier);
+        return new OAuthUsersEntity(
+                this.name,
+                this.email,
+                this.picture,
+                "User",
+                this.identifier,
+                this.nickname
+        );
     }
 
     public void setName(String name) {

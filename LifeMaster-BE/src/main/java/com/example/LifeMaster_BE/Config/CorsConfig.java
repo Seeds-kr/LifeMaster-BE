@@ -1,4 +1,4 @@
-package com.example.LifeMaster_BE.Config;
+/*package com.example.LifeMaster_BE.Config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,5 +21,5 @@ public class CorsConfig {
             }
         };
     }
-}
+}*/
 

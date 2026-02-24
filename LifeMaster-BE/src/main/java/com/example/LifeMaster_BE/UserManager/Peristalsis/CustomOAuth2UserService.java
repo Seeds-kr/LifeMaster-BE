@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.*;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -56,37 +57,58 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
     //구글 유저 정보 가져오는 메소드
     public OAuthUsersEntity loadGoogleUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
         RestTemplate restTemplate = new RestTemplate();
-        // 액세스 토큰 가져오기
+
         String accessToken = userRequest.getAccessToken().getTokenValue();
         HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer " + accessToken); // Authorization 헤더에 Bearer 토큰 추가
+        headers.set("Authorization", "Bearer " + accessToken);
 
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
+        ResponseEntity<Map> response = restTemplate.exchange(
+                "https://www.googleapis.com/oauth2/v3/userinfo",
+                HttpMethod.GET,
+                entity,
+                Map.class
+        );
 
-        ResponseEntity<Map> response = restTemplate.exchange("https://www.googleapis.com/oauth2/v3/userinfo", HttpMethod.GET, entity, Map.class);
+        Map<String, Object> userAttributes = response.getBody();
+        if (userAttributes == null) {
+            throw new OAuth2AuthenticationException("구글 사용자 정보가 비어있습니다.");
+        }
 
-        Map<String, Object> userAttributes = response.getBody(); // 사용자 정보
-
-        // Map to GoogleUsers
-        String id = (String) userAttributes.get("sub");  // sub is the unique identifier
+        String id = (String) userAttributes.get("sub");   // unique id
         String name = (String) userAttributes.get("name");
         String email = (String) userAttributes.get("email");
         String picture = (String) userAttributes.get("picture");
 
-        OAuthUsersEntity googleUser;
+        // 구글은 nickname 필드가 따로 없으니 name/email로 fallback
+        String finalNickname = resolveNickname(null, name, email, id);
+
+        if (id == null || id.isBlank()) {
+            throw new OAuth2AuthenticationException("구글 사용자 식별자(sub)가 비어있습니다.");
+        }
+
         Optional<OAuthUsersEntity> optionalUser = OAuthUsersRepository.findByIdentifier(id);
 
+        OAuthUsersEntity googleUser;
         if (optionalUser.isPresent()) {
-            // 기존 유저 정보 업데이트
-            googleUser = optionalUser.get().update(name, picture);
+            // nickname까지 업데이트 (update 시그니처를 nickname 포함 형태로 맞춘 경우)
+            googleUser = optionalUser.get().update(name, picture, finalNickname);
         } else {
-            // 새 유저 생성
-            googleUser = new OAuthUsersEntity(name, email, picture, "User", id);
+            // nickname 포함 생성자 사용 (생성자 시그니처도 nickname 포함으로 맞춘 경우)
+            googleUser = new OAuthUsersEntity(name, email, picture, "User", id, finalNickname);
         }
 
         return googleUser;
     }
+
+    private String resolveNickname(String nickname, String name, String email, String id) {
+        if (nickname != null && !nickname.isBlank()) return nickname;
+        if (name != null && !name.isBlank()) return name;
+        if (email != null && email.contains("@")) return email.substring(0, email.indexOf("@"));
+        return "user_" + id;
+    }
+
 
     //네이버 유저 정보 가져오는 메소드
     public OAuthUsersEntity loadNaverUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
@@ -111,16 +133,17 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         String name = (String) responseMap.get("name");
         String email = (String) responseMap.get("email");
         String picture = (String) responseMap.get("profile_image");
+        String nickname = (String) responseMap.get("nickname"); // ✅ 추가
 
         OAuthUsersEntity naverUser;
         Optional<OAuthUsersEntity> optionalUser = OAuthUsersRepository.findByIdentifier(id);
 
+        String finalNickname = resolveNickname(nickname, name, email, id);
+
         if (optionalUser.isPresent()) {
-            // 기존 유저 정보 업데이트
-            naverUser = optionalUser.get().update(name, picture);
+            naverUser = optionalUser.get().update(name, picture, finalNickname); // ✅ 변경
         } else {
-            // 새 유저 생성
-            naverUser = new OAuthUsersEntity(name, email, picture, "User", id);
+            naverUser = new OAuthUsersEntity(name, email, picture, "User", id, finalNickname); // ✅ 변경
         }
 
         return naverUser;
@@ -146,12 +169,38 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 
 
         OAuthUsersEntity user = saveOrUpdate(oAuth2User);
-        MemberEntity member = new MemberEntity(user.getEmail(),user.getIdentifier());
+        MemberEntity member = new MemberEntity(user.getEmail(), user.getIdentifier());
+
+        Optional<MemberEntity> existing = memberRepository.findByEmail(user.getEmail());
+
+        if (existing.isEmpty()) {
+            String baseNickname = resolveNickname(
+                    user.getNickname(),
+                    user.getName(),
+                    user.getEmail(),
+                    user.getIdentifier()
+            );
+            member.setNickname(generateUniqueNickname(baseNickname));
+        } else {
+            // 기존 유저면 닉네임 유지(혹은 user.getNickname()으로 업데이트 정책 선택)
+            member.setNickname(existing.get().getNickname());
+        }
+
+        member.setImageUrl(user.getPicture());
 
         BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder();
         member.setPassword(bCryptPasswordEncoder.encode(oAuth2User.getIdentifier()));
 
-        saveOrUpdateMember(member);
+        try {
+            saveOrUpdateMember(member);
+        } catch (DataIntegrityViolationException e) {
+            // 닉네임 유니크 충돌 시 재시도
+            String baseNickname = resolveNickname(
+                    user.getNickname(), user.getName(), user.getEmail(), user.getIdentifier()
+            );
+            member.setNickname(generateUniqueNickname(baseNickname));
+            saveOrUpdateMember(member);
+        }
 
         Authentication authenticate = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(member.getEmail(), user.getIdentifier())
@@ -162,41 +211,67 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
     }
 
     //네이버 연동 인증 처리하는 메소드
-    public GoogleOAuth2AuthenticationResponse handleOAuth2AuthenticationNaver(String authorizationCode) {
-        String state = UUID.randomUUID().toString(); // 고유한 상태 값 생성
+        public GoogleOAuth2AuthenticationResponse handleOAuth2AuthenticationNaver(String authorizationCode) {
+            String state = UUID.randomUUID().toString(); // 고유한 상태 값 생성
 
-        ClientRegistration registration = ClientRegistration.withRegistrationId("Naver")
-                .clientId(naverOAuthProperties.getClientId())                 // Google 클라이언트 ID
-                .clientSecret(naverOAuthProperties.getClientSecret())         // Google 클라이언트 비밀
-                .redirectUri(naverOAuthProperties.getRedirectUri())           // 리다이렉트 URI
-                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)  // 인증 코드 그랜트 타입
-                .authorizationUri("https://nid.naver.com/oauth2.0/authorize")  // 인증 URI
-                .tokenUri("https://nid.naver.com/oauth2.0/token")        // 토큰 URI
-                .userInfoUri("https://openapi.naver.com/v1/nid/me") // UserInfo Endpoint 추가
-                .userNameAttributeName("id") // Google UserInfo에서 사용자 ID 필드 설정
-                .scope("name", "profile", "email")      // OAuth2 스코프 설정
-                .build();
+            ClientRegistration registration = ClientRegistration.withRegistrationId("Naver")
+                    .clientId(naverOAuthProperties.getClientId())                 // Google 클라이언트 ID
+                    .clientSecret(naverOAuthProperties.getClientSecret())         // Google 클라이언트 비밀
+                    .redirectUri(naverOAuthProperties.getRedirectUri())           // 리다이렉트 URI
+                    .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)  // 인증 코드 그랜트 타입
+                    .authorizationUri("https://nid.naver.com/oauth2.0/authorize")  // 인증 URI
+                    .tokenUri("https://nid.naver.com/oauth2.0/token")        // 토큰 URI
+                    .userInfoUri("https://openapi.naver.com/v1/nid/me") // UserInfo Endpoint 추가
+                    .userNameAttributeName("id") // Google UserInfo에서 사용자 ID 필드 설정
+                    .scope("name", "profile", "email")      // OAuth2 스코프 설정
+                    .build();
 
-        CustomOAuth2AccessToken accessToken = getAccessTokenFromNaver(authorizationCode, state, registration);
+            CustomOAuth2AccessToken accessToken = getAccessTokenFromNaver(authorizationCode, state, registration);
 
-        OAuthUsersEntity oAuth2User = loadNaverUser(new OAuth2UserRequest(registration, accessToken));
+            OAuthUsersEntity oAuth2User = loadNaverUser(new OAuth2UserRequest(registration, accessToken));
 
 
-        OAuthUsersEntity user = saveOrUpdate(oAuth2User);
-        MemberEntity member = new MemberEntity(user.getEmail(),user.getIdentifier());
+            OAuthUsersEntity user = saveOrUpdate(oAuth2User);
+            MemberEntity member = new MemberEntity(user.getEmail(),user.getIdentifier());
 
-        BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder();
-        member.setPassword(bCryptPasswordEncoder.encode(oAuth2User.getIdentifier()));
+            Optional<MemberEntity> existing = memberRepository.findByEmail(user.getEmail());
 
-        saveOrUpdateMember(member);
+            if (existing.isEmpty()) {
+                String baseNickname = resolveNickname(
+                        user.getNickname(),
+                        user.getName(),
+                        user.getEmail(),
+                        user.getIdentifier()
+                );
+                member.setNickname(generateUniqueNickname(baseNickname));
+            } else {
+                // 기존 유저면 닉네임 유지(혹은 user.getNickname()으로 업데이트 정책 선택)
+                member.setNickname(existing.get().getNickname());
+            }
 
-        Authentication authenticate = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(member.getEmail(), user.getIdentifier())
-        );
-        String token = jwtUtil.generateToken(authenticate.getName());
+            member.setImageUrl(user.getPicture());
 
-        return new GoogleOAuth2AuthenticationResponse(user, accessToken, token);
-    }
+            BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder();
+            member.setPassword(bCryptPasswordEncoder.encode(oAuth2User.getIdentifier()));
+
+            try {
+                saveOrUpdateMember(member);
+            } catch (DataIntegrityViolationException e) {
+                // 닉네임 유니크 충돌 시 재시도
+                String baseNickname = resolveNickname(
+                        user.getNickname(), user.getName(), user.getEmail(), user.getIdentifier()
+                );
+                member.setNickname(generateUniqueNickname(baseNickname));
+                saveOrUpdateMember(member);
+            }
+
+            Authentication authenticate = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(member.getEmail(), user.getIdentifier())
+            );
+            String token = jwtUtil.generateToken(authenticate.getName());
+
+            return new GoogleOAuth2AuthenticationResponse(user, accessToken, token);
+        }
 
     //구글 연동 인증 토큰 가져오는 메소드
     public CustomOAuth2AccessToken getAccessTokenGoogle(String authorizationCode, ClientRegistration registration) {
@@ -369,19 +444,36 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
     //유저 정보 저장/갱신
     private OAuthUsersEntity saveOrUpdate(OAuthUsersEntity usersEntity) {
         OAuthUsersEntity user = (OAuthUsersEntity) OAuthUsersRepository.findByEmail(usersEntity.getEmail())
-                .map(entity -> entity.update(usersEntity.getName(), usersEntity.getPicture()))
+                .map(entity -> entity.update(usersEntity.getName(), usersEntity.getPicture(),usersEntity.getNickname()))
                 .orElse(usersEntity);
 
         return OAuthUsersRepository.save(user); // Save method should return GoogleUsers, not Object.
     }
 
     private MemberEntity saveOrUpdateMember(MemberEntity usersEntity) {
-        MemberEntity user = (MemberEntity) memberRepository.findByEmail(usersEntity.getEmail())
-                .map(entity -> entity.update(usersEntity.getName(), usersEntity.getPicture()))
+        MemberEntity user = memberRepository.findByEmail(usersEntity.getEmail())
+                .map(entity -> entity.update(
+                        usersEntity.getPicture(),
+                        usersEntity.getNickname()
+                ))
                 .orElse(usersEntity);
-        user.login(true);
 
-        return memberRepository.save(user); // Save method should return GoogleUsers, not Object.
+        user.login(true);
+        return memberRepository.save(user);
+    }
+
+    private String generateUniqueNickname(String baseNickname) {
+        if (baseNickname == null || baseNickname.isBlank()) {
+            baseNickname = "user";
+        }
+
+        String nickname = baseNickname;
+        int suffix = 1;
+
+        while (memberRepository.existsByNickname(nickname)) {
+            nickname = baseNickname + "_" + suffix++;
+        }
+        return nickname;
     }
 
     @Override
