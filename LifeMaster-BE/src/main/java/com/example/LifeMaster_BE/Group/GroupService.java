@@ -162,7 +162,7 @@ public class GroupService {
         GroupEntity group = groupRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found with ID: " + id));
 
-        // ✅ 비밀번호가 설정된 그룹이면 삭제 시 비밀번호 필수 + 검증
+        // 비밀번호가 설정된 그룹이면 삭제 시 비밀번호 필수 + 검증
         String stored = group.getPassword();
         boolean hasPassword = stored != null && !stored.isBlank();
         if (hasPassword) {
