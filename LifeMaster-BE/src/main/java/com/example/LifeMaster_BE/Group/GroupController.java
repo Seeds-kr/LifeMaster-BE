@@ -222,13 +222,31 @@ public class GroupController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "Delete a user to a group", description = "Deletes a specific user to a group.")
+    @Operation(summary = "그룹 멤버 강퇴(OWNER)", description = "OWNER만 특정 멤버를 강퇴합니다. OWNER 타겟은 불가.")
     @DeleteMapping("/{groupId}/user/{userId}")
-    public ResponseEntity<?> removeUserFromGroup(@PathVariable("groupId") Long groupId, @PathVariable("userId") Long userId,@AuthenticationPrincipal CustomUserDetails user) {
+    public ResponseEntity<?> kickMember(
+            @PathVariable("groupId") Long groupId,
+            @PathVariable("userId") Long targetUserId,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
         ResponseEntity<?> loginCheck = login.checkLogin(user);
         if (loginCheck != null) return loginCheck;
-        groupService.removeUserFromGroup(groupId, user.getId(), userId);
+
+        groupService.kickMember(groupId, user.getId(), targetUserId);
         return ResponseEntity.ok("User removed from group successfully.");
+    }
+
+    @Operation(summary = "그룹 탈퇴(본인)", description = "본인 그룹 탈퇴. OWNER는 불가.")
+    @PostMapping("/{groupId}/leave")
+    public ResponseEntity<?> leaveGroup(
+            @PathVariable Long groupId,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        ResponseEntity<?> loginCheck = login.checkLogin(user);
+        if (loginCheck != null) return loginCheck;
+
+        groupService.leaveGroup(groupId, user.getId());
+        return ResponseEntity.ok("Left the group.");
     }
 
     // 목표 ID를 그룹의 통계에 추가하는 API

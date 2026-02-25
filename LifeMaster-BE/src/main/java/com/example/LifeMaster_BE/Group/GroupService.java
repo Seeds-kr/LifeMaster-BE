@@ -404,33 +404,67 @@ public class GroupService {
 
     // 새 메서드 추가 (요청자 기반 권한처리 가능)
     @Transactional
-    public void removeUserFromGroup(Long groupId, Long requestUserId, Long targetUserId) {
+    public void kickMember(Long groupId, Long requestUserId, Long targetUserId) {
+
+        // OWNER만 강퇴 가능
+        groupMemberService.requireOwner(groupId, requestUserId);
+
         GroupEntity group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found with ID: " + groupId));
 
-        MemberEntity member = memberRepository.findById(targetUserId)
+        MemberEntity target = memberRepository.findById(targetUserId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + targetUserId));
 
-        if (!group.getMembers().contains(member)) {
+        if (!group.getMembers().contains(target)) {
             throw new IllegalArgumentException("User is not a member of this group.");
         }
 
-        // 0-1) OWNER만 유저 제거 가능(강퇴)
-        groupMemberService.requireOwner(groupId, requestUserId);
-
-        // 0-2) OWNER는 제거 불가(본인 포함)
+        // OWNER는 강퇴 불가
         GroupMemberRole targetRole = groupMemberService.getRole(groupId, targetUserId);
         if (targetRole == GroupMemberRole.OWNER) {
             throw new GroupMemberException("OWNER cannot be removed.");
         }
 
-        // 0-3) 권한 엔티티 제거 (여기선 요청자가 OWNER라 통과)
+        // 권한 엔티티 제거
         groupMemberService.removeMember(groupId, requestUserId, targetUserId);
 
-        // 1) 탈퇴 기록 저장
+        // 탈퇴 기록 저장
         groupExitHistoryService.recordGroupExit(groupId, targetUserId);
 
-        // 2) ManyToMany 제거
+        // ManyToMany 제거
+        group.getMembers().remove(target);
+        target.getGroups().remove(group);
+
+        groupRepository.save(group);
+    }
+
+    // 본인 탈퇴 전용: MEMBER/ADMIN 가능, OWNER 불가
+    @Transactional
+    public void leaveGroup(Long groupId, Long requestUserId) {
+
+        GroupEntity group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new IllegalArgumentException("Group not found with ID: " + groupId));
+
+        MemberEntity member = memberRepository.findById(requestUserId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + requestUserId));
+
+        if (!group.getMembers().contains(member)) {
+            throw new IllegalArgumentException("User is not a member of this group.");
+        }
+
+        // ✅ OWNER는 탈퇴 불가
+        GroupMemberRole myRole = groupMemberService.getRole(groupId, requestUserId);
+        if (myRole == GroupMemberRole.OWNER) {
+            throw new GroupMemberException("OWNER cannot leave. Transfer ownership first.");
+        }
+
+        // ✅ 권한 엔티티 제거 (self 탈퇴)
+        groupMemberService.removeMember(groupId, requestUserId, requestUserId);
+
+        // 탈퇴 기록 저장
+        groupExitHistoryService.recordGroupExit(groupId, requestUserId);
+
+        // ManyToMany 제거
         group.getMembers().remove(member);
         member.getGroups().remove(group);
 
@@ -439,19 +473,12 @@ public class GroupService {
             deleteByGroupId(groupId);
             groupExitHistoryService.deleteByGroupId(groupId);
 
-            // 그룹 삭제 시 GroupMember도 정리(추천: 주석 해제)
-            // groupMemberService.deleteAllByGroupId(groupId);
+            groupMemberService.deleteAllByGroupId(groupId);
 
             groupRepository.delete(group);
         } else {
             groupRepository.save(group);
         }
-    }
-
-    // 기존 메서드는 호환용 (요청자=대상자 탈퇴로 처리)
-    @Transactional
-    public void removeUserFromGroup(Long groupId, Long memberId) {
-        removeUserFromGroup(groupId, memberId, memberId);
     }
 
     public void deleteByGroupId(Long groupId) {
