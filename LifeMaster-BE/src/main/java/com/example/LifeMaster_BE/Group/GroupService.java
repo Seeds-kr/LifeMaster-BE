@@ -6,10 +6,13 @@ import com.example.LifeMaster_BE.Group.GoalProgress.GoalProgressEntity;
 import com.example.LifeMaster_BE.Group.GoalProgress.GoalProgressRepository;
 import com.example.LifeMaster_BE.Group.GoalProgress.GoalProgressService;
 import com.example.LifeMaster_BE.Group.GroupExit.GroupExitHistoryService;
+import com.example.LifeMaster_BE.Group.GroupMember.GroupMemberException;
+import com.example.LifeMaster_BE.Group.GroupMember.GroupMemberRole;
 import com.example.LifeMaster_BE.TimeManager.Sleep.Sleep;
 import com.example.LifeMaster_BE.TimeManager.Sleep.SleepRepository;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
+import com.example.LifeMaster_BE.Group.GroupMember.GroupMemberService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -41,6 +44,8 @@ public class GroupService {
     private final GroupExitHistoryService groupExitHistoryService;
     private final GoalProgressService goalProgressService;
 
+    private final GroupMemberService groupMemberService;
+
 
     // Create a group
     @Transactional
@@ -69,16 +74,20 @@ public class GroupService {
 
         // 2) null 처리(버그 수정 포함)
         String effectiveIcon = (icon != null) ? icon : "";
-        String effectivePassword = (password != null) ? password : "";
-        String effectiveDescription = (description != null) ? description : ""; // ✅ description 사용
+        String effectiveDescription = (description != null) ? description : "";
 
-        // 3) 그룹 생성 (생성자에 statistics 전달 시 내부에서 방어적 복사)
+        // 비밀번호 해싱 (입력 없으면 null)
+        String encodedPassword = null;
+        if (password != null && !password.isBlank()) {
+            encodedPassword = passwordEncoder.encode(password);
+        }
+
         GroupEntity group = new GroupEntity(
                 effectiveIcon,
                 name,
                 effectiveDescription,
                 statistics,
-                effectivePassword,
+                encodedPassword,
                 creator
         );
 
@@ -86,7 +95,12 @@ public class GroupService {
         group.addMember(creator);
 
         // 5) 저장
-        return groupRepository.save(group);
+        GroupEntity saved = groupRepository.save(group);
+
+        // 그룹 생성자 OWNER 등록 (권한 시스템 동기화)
+        groupMemberService.ensureOwner(saved.getId(), creator.getId());
+
+        return saved;
     }
 
     // Retrieve all groups
@@ -111,9 +125,12 @@ public class GroupService {
 
     // Update a group
     // 선택적인 값만 업데이트하는 메소드
-    public GroupEntity updateGroup(Long id, String name, String description, String icon, List<Long> statistics, String password) {
+    public GroupEntity updateGroup(Long id, String name, String description, String icon, List<Long> statistics, String password, Long requestUserId) {
         GroupEntity existingGroup = groupRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found with ID: " + id));
+
+        // OWNER만
+        groupMemberService.requireOwner(id, requestUserId);
 
         // 선택적으로 값을 업데이트
         if (name != null) {
@@ -123,41 +140,53 @@ public class GroupService {
             existingGroup.setDescription(description);
         }
         if (icon != null) {
-            existingGroup.setPassword(icon);
+            existingGroup.setIcon(icon);
         }
         if (statistics != null) {
             existingGroup.setStatistics(statistics);
         }
         if (password != null) {
-            existingGroup.setIcon(password);
+            existingGroup.setPassword(password);
         }
 
         return groupRepository.save(existingGroup);
     }
 
     @Transactional
-    public void deleteGroup(Long id) {
+    public void deleteGroup(Long id, Long requestUserId, String password) {
+
+        // OWNER만
+        groupMemberService.requireOwner(id, requestUserId);
+
         // 그룹 조회
         GroupEntity group = groupRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found with ID: " + id));
 
-        // 그룹의 creator를 가져옴
-        MemberEntity creator = group.getCreator();
-
-        // creator가 그룹의 멤버에서 제거되도록 처리
-        if (creator != null) {
-            creator.getGroups().remove(group); // creator가 속한 그룹 목록에서 그룹 제거
+        // 비밀번호가 설정된 그룹이면 삭제 시 비밀번호 필수 + 검증
+        String stored = group.getPassword();
+        boolean hasPassword = stored != null && !stored.isBlank();
+        if (hasPassword) {
+            if (password == null || password.isBlank()) {
+                throw new IllegalArgumentException("Password is required to delete this group.");
+            }
+            // stored가 BCrypt 해시라는 전제 (권장)
+            if (!passwordEncoder.matches(password, stored)) {
+                throw new IllegalArgumentException("Invalid group password.");
+            }
         }
 
-        // 그룹의 멤버 목록에서 creator를 제거
+        // 이하 기존 로직 그대로...
+        MemberEntity creator = group.getCreator();
+
+        if (creator != null) {
+            creator.getGroups().remove(group);
+        }
+
         group.getMembers().remove(creator);
 
-        // 그룹의 목표 진행 상황 (GoalProgressEntity) 삭제
         List<GoalProgressEntity> goalProgressList = goalProgressRepository.findByGroup(group);
-        goalProgressRepository.deleteAll(goalProgressList); // 해당 그룹의 모든 진행 상황 삭제
+        goalProgressRepository.deleteAll(goalProgressList);
 
-
-        // 그룹을 삭제
         groupRepository.delete(group);
     }
 
@@ -244,26 +273,34 @@ public class GroupService {
 
     @Transactional
     public String addUserToGroup(Long groupId, Long userId) {
-        // 그룹 조회
-        Optional<GroupEntity> groupOpt = groupRepository.findById(groupId);
-        if (groupOpt.isEmpty()) {
-            throw new IllegalArgumentException("Group not found with ID: " + groupId);
+        // 과거 방식(요청자=대상자)로 취급 → "자기 자신이 가입" 같은 용도
+        return addUserToGroup(groupId, userId, userId);
+    }
+
+    @Transactional
+    public String addUserToGroup(Long groupId, Long requestUserId, Long targetUserId) {
+
+        // 권한 설정
+        groupMemberService.requireAtLeastAdmin(groupId, requestUserId);
+
+        GroupEntity group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new IllegalArgumentException("Group not found with ID: " + groupId));
+
+        MemberEntity member = memberRepository.findById(targetUserId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + targetUserId));
+
+        if (group.getMembers().contains(member)) {
+            return "User already in the group.";
         }
 
-        // 사용자 조회
-        Optional<MemberEntity> memberOpt = memberRepository.findById(userId);
-        if (memberOpt.isEmpty()) {
-            throw new IllegalArgumentException("User not found with ID: " + userId);
-        }
-
-        // 그룹과 사용자 연결
-        GroupEntity group = groupOpt.get();
-        MemberEntity member = memberOpt.get();
-
+        // 1) ManyToMany 추가
         group.getMembers().add(member);
         member.getGroups().add(group);
+        groupRepository.save(group);
 
-        groupRepository.save(group); // 그룹 저장
+        // 2) 권한 엔티티 추가 (여긴 이제 안전)
+        groupMemberService.addMember(groupId, requestUserId, targetUserId, null);
+
         return "User added to group successfully";
     }
 
@@ -365,21 +402,35 @@ public class GroupService {
         return goalProgressList;
     }
 
+    // 새 메서드 추가 (요청자 기반 권한처리 가능)
     @Transactional
-    public void removeUserFromGroup(Long groupId, Long memberId) {
+    public void removeUserFromGroup(Long groupId, Long requestUserId, Long targetUserId) {
         GroupEntity group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found with ID: " + groupId));
-        MemberEntity member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + memberId));
+
+        MemberEntity member = memberRepository.findById(targetUserId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + targetUserId));
 
         if (!group.getMembers().contains(member)) {
             throw new IllegalArgumentException("User is not a member of this group.");
         }
 
-        // 탈퇴 기록 저장
-        groupExitHistoryService.recordGroupExit(groupId, memberId);
+        // 0-1) OWNER만 유저 제거 가능(강퇴)
+        groupMemberService.requireOwner(groupId, requestUserId);
 
-        // 그룹에서 멤버 제거
+        // 0-2) OWNER는 제거 불가(본인 포함)
+        GroupMemberRole targetRole = groupMemberService.getRole(groupId, targetUserId);
+        if (targetRole == GroupMemberRole.OWNER) {
+            throw new GroupMemberException("OWNER cannot be removed.");
+        }
+
+        // 0-3) 권한 엔티티 제거 (여기선 요청자가 OWNER라 통과)
+        groupMemberService.removeMember(groupId, requestUserId, targetUserId);
+
+        // 1) 탈퇴 기록 저장
+        groupExitHistoryService.recordGroupExit(groupId, targetUserId);
+
+        // 2) ManyToMany 제거
         group.getMembers().remove(member);
         member.getGroups().remove(group);
 
@@ -387,12 +438,20 @@ public class GroupService {
             goalProgressService.deleteByGroupId(groupId);
             deleteByGroupId(groupId);
             groupExitHistoryService.deleteByGroupId(groupId);
-            // 그룹에 남아있는 멤버가 없으면 그룹 삭제
+
+            // 그룹 삭제 시 GroupMember도 정리(추천: 주석 해제)
+            // groupMemberService.deleteAllByGroupId(groupId);
+
             groupRepository.delete(group);
         } else {
-            // 멤버가 남아 있으면 변경사항 저장
             groupRepository.save(group);
         }
+    }
+
+    // 기존 메서드는 호환용 (요청자=대상자 탈퇴로 처리)
+    @Transactional
+    public void removeUserFromGroup(Long groupId, Long memberId) {
+        removeUserFromGroup(groupId, memberId, memberId);
     }
 
     public void deleteByGroupId(Long groupId) {
@@ -400,7 +459,11 @@ public class GroupService {
     }
 
     // ✅ 초대 코드 생성 (그룹 ID + 해싱된 비밀번호 조합)
-    public String generateInviteCode(Long groupId) {
+    public String generateInviteCode(Long groupId, Long requestUserId) {
+
+        // ADMIN 이상만
+        groupMemberService.requireAtLeastAdmin(groupId, requestUserId);
+
         GroupEntity group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found with ID: " + groupId));
 
@@ -433,6 +496,10 @@ public class GroupService {
         member.getGroups().add(group);
 
         groupRepository.save(group);
+
+        // 권한 엔티티에도 가입 반영
+        groupMemberService.joinAsMember(groupId, userId);
+
         return "User successfully joined the group.";
     }
 
@@ -520,5 +587,41 @@ public class GroupService {
     //유저 id로 목표 조회
     public List<GoalEntity> getGoalsByMemberId (Long memberId){
         return groupRepository.findGoalsByMemberId(memberId);
+    }
+
+    //그룹 비밀번호 재설정
+    @Transactional
+    public void resetGroupPassword(Long groupId, Long requestUserId, String ownerPassword, String newGroupPassword) {
+
+        groupMemberService.requireOwner(groupId, requestUserId);
+
+        MemberEntity owner = memberRepository.findById(requestUserId)
+                .orElseThrow(() -> new IllegalArgumentException("Owner not found."));
+
+        if (ownerPassword == null || ownerPassword.isBlank()) {
+            throw new IllegalArgumentException("Owner password is required.");
+        }
+
+        // 계정 비밀번호 해시 검증
+        if (!passwordEncoder.matches(ownerPassword, owner.getPassword())) {
+            throw new IllegalArgumentException("Invalid owner password.");
+        }
+
+        GroupEntity group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new IllegalArgumentException("Group not found with ID: " + groupId));
+
+        // 새 그룹 비밀번호 저장(해싱)
+        if (newGroupPassword == null || newGroupPassword.isBlank()) {
+            group.setPassword(null); // 비번 제거
+        } else {
+            group.setPassword(passwordEncoder.encode(newGroupPassword));
+        }
+
+        groupRepository.save(group);
+    }
+
+    @Transactional
+    public void clearGroupPassword(Long groupId, Long requestUserId, String ownerPassword) {
+        resetGroupPassword(groupId, requestUserId, ownerPassword, null);
     }
 }
