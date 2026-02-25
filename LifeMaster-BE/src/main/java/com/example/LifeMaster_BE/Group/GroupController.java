@@ -117,7 +117,7 @@ public class GroupController {
             @AuthenticationPrincipal CustomUserDetails user)
     {ResponseEntity<?> loginCheck = login.checkLogin(user);
         if (loginCheck != null) return loginCheck;
-        GroupEntity group = groupService.updateGroup(id, name, description, icon, statistics, password);
+        GroupEntity group = groupService.updateGroup(id, name, description, icon, statistics, password, user.getId());
         return ResponseEntity.ok(group);
     }
 
@@ -130,7 +130,7 @@ public class GroupController {
     public ResponseEntity<?> deleteGroup(@Parameter(description = "ID of the group to delete") @PathVariable("id") Long id,@AuthenticationPrincipal CustomUserDetails user) {
         ResponseEntity<?> loginCheck = login.checkLogin(user);
         if (loginCheck != null) return loginCheck;
-        groupService.deleteGroup(id);
+        groupService.deleteGroup(id, user.getId());
         return ResponseEntity.noContent().build();
     }
 
@@ -191,7 +191,7 @@ public class GroupController {
             @AuthenticationPrincipal CustomUserDetails user) {
         ResponseEntity<?> loginCheck = login.checkLogin(user);
         if (loginCheck != null) return loginCheck;
-        String response = groupService.addUserToGroup(groupId, memberId);
+        String response = groupService.addUserToGroup(groupId, user.getId(), memberId);
         return ResponseEntity.ok(response);
     }
 
@@ -200,7 +200,7 @@ public class GroupController {
     public ResponseEntity<?> removeUserFromGroup(@PathVariable("groupId") Long groupId, @PathVariable("userId") Long userId,@AuthenticationPrincipal CustomUserDetails user) {
         ResponseEntity<?> loginCheck = login.checkLogin(user);
         if (loginCheck != null) return loginCheck;
-        groupService.removeUserFromGroup(groupId, userId);
+        groupService.removeUserFromGroup(groupId, user.getId(), userId);
         return ResponseEntity.ok("User removed from group successfully.");
     }
 
@@ -266,7 +266,7 @@ public class GroupController {
     public ResponseEntity<?> generateInviteCode(@PathVariable("groupId") Long groupId,@AuthenticationPrincipal CustomUserDetails user) {
         ResponseEntity<?> loginCheck = login.checkLogin(user);
         if (loginCheck != null) return loginCheck;
-        String inviteCode = groupService.generateInviteCode(groupId);
+        String inviteCode = groupService.generateInviteCode(groupId, user.getId());
         return ResponseEntity.ok(inviteCode);
     }
 
