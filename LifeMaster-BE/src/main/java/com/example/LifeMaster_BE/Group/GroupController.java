@@ -59,6 +59,31 @@ public class GroupController {
         return ResponseEntity.ok(group);
     }
 
+    @Operation(
+            summary = "그룹 비밀번호 재설정/제거 (OWNER)",
+            description = "OWNER 계정 비밀번호를 재확인한 뒤, 그룹 비밀번호를 재설정합니다. newGroupPassword가 비어있으면 그룹 비밀번호를 제거합니다."
+    )
+    @PatchMapping("/{groupId}/password")
+    public ResponseEntity<?> updateGroupPassword(
+            @PathVariable Long groupId,
+            @RequestBody GroupPasswordUpdateRequest req,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        ResponseEntity<?> loginCheck = login.checkLogin(user);
+        if (loginCheck != null) return loginCheck;
+
+        Long requestUserId = user.getId();
+
+        groupService.resetGroupPassword(
+                groupId,
+                requestUserId,
+                req.getOwnerPassword(),
+                req.getNewGroupPassword()
+        );
+
+        return ResponseEntity.ok("Group password updated.");
+    }
+
     @Operation(summary = "Get all groups", description = "Retrieves a list of all groups.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved list of groups")
@@ -127,10 +152,12 @@ public class GroupController {
             @ApiResponse(responseCode = "404", description = "Group not found")
     })
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteGroup(@Parameter(description = "ID of the group to delete") @PathVariable("id") Long id,@AuthenticationPrincipal CustomUserDetails user) {
+    public ResponseEntity<?> deleteGroup(@Parameter(description = "ID of the group to delete") @PathVariable("id") Long id,
+                                         @RequestParam(value = "password", required = false) String password,
+                                         @AuthenticationPrincipal CustomUserDetails user) {
         ResponseEntity<?> loginCheck = login.checkLogin(user);
         if (loginCheck != null) return loginCheck;
-        groupService.deleteGroup(id, user.getId());
+        groupService.deleteGroup(id, user.getId(),password);
         return ResponseEntity.noContent().build();
     }
 

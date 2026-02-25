@@ -55,7 +55,7 @@ public class GroupEntity {
         this.icon = icon;
         this.name = name;
         this.description = description;
-        // ✅ 방어적 복사 (null 허용)
+        // 방어적 복사 (null 허용)
         if (statistics != null) this.statistics = new ArrayList<>(statistics);
         this.password = password;
         this.creator = creator;
