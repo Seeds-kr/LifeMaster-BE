@@ -14,14 +14,14 @@ import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/auth")
+@RequestMapping("/kakaoLogin")
 public class AuthController {
 
     private final KakaoOAuthService kakaoOAuthService;
     private final MemberRepository memberRepository;
     private final JwtUtil jwtUtil;
 
-    @GetMapping("/kakao/callback")
+    @GetMapping("/callback")
     public ResponseEntity<?> kakaoCallback(@RequestParam String code) {
         try {
             // 1. 카카오 Access Token 받기
