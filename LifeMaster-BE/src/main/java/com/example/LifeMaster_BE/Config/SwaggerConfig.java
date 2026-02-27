@@ -168,8 +168,23 @@ public class SwaggerConfig implements WebMvcConfigurer {
     @Bean
     public GroupedOpenApi groupApi() {
         return GroupedOpenApi.builder()
-                .group("group")
-                .pathsToMatch("/group/**")
+                .group("Group")
+                .pathsToMatch(
+                        "/group/**"   // 그룹 관련 전체
+                )
+                // GroupMember 쪽을 /group/** 안에서 제외하고 싶으면 아래처럼 제외 패턴을 쓸 수 있어
+                .pathsToExclude("/group/*/members/**", "/group/*/me/role")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi groupMemberApi() {
+        return GroupedOpenApi.builder()
+                .group("GroupMember")
+                .pathsToMatch(
+                        "/group/*/members/**", // 멤버 권한/역할 관련
+                        "/group/*/me/role"     // (네가 만든 엔드포인트 기준)
+                )
                 .build();
     }
 

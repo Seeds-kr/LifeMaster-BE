@@ -2,16 +2,20 @@ package com.example.LifeMaster_BE.Challenge.Detox;
 
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import java.time.format.DateTimeFormatter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -30,25 +34,51 @@ public class TimeDetoxService {
     @Getter
     private String currentRandomPhrase;
 
+    private final ObjectMapper objectMapper = new ObjectMapper();
+    private static final DateTimeFormatter HH_MM = DateTimeFormatter.ofPattern("HH:mm");
+
 
     public void updateRandomPhrase() {
         this.currentRandomPhrase = randomPhraseProvider.getRandomPhrase();
     }
 
     public TimeDetoxDTO createSchedule(TimeDetoxDTO dto, Long memberId) {
+
         TimeDetoxEntity entity = new TimeDetoxEntity();
         entity.setCycle(dto.getCycle());
         entity.setDay(dto.getDay());
-        entity.setStartTime(LocalTime.parse(dto.getStartTime()));
-        entity.setEndTime(LocalTime.parse(dto.getEndTime()));
-        entity.setActive(dto.isActive());
-        entity.setLockedApps(dto.getLockedApps());
-        entity.setMemberId(memberId); // 멤버 ID 설정
+
+        // "10:30" / "18:30"만
+        entity.setStartTime(LocalTime.parse(dto.getStartTime(), HH_MM));
+        entity.setEndTime(LocalTime.parse(dto.getEndTime(), HH_MM));
+
+        // lockedApps: String -> List<String>
+        entity.setLockedApps(parseLockedApps(dto.getLockedApps()));
+
+        // (선택) 내부적으로 기본 활성화 값이 필요하면 여기서만 세팅
+        entity.setActive(true);
+
+        entity.setMemberId(memberId);
 
         TimeDetoxEntity savedEntity = repository.save(entity);
-
-        // 저장된 엔티티를 DTO로 변환하여 반환
         return convertToDTO(savedEntity);
+    }
+
+    private List<String> parseLockedApps(String lockedAppsRaw) {
+        if (lockedAppsRaw == null || lockedAppsRaw.isBlank()) return Collections.emptyList();
+
+        String s = lockedAppsRaw.trim();
+        try {
+            // JSON 배열 문자열이면: ["YouTube","Instagram"]
+            if (s.startsWith("[")) {
+                return new ObjectMapper().readValue(s, new TypeReference<List<String>>() {});
+            }
+
+            // 아니면 콤마 구분: YouTube,Instagram
+            return List.of(s.split("\\s*,\\s*"));
+        } catch (Exception e) {
+            throw new IllegalArgumentException("lockedApps 형식이 올바르지 않습니다. JSON 배열 문자열 또는 콤마 구분 문자열을 사용하세요.", e);
+        }
     }
 
     private TimeDetoxDTO convertToDTO(TimeDetoxEntity entity) {
@@ -56,10 +86,18 @@ public class TimeDetoxService {
         dto.setId(entity.getId());
         dto.setCycle(entity.getCycle());
         dto.setDay(entity.getDay());
-        dto.setStartTime(String.valueOf(entity.getStartTime()));
-        dto.setEndTime(String.valueOf(entity.getEndTime()));
-        dto.setActive(entity.isActive());
-        dto.setLockedApps(entity.getLockedApps());
+
+        // HH:mm 로만 내려주기
+        dto.setStartTime(entity.getStartTime() != null ? entity.getStartTime().format(HH_MM) : null);
+        dto.setEndTime(entity.getEndTime() != null ? entity.getEndTime().format(HH_MM) : null);
+
+        // List<String> -> String(JSON)
+        try {
+            dto.setLockedApps(objectMapper.writeValueAsString(entity.getLockedApps()));
+        } catch (Exception e) {
+            dto.setLockedApps("[]");
+        }
+
         return dto;
     }
 
@@ -91,8 +129,15 @@ public class TimeDetoxService {
     }
 
 
-    public void deleteSchedule(Long id) {
-        repository.deleteById(id);
+    public void deleteSchedule(Long memberId, Long id) {
+
+        TimeDetoxEntity schedule = repository
+                .findByIdAndMember_Id(id, memberId)
+                .orElseThrow(() ->
+                        new EntityNotFoundException("해당 스케줄이 없거나 삭제 권한이 없습니다.")
+                );
+
+        repository.delete(schedule);
     }
 
     // 특정 디톡스 활성화/비활성화 로직 수정
@@ -239,5 +284,12 @@ public class TimeDetoxService {
         public List<String> getLockedApps() {
             return lockedApps;
         }
+    }
+
+    public List<TimeDetoxDTO> getAllTimeDetoxSchedulesByMember(Long memberId) {
+        return repository.findAllByMember_Id(memberId)
+                .stream()
+                .map(this::convertToDTO)
+                .toList();
     }
 }
