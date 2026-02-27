@@ -45,6 +45,7 @@ public class SpringSecurityConfig {
                                         //"/challenge/**",
                                         "/auth/password/reset/**",
                                         "/auth/kakao/**", "/kakao/**",
+                                        "kakaoLogin/**",
 
                                         // OAuth2 로그인 시작/콜백
                                         "/oauth2/**",
