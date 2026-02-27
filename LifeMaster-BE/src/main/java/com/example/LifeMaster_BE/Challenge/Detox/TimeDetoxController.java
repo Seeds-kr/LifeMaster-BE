@@ -114,10 +114,9 @@ public class TimeDetoxController {
                                 {
                                     "cycle": "WEEKLY",
                                     "day": "MONDAY",
-                                    "startTime": "10:30:00",
-                                    "endTime": "18:30:00",
-                                    "active": true,
-                                    "lockedApps": ["YouTube", "Instagram", "Facebook"]
+                                    "startTime": "10:30",
+                                    "endTime": "18:30",
+                                    "lockedApps": "YouTube,Instagram,Facebook"
                                 }
                                 """
                             )
@@ -172,6 +171,19 @@ public class TimeDetoxController {
         MemberEntity User = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다."));
         return ResponseEntity.ok(service.getScheduleById(User.getId()));
+    }
+
+    @Operation(summary = "내 시간 잠금 설정 아이템 전체 조회", description = "로그인한 사용자의 시간 잠금 설정 아이템을 전체 조회니다.")
+    @GetMapping("/me")
+    public ResponseEntity<?> getMyTimeDetoxSchedules(@AuthenticationPrincipal CustomUserDetails user) {
+
+        ResponseEntity<?> loginCheck = login.checkLogin(user);
+        if (loginCheck != null) return loginCheck;
+
+        Long memberId = user.getId();
+
+        List<TimeDetoxDTO> schedules = service.getAllTimeDetoxSchedulesByMember(memberId);
+        return ResponseEntity.ok(schedules);
     }
 
     @Operation(
@@ -229,29 +241,39 @@ public class TimeDetoxController {
     }
 
     @Operation(
-            summary = "특정 디톡스 일정 삭제",
-            description = "ID를 기준으로 디톡스 일정을 데이터베이스에서 삭제합니다.",
+            summary = "본인 디톡스 일정 삭제",
+            description = "ID를 기준으로 본인의 디톡스 일정을 데이터베이스에서 삭제합니다.",
             responses = {
                     @ApiResponse(responseCode = "204", description = "일정 삭제 성공"),
                     @ApiResponse(responseCode = "404", description = "일정을 찾을 수 없음")
             })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteSchedule(
+    public ResponseEntity<?> deleteSchedule(
             @PathVariable(name = "id") Long id,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
+        if (user == null) {
+            return ResponseEntity.status(401).body("로그인이 필요한 서비스입니다.");
+        }
+
         Long memberId = user.getId();
 
-        service.deleteSchedule(id);
+        try {
+            service.deleteSchedule(memberId, id); // 내 스케줄만 삭제, 아니면 예외
 
-        // 오늘 날짜 "yyyyMMdd"
-        String today = LocalDate.now()
-                .format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+            // 오늘 날짜 "yyyyMMdd"
+            String today = LocalDate.now()
+                    .format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
-        // ✅ 오류 원인 2 해결 (파라미터 맞춤)
-        scheduleCalendarService.addOrUpdateEvent(memberId, today, "Detox");
+            // 삭제 성공시에만 캘린더 업데이트
+            scheduleCalendarService.addOrUpdateEvent(memberId, today, "Detox");
 
-        return ResponseEntity.noContent().build();
+            return ResponseEntity.noContent().build();
+
+        } catch (jakarta.persistence.EntityNotFoundException e) {
+            // 존재하지 않거나 내 소유가 아님
+            return ResponseEntity.status(404).body("삭제 실패: 스케줄이 없거나 삭제 권한이 없습니다.");
+        }
     }
 
     @Operation(summary = "비상 탈출 문장 생성",

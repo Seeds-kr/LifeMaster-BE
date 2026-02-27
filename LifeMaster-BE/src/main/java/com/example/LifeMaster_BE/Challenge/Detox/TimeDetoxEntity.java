@@ -12,6 +12,11 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import org.springframework.format.annotation.DateTimeFormat;
+import io.swagger.v3.oas.annotations.media.Schema;
+
 @Entity
 @Setter
 @Getter
@@ -25,12 +30,20 @@ public class TimeDetoxEntity {
     private String cycle; // WEEKLY, BIWEEKLY
     private String day; // MONDAY, TUESDAY, etc.
 
-    @Schema(description = "Start time in HH:mm:ss format", example = "10:30:00")
+    // startTime/endTime은 HH:mm 로 응답/요청 포맷 고정 (초는 안 보냄)
+    @Schema(description = "Start time in HH:mm format", example = "10:30")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
+    @DateTimeFormat(pattern = "HH:mm")
     private LocalTime startTime;
 
-    @Schema(description = "End time in HH:mm:ss format", example = "18:30:00")
+    @Schema(description = "End time in HH:mm format", example = "18:30")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
+    @DateTimeFormat(pattern = "HH:mm")
     private LocalTime endTime;
 
+    // active 필드는 “엔티티에 남겨두되”, API에는 숨김(토글 아이콘 없음 요구 충족)
+    @JsonIgnore
+    @Schema(hidden = true)
     private boolean isActive;
 
     @ElementCollection
