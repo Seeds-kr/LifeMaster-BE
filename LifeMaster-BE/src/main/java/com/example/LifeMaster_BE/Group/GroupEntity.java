@@ -49,18 +49,29 @@ public class GroupEntity {
 
     private String password; // 비밀번호(해싱 필요)
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private GroupAccessType accessType = GroupAccessType.PUBLIC;
+
     public GroupEntity() {}
 
-    public GroupEntity(String icon, String name, String description, List<Long> statistics, String password, MemberEntity creator) {
+    public GroupEntity(
+            String icon,
+            String name,
+            String description,
+            List<Long> statistics,
+            String password,
+            MemberEntity creator,
+            GroupAccessType accessType
+    ) {
         this.icon = icon;
         this.name = name;
         this.description = description;
-        // 방어적 복사 (null 허용)
         if (statistics != null) this.statistics = new ArrayList<>(statistics);
         this.password = password;
         this.creator = creator;
+        this.accessType = accessType;
     }
-
     // ===== 편의 메서드 =====
     public void addGoal(GoalEntity goal) {
         if (goal == null) return;
@@ -89,4 +100,25 @@ public class GroupEntity {
         if (goalId == null) return;
         this.statistics.remove(goalId);
     }
+
+    @PrePersist
+    @PreUpdate
+    private void validatePasswordRule() {
+        if (accessType == null) {
+            accessType = GroupAccessType.PUBLIC; // 기본값 안전장치(원하면 제거 가능)
+        }
+
+        if (!accessType.requiresPassword()) {
+            // PUBLIC 같은 케이스: 비번은 무조건 null
+            this.password = null;
+            return;
+        }
+
+        // PRIVATE / PASSWORD 등: 비번 필수(DB에는 해시가 들어있어야 함)
+        if (password == null || password.isBlank()) {
+            throw new IllegalArgumentException(accessType + " group must have password.");
+        }
+    }
 }
+
+

@@ -55,28 +55,33 @@ public class GroupService {
             String icon,
             List<Long> statistics,
             String password,
+            GroupAccessType accesstype,
             Long creatorId,
-            String creatorEmail // ✅ 보조 조회용
+            String creatorEmail
     ) {
-        // 1) 생성자(Member) 조회: id 우선, 실패 시 email
-        MemberEntity creator = null;
-        if (creatorId != null) {
-            creator = memberRepository.findById(creatorId).orElse(null);
+        // 0) 기본 검증/기본값
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("Group name is required.");
         }
+        if (accesstype == null) {
+            accesstype = GroupAccessType.PUBLIC;
+        }
+
+        // 1) 생성자 조회
+        MemberEntity creator = null;
+        if (creatorId != null) creator = memberRepository.findById(creatorId).orElse(null);
         if (creator == null && creatorEmail != null) {
             creator = memberRepository.findByEmail(creatorEmail)
                     .orElseThrow(() -> new IllegalArgumentException(
                             "Member not found by id=" + creatorId + " or email=" + creatorEmail));
         }
-        if (creator == null) {
-            throw new IllegalArgumentException("Creator not resolved (id/email both invalid).");
-        }
+        if (creator == null) throw new IllegalArgumentException("Creator not resolved (id/email both invalid).");
 
-        // 2) null 처리(버그 수정 포함)
+        // 2) null 처리
         String effectiveIcon = (icon != null) ? icon : "";
         String effectiveDescription = (description != null) ? description : "";
 
-        // 비밀번호 해싱 (입력 없으면 null)
+        // 3) 서비스는 '해싱'만 한다 (정책은 엔티티/enum이 강제)
         String encodedPassword = null;
         if (password != null && !password.isBlank()) {
             encodedPassword = passwordEncoder.encode(password);
@@ -88,16 +93,13 @@ public class GroupService {
                 effectiveDescription,
                 statistics,
                 encodedPassword,
-                creator
+                creator,
+                accesstype
         );
 
-        // 4) 생성자를 멤버로 추가(편의 메서드 사용)
         group.addMember(creator);
 
-        // 5) 저장
         GroupEntity saved = groupRepository.save(group);
-
-        // 그룹 생성자 OWNER 등록 (권한 시스템 동기화)
         groupMemberService.ensureOwner(saved.getId(), creator.getId());
 
         return saved;
@@ -125,7 +127,16 @@ public class GroupService {
 
     // Update a group
     // 선택적인 값만 업데이트하는 메소드
-    public GroupEntity updateGroup(Long id, String name, String description, String icon, List<Long> statistics, String password, Long requestUserId) {
+    public GroupEntity updateGroup(
+            Long id,
+            String name,
+            String description,
+            String icon,
+            List<Long> statistics,
+            String password,
+            GroupAccessType accessType,
+            Long requestUserId
+    ) {
         GroupEntity existingGroup = groupRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found with ID: " + id));
 
@@ -145,8 +156,26 @@ public class GroupService {
         if (statistics != null) {
             existingGroup.setStatistics(statistics);
         }
+
+        if (accessType != null) {
+            existingGroup.setAccessType(accessType);
+
+            // PUBLIC/PRIVATE로 바꾸면 비번 제거
+            if (accessType == GroupAccessType.PUBLIC || accessType == GroupAccessType.PRIVATE) {
+                existingGroup.setPassword(null);
+            }
+        }
+
+        // 비밀번호 변경은 PASSWORD 타입에서만 허용
         if (password != null) {
-            existingGroup.setPassword(password);
+            if (existingGroup.getAccessType() != GroupAccessType.PASSWORD) {
+                throw new IllegalArgumentException("Only PASSWORD group can set password.");
+            }
+            if (password.isBlank()) {
+                existingGroup.setPassword(null); // 비번 제거
+            } else {
+                existingGroup.setPassword(passwordEncoder.encode(password));
+            }
         }
 
         return groupRepository.save(existingGroup);
@@ -155,38 +184,40 @@ public class GroupService {
     @Transactional
     public void deleteGroup(Long id, Long requestUserId, String password) {
 
-        // OWNER만
         groupMemberService.requireOwner(id, requestUserId);
 
-        // 그룹 조회
         GroupEntity group = groupRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found with ID: " + id));
 
-        // 비밀번호가 설정된 그룹이면 삭제 시 비밀번호 필수 + 검증
+        // 비밀번호 검증(기존)
         String stored = group.getPassword();
         boolean hasPassword = stored != null && !stored.isBlank();
         if (hasPassword) {
             if (password == null || password.isBlank()) {
                 throw new IllegalArgumentException("Password is required to delete this group.");
             }
-            // stored가 BCrypt 해시라는 전제 (권장)
             if (!passwordEncoder.matches(password, stored)) {
                 throw new IllegalArgumentException("Invalid group password.");
             }
         }
 
-        // 이하 기존 로직 그대로...
-        MemberEntity creator = group.getCreator();
+        // 1) 권한/멤버십(별도 테이블) 먼저 삭제
+        groupMemberService.deleteAllByGroupId(id);
 
-        if (creator != null) {
-            creator.getGroups().remove(group);
+        // 2) 탈퇴/히스토리 등 groupId FK 가진 것들 삭제
+        groupExitHistoryService.deleteByGroupId(id);
+
+        // 3) 목표 진행도/목표 등 groupId FK 가진 것들 삭제
+        goalProgressService.deleteByGroupId(id);
+        goalRepository.deleteByGroupId(id);
+
+        // 4) ManyToMany 조인 정리 (member_group)
+        for (MemberEntity m : new HashSet<>(group.getMembers())) {
+            m.getGroups().remove(group);
         }
+        group.getMembers().clear();
 
-        group.getMembers().remove(creator);
-
-        List<GoalProgressEntity> goalProgressList = goalProgressRepository.findByGroup(group);
-        goalProgressRepository.deleteAll(goalProgressList);
-
+        // 5) 마지막에 그룹 삭제
         groupRepository.delete(group);
     }
 
@@ -485,46 +516,67 @@ public class GroupService {
         goalRepository.deleteByGroupId(groupId);
     }
 
-    // ✅ 초대 코드 생성 (그룹 ID + 해싱된 비밀번호 조합)
+    // 초대 코드 생성 (그룹 ID + 해싱된 비밀번호 조합)
     public String generateInviteCode(Long groupId, Long requestUserId) {
 
-        // ADMIN 이상만
         groupMemberService.requireAtLeastAdmin(groupId, requestUserId);
 
         GroupEntity group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found with ID: " + groupId));
 
-        return groupId + "-" + passwordEncoder.encode(group.getPassword());
+        // PUBLIC 그룹은 초대코드 필요 없음
+        if (group.getAccessType() == GroupAccessType.PUBLIC) {
+            throw new IllegalArgumentException("Public group does not require invite code.");
+        }
+
+        String groupPasswordHash = group.getPassword();
+
+        // PRIVATE는 password 없어도 가능
+        if (group.getAccessType() == GroupAccessType.PASSWORD) {
+            if (groupPasswordHash == null || groupPasswordHash.isBlank()) {
+                throw new IllegalArgumentException("Group password is not set.");
+            }
+        }
+
+        return groupId + ":" + (groupPasswordHash != null ? groupPasswordHash : "private");
     }
 
-    // ✅ 초대 코드로 그룹 가입
+    // 초대 코드로 그룹 가입
     @Transactional
     public String joinGroupWithInviteCode(Long userId, String inviteCode) {
-        String[] parts = inviteCode.split("-");
+
+        String[] parts = inviteCode.split(":");
         if (parts.length != 2) {
-            throw new IllegalArgumentException("Invalid invite code format.");
+            throw new IllegalArgumentException("Invalid invite code format. Expected: groupId:passwordHash");
         }
 
         Long groupId = Long.parseLong(parts[0]);
-        String hashedPassword = parts[1];
+        String inviteHash = parts[1];
 
         GroupEntity group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found with ID: " + groupId));
 
-        if (!passwordEncoder.matches(group.getPassword(), hashedPassword)) {
+        String dbHash = group.getPassword();
+        if (dbHash == null || dbHash.isBlank()) {
+            throw new IllegalArgumentException("Group password is not set.");
+        }
+
+        // ✅ 해시 문자열 동일 비교
+        if (!dbHash.equals(inviteHash)) {
             throw new IllegalArgumentException("Invalid invite code.");
         }
 
         MemberEntity member = memberRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
 
-        // 사용자를 그룹에 추가
+        if (group.getMembers().contains(member)) {
+            return "User already in the group.";
+        }
+
         group.getMembers().add(member);
         member.getGroups().add(group);
-
         groupRepository.save(group);
 
-        // 권한 엔티티에도 가입 반영
         groupMemberService.joinAsMember(groupId, userId);
 
         return "User successfully joined the group.";
@@ -628,8 +680,6 @@ public class GroupService {
         if (ownerPassword == null || ownerPassword.isBlank()) {
             throw new IllegalArgumentException("Owner password is required.");
         }
-
-        // 계정 비밀번호 해시 검증
         if (!passwordEncoder.matches(ownerPassword, owner.getPassword())) {
             throw new IllegalArgumentException("Invalid owner password.");
         }
@@ -637,14 +687,65 @@ public class GroupService {
         GroupEntity group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found with ID: " + groupId));
 
-        // 새 그룹 비밀번호 저장(해싱)
+        // PUBLIC이면 비번 기능 자체가 없음
+        if (!group.getAccessType().requiresPassword()) {
+            throw new IllegalArgumentException("This group type cannot have password.");
+        }
+
         if (newGroupPassword == null || newGroupPassword.isBlank()) {
-            group.setPassword(null); // 비번 제거
+            group.setPassword(null); // 엔티티 validate에서 PRIVATE/PASSWORD면 여기서 예외가 날 거야(=비번 제거 불가 정책)
         } else {
             group.setPassword(passwordEncoder.encode(newGroupPassword));
         }
 
         groupRepository.save(group);
+    }
+
+    @Transactional
+    public String joinGroup(Long groupId, Long userId, String password) {
+
+        GroupEntity group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new IllegalArgumentException("Group not found with ID: " + groupId));
+
+        MemberEntity member = memberRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
+
+        // 이미 가입 여부
+        if (group.getMembers().contains(member)) {
+            return "User already in the group.";
+        }
+
+        // 그룹 접근 타입 확인
+        switch (group.getAccessType()) {
+
+            case PUBLIC:
+                // 바로 가입 가능
+                break;
+
+            case PASSWORD:
+                if (password == null || password.isBlank()) {
+                    throw new IllegalArgumentException("Password is required to join this group.");
+                }
+
+                if (!passwordEncoder.matches(password, group.getPassword())) {
+                    throw new IllegalArgumentException("Invalid group password.");
+                }
+                break;
+
+            case PRIVATE:
+                throw new IllegalArgumentException("This group is private. Invite code required.");
+        }
+
+        // 그룹 가입
+        group.getMembers().add(member);
+        member.getGroups().add(group);
+
+        groupRepository.save(group);
+
+        // 권한 엔티티 추가
+        groupMemberService.joinAsMember(groupId, userId);
+
+        return "Successfully joined the group.";
     }
 
     @Transactional
