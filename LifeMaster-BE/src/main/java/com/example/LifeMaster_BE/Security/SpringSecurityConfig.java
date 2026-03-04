@@ -109,7 +109,7 @@ public class SpringSecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of("http://localhost:7550",
                 "http://127.0.0.1:7550","http://localhost:3000",
-                "http://localhost:8080", "http://127.0.0.1:5500", "https://api.lifemaster.harvester.kr", "http://ec2-3-39-230-176.ap-northeast-2.compute.amazonaws.com:7550"
+                "http://localhost:8080", "http://127.0.0.1:5500", "https://api.lifemaster.harvester.kr", "https://lifemaster.harvester.kr"
         )); // 허용할 API 접근 Origin 목록
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
