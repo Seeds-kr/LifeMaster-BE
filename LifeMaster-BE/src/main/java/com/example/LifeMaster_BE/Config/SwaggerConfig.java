@@ -45,7 +45,7 @@ public class SwaggerConfig implements WebMvcConfigurer {
     @Bean
     public GroupedOpenApi ChallengeApi() {
         return GroupedOpenApi.builder()
-                .group("Challenge")
+                .group("challenge-api")
                 .pathsToMatch("/challenge/**")
                 .build();
     }

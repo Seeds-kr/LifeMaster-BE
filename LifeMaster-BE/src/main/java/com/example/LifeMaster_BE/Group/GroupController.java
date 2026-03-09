@@ -45,6 +45,10 @@ public class GroupController {
             @RequestParam(value = "icon", required = false) String icon,
             @RequestParam(value = "통계 표시할 목표(null 이면 전체 표시)", required = false) List<Long> statistics,
             @RequestParam(value = "password", required = false) String password,
+            @Parameter(
+                    description = "Group access type (PUBLIC / PASSWORD / PRIVATE)"
+            )
+            @RequestParam(value = "accessType", defaultValue = "PUBLIC") GroupAccessType accessType,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         ResponseEntity<?> loginCheck = login.checkLogin(user);
@@ -54,7 +58,7 @@ public class GroupController {
         String creatorEmail = user.getUsername(); // 일반적으로 이메일
 
         GroupEntity group = groupService.createGroup(
-                name, description, icon, statistics, password, creatorId, creatorEmail
+                name, description, icon, statistics, password, accessType, creatorId, creatorEmail
         );
         return ResponseEntity.ok(group);
     }
@@ -139,11 +143,28 @@ public class GroupController {
             @Parameter(description = "Icon URL of the group") @RequestParam(value = "icon", required = false) String icon,
             @Parameter(description = "통계 표시할 목표(null 이면 전체 표시)") @RequestParam(value = "statistics", required = false) List<Long> statistics,
             @Parameter(description = "Password for the group") @RequestParam(value = "password", required = false) String password,
+            @RequestParam(value = "accessType", required = false) GroupAccessType accessType,
             @AuthenticationPrincipal CustomUserDetails user)
     {ResponseEntity<?> loginCheck = login.checkLogin(user);
         if (loginCheck != null) return loginCheck;
-        GroupEntity group = groupService.updateGroup(id, name, description, icon, statistics, password, user.getId());
+        GroupEntity group = groupService.updateGroup(
+                id, name, description, icon, statistics, password, accessType, user.getId()
+        );
         return ResponseEntity.ok(group);
+    }
+
+    @Operation(summary = "그룹 가입", description = "공개 그룹은 바로 가입, 비밀번호 그룹은 비밀번호 필요")
+    @PostMapping("/{groupId}/join")
+    public ResponseEntity<?> joinGroup(
+            @PathVariable Long groupId,
+            @RequestParam(required = false) String password,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        ResponseEntity<?> loginCheck = login.checkLogin(user);
+        if (loginCheck != null) return loginCheck;
+
+        String result = groupService.joinGroup(groupId, user.getId(), password);
+        return ResponseEntity.ok(result);
     }
 
     @Operation(summary = "Delete a group", description = "Deletes a specific group by its ID.")
@@ -206,18 +227,24 @@ public class GroupController {
         }
     }
 
-    @Operation(summary = "Add a user to a group", description = "Adds a specific user to a group.")
+    @Operation(
+            summary = "그룹에 유저 추가 (ADMIN 이상)",
+            description = "ADMIN 이상의 권한을 가진 사용자가 자신의 그룹에 다른 사용자(친구)를 추가하는 기능입니다."
+    )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "User added to group successfully"),
+            @ApiResponse(responseCode = "403", description = "Only ADMIN or OWNER can add users"),
             @ApiResponse(responseCode = "404", description = "Group or user not found")
     })
     @PostMapping("/{groupId}/addUser/{userId}")
     public ResponseEntity<?> addUserToGroup(
             @Parameter(description = "ID of the group") @PathVariable("groupId") Long groupId,
-            @Parameter(description = "ID of the user") @PathVariable("userId") Long memberId,
+            @Parameter(description = "ID of the user to add") @PathVariable("userId") Long memberId,
             @AuthenticationPrincipal CustomUserDetails user) {
+
         ResponseEntity<?> loginCheck = login.checkLogin(user);
         if (loginCheck != null) return loginCheck;
+
         String response = groupService.addUserToGroup(groupId, user.getId(), memberId);
         return ResponseEntity.ok(response);
     }
@@ -319,12 +346,13 @@ public class GroupController {
     @Operation(summary = "초대 코드로 그룹 가입", description = "초대 코드로 그룹 가입")
     @PostMapping("/join")
     public ResponseEntity<?> joinGroupWithInviteCode(
-            @RequestParam("userId") Long userId,
             @RequestParam("inviteCode") String inviteCode,
-            @AuthenticationPrincipal CustomUserDetails user) {
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
         ResponseEntity<?> loginCheck = login.checkLogin(user);
         if (loginCheck != null) return loginCheck;
-        String response = groupService.joinGroupWithInviteCode(userId, inviteCode);
+
+        String response = groupService.joinGroupWithInviteCode(user.getId(), inviteCode);
         return ResponseEntity.ok(response);
     }
 
