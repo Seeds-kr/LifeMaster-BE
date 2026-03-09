@@ -25,9 +25,6 @@ public class OpenApiConfig {
                 .name("Authorization");
 
         return new OpenAPI()
-                .servers(List.of(
-                        new Server().url("http://ec2-43-203-120-233.ap-northeast-2.compute.amazonaws.com:7550")
-                ))
                 .components(new Components()
                         .addSecuritySchemes("bearerAuth", securityScheme)
                 )
