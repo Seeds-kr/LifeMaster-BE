@@ -1,5 +1,8 @@
 package com.example.LifeMaster_BE.Group.GoalAchievement;
 
+import com.example.LifeMaster_BE.Group.Goal.GoalEntity;
+import com.example.LifeMaster_BE.Group.Goal.GoalRepository;
+import com.example.LifeMaster_BE.Group.GroupRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -16,12 +19,24 @@ public class GoalAchievementService {
     private static final ZoneId ZONE_ID = ZoneId.of("Asia/Seoul");
 
     private final GoalAchievementRepository goalAchievementRepository;
+    private final GroupRepository groupRepository;
+    private final GoalRepository goalRepository;
 
-    public GoalAchievementService(GoalAchievementRepository goalAchievementRepository) {
+    public GoalAchievementService(
+            GoalAchievementRepository goalAchievementRepository,
+            GroupRepository groupRepository,
+            GoalRepository goalRepository
+    ) {
         this.goalAchievementRepository = goalAchievementRepository;
+        this.groupRepository = groupRepository;
+        this.goalRepository = goalRepository;
     }
 
     public List<GoalAchievementHeatmapDto> getLast30DaysHeatmapByGroup(Long groupId) {
+        if (!groupRepository.existsById(groupId)) {
+            throw new IllegalArgumentException("Group not found with id: " + groupId);
+        }
+
         LocalDate today = LocalDate.now(ZONE_ID);
         LocalDate startDate = today.minusDays(29);
 
@@ -54,6 +69,17 @@ public class GoalAchievementService {
     }
 
     public List<GoalAchievementHeatmapDto> getLast30DaysHeatmapByGroupAndGoal(Long groupId, Long goalId) {
+        if (!groupRepository.existsById(groupId)) {
+            throw new IllegalArgumentException("Group not found with id: " + groupId);
+        }
+
+        GoalEntity goal = goalRepository.findById(goalId)
+                .orElseThrow(() -> new IllegalArgumentException("Goal not found with id: " + goalId));
+
+        if (!goal.getGroup().getId().equals(groupId)) {
+            throw new IllegalArgumentException("Goal does not belong to the specified group.");
+        }
+
         LocalDate today = LocalDate.now(ZONE_ID);
         LocalDate startDate = today.minusDays(29);
 

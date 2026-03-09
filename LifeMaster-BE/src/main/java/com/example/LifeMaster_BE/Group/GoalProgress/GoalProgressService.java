@@ -148,15 +148,15 @@ public class GoalProgressService {
      * 목표 진행 기록 추가
      */
     @Transactional
-    public GoalProgressEntity addGoalProgress(Long groupId, Long goalId, String userEmail, int progressValue) {
+    public GoalProgressEntity addGoalProgress(Long groupId, Long goalId, Long userId, int progressValue) {
         GroupEntity group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new RuntimeException("Group not found with id: " + groupId));
 
         GoalEntity goal = goalRepository.findById(goalId)
                 .orElseThrow(() -> new RuntimeException("Goal not found with id: " + goalId));
 
-        MemberEntity user = memberRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new RuntimeException("User not found with email: " + userEmail));
+        MemberEntity user = memberRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
 
         GoalProgressEntity goalProgress = new GoalProgressEntity(user, group, goal, progressValue);
         GoalProgressEntity saved = goalProgressRepository.save(goalProgress);
@@ -218,11 +218,11 @@ public class GoalProgressService {
     }
 
     /**
-     * 사용자 이메일 기준 목표 진행 기록 조회
+     * 사용자 ID 기준 목표 진행 기록 조회
      */
-    public List<GoalProgressEntity> getGoalProgressByUserEmail(String userEmail) {
-        MemberEntity user = memberRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new RuntimeException("User not found with email: " + userEmail));
+    public List<GoalProgressEntity> getGoalProgressByUserId(Long userId) {
+        MemberEntity user = memberRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
 
         return goalProgressRepository.findByUser(user);
     }
