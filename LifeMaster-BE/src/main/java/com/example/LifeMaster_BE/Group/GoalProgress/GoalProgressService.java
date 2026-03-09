@@ -185,9 +185,19 @@ public class GoalProgressService {
             return;
         }
 
+        LocalDateTime startTime = getStartDateTimeForCurrentPeriod(goal.getDuration());
+
+        List<GoalProgressEntity> progressList =
+                goalProgressRepository.findByGoalAndUserAndSubmittedAtAfter(goal, user, startTime);
+
+        int totalProgress = progressList.stream()
+                .mapToInt(GoalProgressEntity::getProgressValue)
+                .sum();
+
+
         double userProgress = calculateUserProgress(goal, user);
 
-        if (userProgress >= 100.0) {
+        if (userProgress >= 100.0 && totalProgress >= goal.getValue()) {
             GoalAchievementEntity achievement = new GoalAchievementEntity(
                     group,
                     goal,
@@ -213,18 +223,39 @@ public class GoalProgressService {
     /**
      * 전체 목표 진행 기록 조회
      */
-    public List<GoalProgressEntity> getAllGoalProgress() {
-        return goalProgressRepository.findAll();
+    @Transactional(readOnly = true)
+    public List<GoalProgressResponseDTO> getAllGoalProgress() {
+        return goalProgressRepository.findAllWithDetails()
+                .stream()
+                .map(this::toDto)
+                .toList();
     }
 
     /**
      * 사용자 ID 기준 목표 진행 기록 조회
      */
-    public List<GoalProgressEntity> getGoalProgressByUserId(Long userId) {
+    @Transactional(readOnly = true)
+    public List<GoalProgressResponseDTO> getGoalProgressByUserId(Long userId) {
         MemberEntity user = memberRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
 
-        return goalProgressRepository.findByUser(user);
+        return goalProgressRepository.findByUserWithDetails(user)
+                .stream()
+                .map(this::toDto)
+                .toList();
+    }
+
+    private GoalProgressResponseDTO toDto(GoalProgressEntity entity) {
+        return new GoalProgressResponseDTO(
+                entity.getId(),
+                entity.getUser().getId(),
+                entity.getUser().getNickname(),
+                entity.getGroup().getId(),
+                entity.getGoal().getId(),
+                entity.getGoal().getName(),
+                entity.getProgressValue(),
+                entity.getSubmittedAt()
+        );
     }
 
     /**

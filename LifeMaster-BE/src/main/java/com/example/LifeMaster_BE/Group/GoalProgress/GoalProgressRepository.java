@@ -31,6 +31,27 @@ public interface GoalProgressRepository extends JpaRepository<GoalProgressEntity
     List<GoalProgressEntity> findByGoal(GoalEntity goal);
 
     @Query("""
+        select gp
+        from GoalProgressEntity gp
+        join fetch gp.user
+        join fetch gp.group
+        join fetch gp.goal
+        order by gp.id desc
+    """)
+    List<GoalProgressEntity> findAllWithDetails();
+
+    @Query("""
+        select gp
+        from GoalProgressEntity gp
+        join fetch gp.user
+        join fetch gp.group
+        join fetch gp.goal
+        where gp.user = :user
+        order by gp.id desc
+    """)
+    List<GoalProgressEntity> findByUserWithDetails(@Param("user") MemberEntity user);
+
+    @Query("""
         select gp.user.id, gp.user.nickname, gp.user.imageUrl, count(gp)
         from GoalProgressEntity gp
         where gp.group.id = :groupId

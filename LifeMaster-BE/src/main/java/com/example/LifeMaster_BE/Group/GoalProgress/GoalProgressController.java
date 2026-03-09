@@ -73,17 +73,17 @@ public class GoalProgressController {
 
     @Operation(summary = "전체 목표 진행 기록 조회", description = "전체 목표 진행 기록 조회")
     @GetMapping("/all")
-    public ResponseEntity<List<GoalProgressEntity>> getAllGoalProgress() {
-        List<GoalProgressEntity> progressList = goalProgressService.getAllGoalProgress();
+    public ResponseEntity<List<GoalProgressResponseDTO>> getAllGoalProgress() {
+        List<GoalProgressResponseDTO> progressList = goalProgressService.getAllGoalProgress();
         return ResponseEntity.ok(progressList);
     }
 
     @Operation(summary = "사용자 ID별 목표 진행 기록 조회", description = "사용자 ID별 목표 진행 기록 조회")
     @GetMapping("/user")
-    public ResponseEntity<List<GoalProgressEntity>> getGoalProgressByUserId(
+    public ResponseEntity<List<GoalProgressResponseDTO>> getGoalProgressByUserId(
             @RequestParam("userId") Long userId
     ) {
-        List<GoalProgressEntity> progressList = goalProgressService.getGoalProgressByUserId(userId);
+        List<GoalProgressResponseDTO> progressList = goalProgressService.getGoalProgressByUserId(userId);
         return ResponseEntity.ok(progressList);
     }
 }
