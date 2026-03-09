@@ -25,6 +25,9 @@ public class OpenApiConfig {
                 .name("Authorization");
 
         return new OpenAPI()
+                .servers(List.of(
+                        new Server().url("https://lifemaster.harvester.kr")
+                ))
                 .components(new Components()
                         .addSecuritySchemes("bearerAuth", securityScheme)
                 )
