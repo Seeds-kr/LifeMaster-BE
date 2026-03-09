@@ -270,8 +270,11 @@ public class SwaggerConfig implements WebMvcConfigurer {
     @Bean
     public GroupedOpenApi achievementApi() {
         return GroupedOpenApi.builder()
-                .group("Group_achievement")
-                .pathsToMatch("/groups/*/achievements/**")
+                .group("Group_achievement/ranking")
+                .pathsToMatch(
+                        "/groups/*/achievements/**",
+                        "/groups/*/stats/**"
+                )
                 .build();
     }
 }
