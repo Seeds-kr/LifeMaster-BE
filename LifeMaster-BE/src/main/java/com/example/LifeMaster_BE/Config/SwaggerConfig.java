@@ -26,9 +26,6 @@ public class SwaggerConfig implements WebMvcConfigurer {
                         .title("LifeMaster API")
                         .version("1.0")
                         .description("LifeMaster 백엔드 API 명세서"))
-                .servers(Arrays.asList(
-                         new Server().url("/").description("Default Server")
-                ))
                 .addSecurityItem(new SecurityRequirement().addList(SECURITY_SCHEME_NAME))
                 .components(new Components()
                         .addSecuritySchemes(SECURITY_SCHEME_NAME,
