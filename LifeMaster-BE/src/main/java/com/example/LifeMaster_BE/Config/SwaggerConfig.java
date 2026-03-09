@@ -27,7 +27,7 @@ public class SwaggerConfig implements WebMvcConfigurer {
                         .version("1.0")
                         .description("LifeMaster 백엔드 API 명세서"))
                 .servers(Arrays.asList(
-                        new Server().url("http://ec2-3-39-230-176.ap-northeast-2.compute.amazonaws.com:7550").description("Development Server"),
+                        new Server().url("https://api.lifemaster.harvester.kr").description("Development Server"),
                         new Server().url("http://localhost:7550").description("Local Server"),
                         new Server().url("http://localhost:8080").description("Local Server 2")
                 ))
