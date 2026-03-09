@@ -53,12 +53,10 @@ public class GoalProgressService {
         List<GoalProgressEntity> progressList =
                 goalProgressRepository.findByGoalAndSubmittedAtAfter(goal, startTime);
 
-        long uniqueUserCount = progressList.stream()
-                .map(progress -> progress.getUser().getId())
-                .distinct()
-                .count();
+        // 그룹 전체 인원
+        int groupMemberCount = goal.getGroup().getMembers().size();
 
-        if (uniqueUserCount == 0) {
+        if (groupMemberCount == 0) {
             return 0.0;
         }
 
@@ -71,7 +69,7 @@ public class GoalProgressService {
                 .mapToInt(GoalProgressEntity::getProgressValue)
                 .sum();
 
-        double raw = (totalProgress / (double) (goalValue * uniqueUserCount)) * 100.0;
+        double raw = (totalProgress / (double) (goalValue * groupMemberCount)) * 100.0;
         return Math.min(raw, 100.0);
     }
 

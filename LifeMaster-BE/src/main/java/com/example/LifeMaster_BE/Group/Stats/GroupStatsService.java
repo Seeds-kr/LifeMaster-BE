@@ -2,7 +2,7 @@ package com.example.LifeMaster_BE.Group.Stats;
 
 import com.example.LifeMaster_BE.Group.GroupEntity;
 import com.example.LifeMaster_BE.Group.GroupRepository;
-import com.example.LifeMaster_BE.Group.GoalProgress.GoalProgressRepository;
+import com.example.LifeMaster_BE.Group.GoalAchievement.GoalAchievementRepository;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,9 +21,11 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class GroupStatsService {
 
+    private static final ZoneId ZONE_ID = ZoneId.of("Asia/Seoul");
+
     private final GroupRepository groupRepository;
     private final MemberRepository memberRepository;
-    private final GoalProgressRepository goalProgressRepository;
+    private final GoalAchievementRepository goalAchievementRepository;
 
     public GroupRankingResponseDTO getGroupRanking(Long groupId, Long loginUserId, RankingScope scope) {
         GroupEntity group = groupRepository.findById(groupId)
@@ -31,31 +34,19 @@ public class GroupStatsService {
         MemberEntity loginUser = memberRepository.findById(loginUserId)
                 .orElseThrow(() -> new RuntimeException("Member not found with id: " + loginUserId));
 
-        // 그룹 멤버 여부 확인
         boolean isMember = group.getMembers()
                 .stream()
-                .anyMatch(m -> m.getId().equals(loginUserId));
+                .anyMatch(member -> member.getId().equals(loginUserId));
 
         if (!isMember) {
             throw new RuntimeException("해당 그룹의 멤버만 랭킹을 조회할 수 있습니다.");
         }
 
-        List<Object[]> rawRanks;
-        if (scope == RankingScope.WEEKLY) {
-            LocalDate today = LocalDate.now();
-            LocalDate startOfWeek = today.with(DayOfWeek.MONDAY);
-            LocalDateTime startDateTime = startOfWeek.atStartOfDay();
-            LocalDateTime endDateTime = startDateTime.plusDays(7);
-
-            rawRanks = goalProgressRepository.findGroupRankingWeekly(groupId, startDateTime, endDateTime);
-        } else {
-            rawRanks = goalProgressRepository.findGroupRankingTotal(groupId);
-        }
-
+        List<Object[]> rawRanks = getRawRanks(groupId, scope);
         List<GroupRankingItemDTO> items = new ArrayList<>();
 
-        Integer myRank = 0;
-        Integer myAchieveCount = 0;
+        int myRank = 0;
+        int myAchieveCount = 0;
         String myName = loginUser.getNickname();
         String myProfileImage = loginUser.getImageUrl();
 
@@ -68,7 +59,7 @@ public class GroupStatsService {
             Long memberId = (Long) row[0];
             String nickname = (String) row[1];
             String profileImage = (String) row[2];
-            Integer achieveCount = ((Long) row[3]).intValue();
+            int achieveCount = ((Long) row[3]).intValue();
 
             if (achieveCount != previousCount) {
                 currentRank = i + 1;
@@ -101,5 +92,19 @@ public class GroupStatsService {
                 myAchieveCount,
                 items
         );
+    }
+
+    private List<Object[]> getRawRanks(Long groupId, RankingScope scope) {
+        if (scope == RankingScope.WEEKLY) {
+            LocalDate today = LocalDate.now(ZONE_ID);
+            LocalDate startOfWeek = today.with(DayOfWeek.MONDAY);
+
+            LocalDateTime startDateTime = startOfWeek.atStartOfDay();
+            LocalDateTime endDateTime = startDateTime.plusDays(7);
+
+            return goalAchievementRepository.findGroupRankingWeekly(groupId, startDateTime, endDateTime);
+        }
+
+        return goalAchievementRepository.findGroupRankingTotal(groupId);
     }
 }

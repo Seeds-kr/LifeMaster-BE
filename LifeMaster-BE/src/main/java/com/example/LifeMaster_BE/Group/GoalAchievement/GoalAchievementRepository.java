@@ -1,6 +1,8 @@
 package com.example.LifeMaster_BE.Group.GoalAchievement;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -31,4 +33,28 @@ public interface GoalAchievementRepository extends JpaRepository<GoalAchievement
     void deleteByGroupId(Long groupId);
     void deleteByGoalId(Long goalId);
     void deleteByUserId(Long userId);
+
+    @Query("""
+        SELECT ga.user.id, ga.user.nickname, ga.user.imageUrl, COUNT(ga)
+        FROM GoalAchievementEntity ga
+        WHERE ga.group.id = :groupId
+          AND ga.achievedAt >= :startDateTime
+          AND ga.achievedAt < :endDateTime
+        GROUP BY ga.user.id, ga.user.nickname, ga.user.imageUrl
+        ORDER BY COUNT(ga) DESC, ga.user.nickname ASC
+    """)
+    List<Object[]> findGroupRankingWeekly(
+            @Param("groupId") Long groupId,
+            @Param("startDateTime") LocalDateTime startDateTime,
+            @Param("endDateTime") LocalDateTime endDateTime
+    );
+
+    @Query("""
+        SELECT ga.user.id, ga.user.nickname, ga.user.imageUrl, COUNT(ga)
+        FROM GoalAchievementEntity ga
+        WHERE ga.group.id = :groupId
+        GROUP BY ga.user.id, ga.user.nickname, ga.user.imageUrl
+        ORDER BY COUNT(ga) DESC, ga.user.nickname ASC
+    """)
+    List<Object[]> findGroupRankingTotal(@Param("groupId") Long groupId);
 }
