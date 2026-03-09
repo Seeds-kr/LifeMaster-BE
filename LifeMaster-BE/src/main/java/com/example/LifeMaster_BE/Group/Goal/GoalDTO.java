@@ -27,7 +27,6 @@ public class GoalDTO {
     @NotNull(message = "목표 기준은 필수입니다.")
     @Schema(
             description = "목표 기준",
-            allowableValues = {"TIME", "COUNT"},
             example = "TIME",
             requiredMode = Schema.RequiredMode.REQUIRED
     )
@@ -46,7 +45,6 @@ public class GoalDTO {
     @NotNull(message = "목표 기한은 필수입니다.")
     @Schema(
             description = "목표 기한",
-            allowableValues = {"DAILY", "WEEKLY", "MONTHLY"},
             example = "DAILY",
             requiredMode = Schema.RequiredMode.REQUIRED
     )
