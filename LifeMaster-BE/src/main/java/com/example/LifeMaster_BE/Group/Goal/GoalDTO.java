@@ -13,34 +13,42 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Schema(description = "목표 생성 요청 DTO")
+@Schema(name = "GoalCreateForm", description = "목표 생성 폼")
 public class GoalDTO {
 
-    @NotBlank
-    @Schema(description = "목표 이름", example = "수면 7시간")
+    @NotBlank(message = "목표 이름은 필수입니다.")
+    @Schema(
+            description = "목표 이름",
+            example = "수면 7시간",
+            requiredMode = Schema.RequiredMode.REQUIRED
+    )
     private String name;
 
-    @NotNull
+    @NotNull(message = "목표 기준은 필수입니다.")
     @Schema(
             description = "목표 기준",
-            implementation = GoalCondition.class,
-            example = "TIME"
+            allowableValues = {"TIME", "COUNT"},
+            example = "TIME",
+            requiredMode = Schema.RequiredMode.REQUIRED
     )
     private GoalCondition goalCondition;
 
-    @NotNull
-    @Min(1)
-    @Schema(description = "목표값", example = "7")
+    @NotNull(message = "목표값은 필수입니다.")
+    @Min(value = 1, message = "목표값은 1 이상이어야 합니다.")
+    @Schema(
+            description = "목표값",
+            example = "7",
+            minimum = "1",
+            requiredMode = Schema.RequiredMode.REQUIRED
+    )
     private Integer value;
 
-    @NotNull
+    @NotNull(message = "목표 기한은 필수입니다.")
     @Schema(
             description = "목표 기한",
-            implementation = GoalDuration.class,
-            example = "DAILY"
+            allowableValues = {"DAILY", "WEEKLY", "MONTHLY"},
+            example = "DAILY",
+            requiredMode = Schema.RequiredMode.REQUIRED
     )
     private GoalDuration duration;
-
-    @Schema(description = "그룹 ID", accessMode = Schema.AccessMode.READ_ONLY)
-    private Long groupId;
 }

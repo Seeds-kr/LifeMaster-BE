@@ -185,17 +185,23 @@ public class GroupController {
 
     @Operation(
             summary = "Add a goal to a group",
-            description = "목표 이름 / 기준(goalCondition) / 기한(duration) / 목표값(value)을 입력하여 그룹에 목표를 추가합니다."
+            description = "목표 이름 / 목표 기준 / 목표 기한 / 목표값을 입력하여 그룹에 목표를 추가합니다."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Goal added successfully"),
             @ApiResponse(responseCode = "404", description = "Group not found")
     })
-    @PostMapping("/{groupId}/goal")
+    @PostMapping(
+            value = "/{groupId}/goal",
+            consumes = {
+                    "multipart/form-data",
+                    "application/x-www-form-urlencoded"
+            }
+    )
     public ResponseEntity<?> addGoalToGroup(
-            @Parameter(description = "ID of the group")
+            @Parameter(description = "ID of the group", example = "1")
             @PathVariable("groupId") Long groupId,
-            @ModelAttribute @Valid GoalDTO goalDTO,
+            @Valid @ModelAttribute GoalDTO goalDTO,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         ResponseEntity<?> loginCheck = login.checkLogin(user);
