@@ -18,8 +18,8 @@ public class GroupStatsController {
     @Operation(summary = "그룹 내 랭킹 조회", description = "주간/전체 기준 그룹 멤버 랭킹을 조회합니다.")
     public GroupRankingResponseDTO getGroupRanking(
             @PathVariable Long groupId,
-            @Parameter(description = "조회 범위", example = "weekly")
-            @RequestParam String scope,
+            @Parameter(description = "조회 범위", example = "WEEKLY")
+            @RequestParam RankingScope scope,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         return groupStatsService.getGroupRanking(groupId, user.getId(), scope);

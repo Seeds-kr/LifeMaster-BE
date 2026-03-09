@@ -24,7 +24,7 @@ public class GroupStatsService {
     private final MemberRepository memberRepository;
     private final GoalProgressRepository goalProgressRepository;
 
-    public GroupRankingResponseDTO getGroupRanking(Long groupId, Long loginUserId, String scope) {
+    public GroupRankingResponseDTO getGroupRanking(Long groupId, Long loginUserId, RankingScope scope) {
         GroupEntity group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new RuntimeException("Group not found with id: " + groupId));
 
@@ -32,19 +32,16 @@ public class GroupStatsService {
                 .orElseThrow(() -> new RuntimeException("Member not found with id: " + loginUserId));
 
         // 그룹 멤버 여부 확인
-        if (!group.getMembers().contains(loginUser)) {
+        boolean isMember = group.getMembers()
+                .stream()
+                .anyMatch(m -> m.getId().equals(loginUserId));
+
+        if (!isMember) {
             throw new RuntimeException("해당 그룹의 멤버만 랭킹을 조회할 수 있습니다.");
         }
 
-        RankingScope rankingScope;
-        try {
-            rankingScope = RankingScope.valueOf(scope.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new RuntimeException("scope must be weekly or total");
-        }
-
         List<Object[]> rawRanks;
-        if (rankingScope == RankingScope.WEEKLY) {
+        if (scope == RankingScope.WEEKLY) {
             LocalDate today = LocalDate.now();
             LocalDate startOfWeek = today.with(DayOfWeek.MONDAY);
             LocalDateTime startDateTime = startOfWeek.atStartOfDay();
@@ -96,7 +93,7 @@ public class GroupStatsService {
         }
 
         return new GroupRankingResponseDTO(
-                scope.toLowerCase(),
+                scope.name().toLowerCase(),
                 myRank,
                 loginUserId,
                 myName,
