@@ -115,7 +115,8 @@ public class SpringSecurityConfig {
                 "http://127.0.0.1:*",
                 "http://ec2-*.ap-northeast-2.compute.amazonaws.com:*",
                 "https://api.lifemaster.harvester.kr",
-                "https://*.harvester.kr"
+                "https://*.harvester.kr",
+                "https://lifemaster.harvester.kr"
         ));
 
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
