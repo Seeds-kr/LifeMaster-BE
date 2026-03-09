@@ -128,7 +128,7 @@ public class SwaggerConfig implements WebMvcConfigurer {
     @Bean
     public GroupedOpenApi googleLoginApi() {
         return GroupedOpenApi.builder()
-                .group("google-login")
+                .group("Google-Login")
                 .pathsToMatch("/googleLogin/**")
                 .build();
     }
@@ -136,7 +136,7 @@ public class SwaggerConfig implements WebMvcConfigurer {
     @Bean
     public GroupedOpenApi naverLoginApi() {
         return GroupedOpenApi.builder()
-                .group("naver-login")
+                .group("Naver-Login")
                 .pathsToMatch("/naverLogin/**")
                 .build();
     }
@@ -144,7 +144,7 @@ public class SwaggerConfig implements WebMvcConfigurer {
     @Bean
     public GroupedOpenApi kakaoLoginApi() {
         return GroupedOpenApi.builder()
-                .group("Challenge")
+                .group("Kakao-login")
                 .pathsToMatch("/kakaoLogin/**")
                 .build();
     }
