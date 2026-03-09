@@ -20,9 +20,16 @@ public class GoalEntity {
     private Long id;
 
     private String name; // 목표 이름 (수면 시간, 공부 시간 등)
+    // setGoalCondition 수동 추가
+    @Setter
     @JsonProperty("goalCondition")
-    private String goal_condition; // 목표 기준 (time/count)
-    private String duration; // 목표 기한 (daily/weekly/monthly)
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private GoalCondition goalCondition;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private GoalDuration duration;
     private int value; // 목표값 (예: 7시간, 50회 등)
 
     @ManyToOne
@@ -38,15 +45,10 @@ public class GoalEntity {
 
     public GoalEntity(GoalDTO goalDTO, GroupEntity group) {
         this.name = goalDTO.getName();
-        this.goal_condition = goalDTO.getGoalCondition();
+        this.goalCondition = goalDTO.getGoalCondition();
         this.value = goalDTO.getValue();
         this.duration = goalDTO.getDuration();
         this.group = group;
-    }
-
-    // setGoalCondition 수동 추가
-    public void setGoalCondition(String goalCondition) {
-        this.goal_condition = goalCondition;
     }
 }
 

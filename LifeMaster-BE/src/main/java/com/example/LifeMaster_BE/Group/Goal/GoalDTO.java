@@ -10,11 +10,14 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class GoalDTO {
-    private String name;
-    private String goalCondition;
-    private int value;
-    private String duration;
-    private Long groupId;
 
-    // Getters and Setters
+    private String name;
+
+    private GoalCondition goalCondition; // TIME / COUNT
+
+    private int value;
+
+    private GoalDuration duration; // DAILY / WEEKLY / MONTHLY
+
+    private Long groupId;
 }
