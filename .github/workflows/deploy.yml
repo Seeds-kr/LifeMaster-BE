@@ -57,10 +57,12 @@ jobs:
           ssh -vvv \
           -o HostKeyAlgorithms=+ssh-rsa \
           -o PubkeyAcceptedAlgorithms=+ssh-rsa \
+          -o PreferredAuthentications=publickey \
           -o StrictHostKeyChecking=no \
           -o ConnectTimeout=10 \
           -o ServerAliveInterval=10 \
           -o ServerAliveCountMax=3 \
+          -o IPQoS=none \
           -i ~/.ssh/id_rsa \
           -p ${{ secrets.EC2_PORT }} \
           ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
