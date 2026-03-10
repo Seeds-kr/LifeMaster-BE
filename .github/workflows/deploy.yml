@@ -59,6 +59,8 @@ jobs:
           -o PubkeyAcceptedAlgorithms=+ssh-rsa \
           -o StrictHostKeyChecking=no \
           -o ConnectTimeout=10 \
+          -o ServerAliveInterval=10 \
+          -o ServerAliveCountMax=3 \
           -i ~/.ssh/id_rsa \
           -p ${{ secrets.EC2_PORT }} \
           ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
