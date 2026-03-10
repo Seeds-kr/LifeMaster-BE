@@ -51,3 +51,4 @@ jobs:
       - name: Deploy to EC2
         run: |
           ssh -p ${{ secrets.EC2_PORT }} ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'bash ~/deploy.sh'
+
