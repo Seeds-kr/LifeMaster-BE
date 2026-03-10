@@ -45,8 +45,8 @@ jobs:
       - name: Fix VPN MTU
         run: |
           ip a
-          sudo ip link set mtu 1400 dev tun0 || true
-          sudo ip link set mtu 1400 dev tun1 || true
+          sudo ip link set mtu 1300 dev tun0 || true
+          sudo ip link set mtu 1300 dev tun1 || true
 
       - name: Check VPN connection
         run: |
@@ -63,12 +63,13 @@ jobs:
           ssh -vvv \
           -o HostKeyAlgorithms=+ssh-rsa \
           -o PubkeyAcceptedAlgorithms=+ssh-rsa \
+          -o KexAlgorithms=curve25519-sha256 \
           -o PreferredAuthentications=publickey \
           -o StrictHostKeyChecking=no \
           -o ConnectTimeout=10 \
           -o ServerAliveInterval=10 \
           -o ServerAliveCountMax=3 \
-          -o IPQoS=none \
+          -o IPQoS=throughput \
           -i ~/.ssh/id_rsa \
           -p ${{ secrets.EC2_PORT }} \
           ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
