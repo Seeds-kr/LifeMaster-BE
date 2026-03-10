@@ -37,10 +37,15 @@ jobs:
           sudo openvpn --config ~/vpn_config.ovpn --auth-user-pass ~/vpn_auth.txt --daemon
           sleep 10
 
+      - name: Check VPN connection
+        run: |
+          ip a
+          ping -c 3 ${{ secrets.EC2_HOST }} || true
+
       - name: Add EC2 host to known_hosts
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -t rsa -p ${{ secrets.EC2_PORT }} -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -t rsa -p ${{ secrets.EC2_PORT }} -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts || true
 
       - name: Deploy to EC2
         run: |
