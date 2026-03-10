@@ -16,7 +16,7 @@ jobs:
       - name: Set up SSH private key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
+          printf "${{ secrets.EC2_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
       - name: Create VPN auth file
@@ -49,10 +49,11 @@ jobs:
 
       - name: Deploy to EC2
         run: |
-          ssh \
+          ssh -vvv \
           -o HostKeyAlgorithms=+ssh-rsa \
           -o PubkeyAcceptedAlgorithms=+ssh-rsa \
           -o StrictHostKeyChecking=no \
+          -o ConnectTimeout=10 \
           -i ~/.ssh/id_rsa \
           -p ${{ secrets.EC2_PORT }} \
           ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
