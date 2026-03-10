@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -182,21 +183,33 @@ public class GroupController {
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "Add a goal to a group", description = "목표 이름/기준(goalCondition)(time/count)/기한(duration)(daily/weekly/monthly)/목표값(value)(예: 7시간, 50회 등) 입력")
+    @Operation(
+            summary = "Add a goal to a group",
+            description = "목표 이름 / 목표 기준 / 목표 기한 / 목표값을 입력하여 그룹에 목표를 추가합니다."
+    )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Goal added successfully"),
             @ApiResponse(responseCode = "404", description = "Group not found")
     })
-    @PostMapping("/{groupId}/goal")
+    @PostMapping(
+            value = "/{groupId}/goal",
+            consumes = {
+                    "multipart/form-data",
+                    "application/x-www-form-urlencoded"
+            }
+    )
     public ResponseEntity<?> addGoalToGroup(
-            @Parameter(description = "ID of the group") @PathVariable("groupId") Long groupId,
-            @RequestBody GoalDTO goalDTO,
-            @AuthenticationPrincipal CustomUserDetails user) {
+            @Parameter(description = "ID of the group", example = "1")
+            @PathVariable("groupId") Long groupId,
+            @Valid @ModelAttribute GoalDTO goalDTO,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
         ResponseEntity<?> loginCheck = login.checkLogin(user);
         if (loginCheck != null) return loginCheck;
-        GroupEntity group = groupService.findById(groupId);
-        GoalEntity goal = new GoalEntity();
 
+        GroupEntity group = groupService.findById(groupId);
+
+        GoalEntity goal = new GoalEntity();
         goal.setName(goalDTO.getName());
         goal.setGoalCondition(goalDTO.getGoalCondition());
         goal.setDuration(goalDTO.getDuration());

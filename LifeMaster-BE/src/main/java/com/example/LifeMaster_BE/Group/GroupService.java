@@ -2,6 +2,7 @@ package com.example.LifeMaster_BE.Group;
 
 import com.example.LifeMaster_BE.Group.Goal.GoalEntity;
 import com.example.LifeMaster_BE.Group.Goal.GoalRepository;
+import com.example.LifeMaster_BE.Group.GoalAchievement.GoalAchievementRepository;
 import com.example.LifeMaster_BE.Group.GoalProgress.GoalProgressEntity;
 import com.example.LifeMaster_BE.Group.GoalProgress.GoalProgressRepository;
 import com.example.LifeMaster_BE.Group.GoalProgress.GoalProgressService;
@@ -20,11 +21,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import com.example.LifeMaster_BE.Group.Goal.GoalCondition;
+import com.example.LifeMaster_BE.Group.Goal.GoalDuration;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -45,6 +45,8 @@ public class GroupService {
     private final GoalProgressService goalProgressService;
 
     private final GroupMemberService groupMemberService;
+
+    private final GoalAchievementRepository goalAchievementRepository;
 
 
     // Create a group
@@ -160,19 +162,19 @@ public class GroupService {
         if (accessType != null) {
             existingGroup.setAccessType(accessType);
 
-            // PUBLIC/PRIVATE로 바꾸면 비번 제거
-            if (accessType == GroupAccessType.PUBLIC || accessType == GroupAccessType.PRIVATE) {
+            // PUBLIC만 비밀번호 제거
+            if (accessType == GroupAccessType.PUBLIC) {
                 existingGroup.setPassword(null);
             }
         }
 
-        // 비밀번호 변경은 PASSWORD 타입에서만 허용
         if (password != null) {
-            if (existingGroup.getAccessType() != GroupAccessType.PASSWORD) {
-                throw new IllegalArgumentException("Only PASSWORD group can set password.");
+            if (!existingGroup.getAccessType().requiresPassword()) {
+                throw new IllegalArgumentException("This group type cannot set password.");
             }
+
             if (password.isBlank()) {
-                existingGroup.setPassword(null); // 비번 제거
+                existingGroup.setPassword(null);
             } else {
                 existingGroup.setPassword(passwordEncoder.encode(password));
             }
@@ -189,7 +191,7 @@ public class GroupService {
         GroupEntity group = groupRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found with ID: " + id));
 
-        // 비밀번호 검증(기존)
+        // 비밀번호 검증
         String stored = group.getPassword();
         boolean hasPassword = stored != null && !stored.isBlank();
         if (hasPassword) {
@@ -207,68 +209,57 @@ public class GroupService {
         // 2) 탈퇴/히스토리 등 groupId FK 가진 것들 삭제
         groupExitHistoryService.deleteByGroupId(id);
 
-        // 3) 목표 진행도/목표 등 groupId FK 가진 것들 삭제
+        // 3) 목표 달성 기록 삭제
+        goalAchievementRepository.deleteByGroupId(id);
+
+        // 4) 목표 진행도 삭제
         goalProgressService.deleteByGroupId(id);
+
+        // 5) 목표 삭제
         goalRepository.deleteByGroupId(id);
 
-        // 4) ManyToMany 조인 정리 (member_group)
+        // 6) ManyToMany 조인 정리
         for (MemberEntity m : new HashSet<>(group.getMembers())) {
             m.getGroups().remove(group);
         }
         group.getMembers().clear();
 
-        // 5) 마지막에 그룹 삭제
+        // 7) 마지막에 그룹 삭제
         groupRepository.delete(group);
     }
 
     // 목표를 그룹에 추가
     public GroupEntity addGoalToGroup(Long groupId, GoalEntity goal) {
-        // GroupEntity 조회
-        Optional<GroupEntity> groupOptional = groupRepository.findById(groupId);
-        if (groupOptional.isPresent()) {
-            GroupEntity group = groupOptional.get();
+        GroupEntity group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new RuntimeException("Group not found with id: " + groupId));
 
-            // duration이 유효한 값인지 확인 (daily, weekly, monthly)
-            if (!isValidDuration(goal.getDuration())) {
-                throw new RuntimeException("Invalid duration value. Must be daily, weekly, or monthly.");
-            }
-
-            // goalCondition이 유효한 값인지 확인 (time, count)
-            if (!isValidGoalCondition(goal.getGoal_condition())) {
-                throw new RuntimeException("Invalid goal condition. Must be time or count.");
-            }
-
-            // 이미 목표가 그룹에 존재하는지 체크 (중복 추가 방지)
-            boolean goalExists = group.getGoals().stream()
-                    .anyMatch(existingGoal -> existingGoal.getName().equals(goal.getName()));
-
-            if (goalExists) {
-                throw new RuntimeException("Goal already exists in the group.");
-            }
-
-            // GoalEntity의 group 설정
-            goal.setGroup(group);
-
-            // 목표를 그룹에 추가
-            group.addGoal(goal); // 그룹에 목표 추가
-
-            // 그룹을 저장하여 목표도 함께 저장
-            groupRepository.save(group); // 이 호출만으로 목표도 저장됨
-
-            return group;
-        } else {
-            throw new RuntimeException("Group not found with id: " + groupId);
+        // enum/null 방어
+        if (goal.getDuration() == null) {
+            throw new RuntimeException("Goal duration is required.");
         }
-    }
 
-    // duration이 유효한 값인지 확인하는 메소드
-    private boolean isValidDuration(String duration) {
-        return "daily".equalsIgnoreCase(duration) || "weekly".equalsIgnoreCase(duration) || "monthly".equalsIgnoreCase(duration);
-    }
+        if (goal.getGoalCondition() == null) {
+            throw new RuntimeException("Goal condition is required.");
+        }
 
-    // goalCondition이 유효한 값인지 확인하는 메소드
-    private boolean isValidGoalCondition(String goalCondition) {
-        return "time".equalsIgnoreCase(goalCondition) || "count".equalsIgnoreCase(goalCondition);
+        // 값 방어
+        if (goal.getValue() <= 0) {
+            throw new RuntimeException("Goal value must be greater than 0.");
+        }
+
+        // 이미 목표가 그룹에 존재하는지 체크
+        boolean goalExists = group.getGoals().stream()
+                .anyMatch(existingGoal -> existingGoal.getName().equals(goal.getName()));
+
+        if (goalExists) {
+            throw new RuntimeException("Goal already exists in the group.");
+        }
+
+        goal.setGroup(group);
+        group.addGoal(goal);
+
+        groupRepository.save(group);
+        return group;
     }
 
 
@@ -284,21 +275,22 @@ public class GroupService {
         }
     }
 
+    @Transactional
     public void deleteGoal(Long groupId, Long goalId) {
-        // 목표 찾기
         GoalEntity goal = goalRepository.findById(goalId)
                 .orElseThrow(() -> new RuntimeException("Goal not found with id: " + goalId));
 
-        // 목표가 속한 그룹이 올바른지 확인
         if (!goal.getGroup().getId().equals(groupId)) {
             throw new RuntimeException("Goal does not belong to the specified group.");
         }
 
-        // 목표와 관련된 진행 상황 (GoalProgressEntity) 삭제
-        List<GoalProgressEntity> goalProgressList = goalProgressRepository.findByGoal(goal);
-        goalProgressRepository.deleteAll(goalProgressList); // 해당 목표의 모든 진행 상황 삭제
+        // 1) 목표 달성 기록 삭제
+        goalAchievementRepository.deleteByGoalId(goalId);
 
-        // 목표 삭제
+        // 2) 목표 진행 기록 삭제
+        goalProgressRepository.deleteByGoalId(goalId);
+
+        // 3) 목표 삭제
         goalRepository.delete(goal);
     }
 
@@ -378,50 +370,59 @@ public class GroupService {
     }
 
     public List<Map<String, Object>> getGroupGoalProgress(Long groupId) {
-        Optional<GroupEntity> groupOptional = groupRepository.findById(groupId);
-        if (groupOptional.isEmpty()) {
-            throw new RuntimeException("Group not found with id: " + groupId);
-        }
+        GroupEntity group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new RuntimeException("Group not found with id: " + groupId));
 
-        GroupEntity group = groupOptional.get();
         List<GoalEntity> goals = group.getGoals();
 
-        List<String> allUsers = group.getMembers() // group.getMembers()로 변경
-                .stream()
-                .map(MemberEntity::getEmail) // MemberEntity에서 이메일 추출
-                .sorted()
+        List<MemberEntity> allUsers = group.getMembers().stream()
+                .sorted(Comparator.comparing(MemberEntity::getEmail))
                 .toList();
 
         List<Map<String, Object>> goalProgressList = new ArrayList<>();
 
         for (GoalEntity goal : goals) {
-            List<GoalProgressEntity> progressList = goalProgressRepository.findByGoal(goal);
+            LocalDateTime startTime = getStartDateTimeForCurrentPeriod(goal.getDuration());
+
+            List<GoalProgressEntity> progressList =
+                    goalProgressRepository.findByGoalAndSubmittedAtAfter(goal, startTime);
 
             Map<String, Object> goalData = new HashMap<>();
+            goalData.put("goalId", goal.getId());
             goalData.put("goalName", goal.getName());
             goalData.put("goalCreationTime", goal.getCreatedAt());
             goalData.put("goalDuration", goal.getDuration());
             goalData.put("goalValue", goal.getValue());
-            goalData.put("goalCondition", goal.getGoal_condition());
+            goalData.put("goalCondition", goal.getGoalCondition());
 
-            // 유저별 진행 정보 계산
             List<Map<String, Object>> userProgressList = new ArrayList<>();
 
-            for (String userEmail : allUsers) { // 🔹 그룹 유저 전원 포함
-                List<GoalProgressEntity> userProgresses = progressList.stream()
-                        .filter(progress -> progress.getUserEmail().equals(userEmail))
-                        .toList();
+            int goalValue = goal.getValue();
 
-                int totalProgress = userProgresses.stream()
+            for (MemberEntity user : allUsers) {
+                int totalProgress = progressList.stream()
+                        .filter(progress -> progress.getUser().getId().equals(user.getId()))
                         .mapToInt(GoalProgressEntity::getProgressValue)
                         .sum();
 
-                double progressPercentage = (totalProgress / (double) goal.getValue()) * 100;
+                double progressPercentage;
+                boolean isAchieved;
+
+                if (goalValue <= 0) {
+                    progressPercentage = 0.0;
+                    isAchieved = false;
+                } else {
+                    double raw = (totalProgress / (double) goalValue) * 100.0;
+                    progressPercentage = Math.min(raw, 100.0);
+                    isAchieved = totalProgress >= goalValue;
+                }
 
                 Map<String, Object> userProgressData = new HashMap<>();
-                userProgressData.put("userEmail", userEmail);
+                userProgressData.put("userId", user.getId());
+                userProgressData.put("userEmail", user.getEmail());
                 userProgressData.put("progressPercentage", String.format("%.1f%%", progressPercentage));
                 userProgressData.put("progressValue", totalProgress);
+                userProgressData.put("isAchieved", isAchieved);
 
                 userProgressList.add(userProgressData);
             }
@@ -431,6 +432,17 @@ public class GroupService {
         }
 
         return goalProgressList;
+    }
+
+    private LocalDateTime getStartDateTimeForCurrentPeriod(GoalDuration duration) {
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
+
+        return switch (duration) {
+            case DAILY -> today.atStartOfDay();
+            case WEEKLY -> today.with(DayOfWeek.MONDAY).atStartOfDay();
+            case MONTHLY -> today.withDayOfMonth(1).atStartOfDay();
+            default -> throw new IllegalArgumentException("Invalid duration: " + duration);
+        };
     }
 
     // 새 메서드 추가 (요청자 기반 권한처리 가능)
@@ -483,13 +495,13 @@ public class GroupService {
             throw new IllegalArgumentException("User is not a member of this group.");
         }
 
-        // ✅ OWNER는 탈퇴 불가
+        // OWNER는 탈퇴 불가
         GroupMemberRole myRole = groupMemberService.getRole(groupId, requestUserId);
         if (myRole == GroupMemberRole.OWNER) {
             throw new GroupMemberException("OWNER cannot leave. Transfer ownership first.");
         }
 
-        // ✅ 권한 엔티티 제거 (self 탈퇴)
+        // 권한 엔티티 제거 (self 탈퇴)
         groupMemberService.removeMember(groupId, requestUserId, requestUserId);
 
         // 탈퇴 기록 저장
@@ -499,14 +511,22 @@ public class GroupService {
         group.getMembers().remove(member);
         member.getGroups().remove(group);
 
+        // 마지막 멤버였으면 그룹 자체 정리 삭제
         if (group.getMembers().isEmpty()) {
+
+            // 목표 달성 기록 삭제
+            goalAchievementRepository.deleteByGroupId(groupId);
+            // 목표 진행도 삭제
             goalProgressService.deleteByGroupId(groupId);
-            deleteByGroupId(groupId);
+            // 목표 삭제
+            goalRepository.deleteByGroupId(groupId);
+            // 탈퇴 기록 삭제
             groupExitHistoryService.deleteByGroupId(groupId);
-
+            // 권한 엔티티 삭제
             groupMemberService.deleteAllByGroupId(groupId);
-
+            // 그룹 삭제
             groupRepository.delete(group);
+
         } else {
             groupRepository.save(group);
         }
@@ -524,21 +544,16 @@ public class GroupService {
         GroupEntity group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found with ID: " + groupId));
 
-        // PUBLIC 그룹은 초대코드 필요 없음
         if (group.getAccessType() == GroupAccessType.PUBLIC) {
             throw new IllegalArgumentException("Public group does not require invite code.");
         }
 
         String groupPasswordHash = group.getPassword();
-
-        // PRIVATE는 password 없어도 가능
-        if (group.getAccessType() == GroupAccessType.PASSWORD) {
-            if (groupPasswordHash == null || groupPasswordHash.isBlank()) {
-                throw new IllegalArgumentException("Group password is not set.");
-            }
+        if (groupPasswordHash == null || groupPasswordHash.isBlank()) {
+            throw new IllegalArgumentException("Group password is not set.");
         }
 
-        return groupId + ":" + (groupPasswordHash != null ? groupPasswordHash : "private");
+        return groupId + ":" + groupPasswordHash;
     }
 
     // 초대 코드로 그룹 가입
@@ -601,13 +616,17 @@ public class GroupService {
                 .collect(Collectors.toList());
         List<Sleep> sleeps = sleepRepository.findAllByUser(userList);
 
-        // 각 유저의 수면 기록을 가져와서 시간 계산
+        /* 각 유저의 수면 기록을 가져와서 시간 계산
         for (MemberEntity user : users) {
             Sleep sleep = sleepRepository.findByUser(user);
             for (Sleep record : sleeps) {
                 totalSleepTime += record.getSleepDuration().toMinutes(); // 수면 시간 합산
                 userCount++;
             }
+        }*/
+        for (Sleep record : sleeps) {
+            totalSleepTime += record.getSleepDuration().toMinutes();
+            userCount++;
         }
 
         if (userCount > 0) {
