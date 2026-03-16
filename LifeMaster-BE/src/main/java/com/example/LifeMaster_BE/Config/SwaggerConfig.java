@@ -53,6 +53,14 @@ public class SwaggerConfig implements WebMvcConfigurer {
                 .build();
     }
 
+    @Bean
+    public GroupedOpenApi DetoxRepeatApi() {
+        return GroupedOpenApi.builder()
+                .group("detox-repeat")
+                .pathsToMatch("/detox/repeat/**")
+                .build();
+    }
+
     //FunctionManager Api
     @Bean
     public GroupedOpenApi scheduleCalendarApi() {

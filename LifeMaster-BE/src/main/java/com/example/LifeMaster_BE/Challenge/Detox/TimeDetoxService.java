@@ -8,8 +8,8 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import java.time.format.DateTimeFormatter;
 
+import java.time.format.DateTimeFormatter;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -33,6 +33,8 @@ public class TimeDetoxService {
 
     @Getter
     private String currentRandomPhrase;
+    //@Autowired
+    //private TimeDetoxRepository timeDetoxRepository;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private static final DateTimeFormatter HH_MM = DateTimeFormatter.ofPattern("HH:mm");
@@ -42,7 +44,7 @@ public class TimeDetoxService {
         this.currentRandomPhrase = randomPhraseProvider.getRandomPhrase();
     }
 
-    public TimeDetoxDTO createSchedule(TimeDetoxDTO dto, Long memberId) {
+    public TimeDetoxDto createSchedule(TimeDetoxDto dto, Long memberId) {
 
         TimeDetoxEntity entity = new TimeDetoxEntity();
         entity.setCycle(dto.getCycle());
@@ -81,8 +83,8 @@ public class TimeDetoxService {
         }
     }
 
-    private TimeDetoxDTO convertToDTO(TimeDetoxEntity entity) {
-        TimeDetoxDTO dto = new TimeDetoxDTO();
+    private TimeDetoxDto convertToDTO(TimeDetoxEntity entity) {
+        TimeDetoxDto dto = new TimeDetoxDto();
         dto.setId(entity.getId());
         dto.setCycle(entity.getCycle());
         dto.setDay(entity.getDay());
@@ -266,6 +268,18 @@ public class TimeDetoxService {
         // 격주인지 여부를 계산 (주 차이가 짝수이면 격주 주기에 포함됨)
         return weeksDifference % 2 == 0;
     }
+/*
+    @Transactional
+    public void addAllowedApps(TimeDetoxDto.App request) {
+        TimeDetoxEntity detox = timeDetoxRepository.findById(request.getDetoxId())
+                .orElseThrow(() -> new RuntimeException("Detox not found"));
+
+        List<String> currentApps = detox.getLockedApps();
+        currentApps.addAll(request.getAllowedApps());
+        detox.setLockedApps(currentApps);
+
+        timeDetoxRepository.save(detox);
+    }*/
 
     // 내부 클래스: 잠긴 상태와 앱 목록 반환 구조체
     public static class LockedAppDetails {
@@ -286,7 +300,7 @@ public class TimeDetoxService {
         }
     }
 
-    public List<TimeDetoxDTO> getAllTimeDetoxSchedulesByMember(Long memberId) {
+    public List<TimeDetoxDto> getAllTimeDetoxSchedulesByMember(Long memberId) {
         return repository.findAllByMember_Id(memberId)
                 .stream()
                 .map(this::convertToDTO)
