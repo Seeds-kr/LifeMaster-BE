@@ -1,11 +1,19 @@
 package com.example.LifeMaster_BE.FunctionManager.Calender;
 
+import com.example.LifeMaster_BE.Security.CustomUserDetails;
+import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Tag(name = "Schedule Calendar API", description = "캘린더 관리 API")
 @RestController("scheduleCalendarController")
@@ -13,62 +21,179 @@ import java.util.List;
 public class ScheduleCalendarController {
 
     private final ScheduleCalendarService calendarService;
+    private final MemberRepository memberRepository;
 
-    public ScheduleCalendarController(ScheduleCalendarService calendarService) {
+    public ScheduleCalendarController(ScheduleCalendarService calendarService,MemberRepository memberRepository) {
         this.calendarService = calendarService;
+        this.memberRepository = memberRepository;
     }
 
-    @Operation(summary = "전체 조회", description = "캘린더에 저장된 모든 엔트리를 조회합니다.")
+    private ScheduleCalendarResponseDto toResponse(ScheduleCalendarEntity entity) {
+        return new ScheduleCalendarResponseDto(
+                entity.getId(),
+                entity.getDate(),
+                entity.getDay(),
+                entity.getEvents()
+        );
+    }
+
+    private Long getMemberId(UserDetails userDetails) {
+        if (userDetails == null) {
+            throw new RuntimeException("인증 정보가 없습니다.");
+        }
+
+        if (userDetails instanceof CustomUserDetails customUser) {
+            return customUser.getId();
+        }
+
+        throw new RuntimeException(
+                "지원하지 않는 UserDetails 타입입니다: " + userDetails.getClass().getName()
+        );
+    }
+
+    @Operation(summary = "전체 조회", description = "현재 로그인한 유저의 캘린더 엔트리를 모두 조회합니다.")
     @GetMapping
-    public List<ScheduleCalendarEntity> getAllEntries() {
-        return calendarService.findAll();
+    public List<ScheduleCalendarResponseDto> getAllEntries(
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        Long memberId = getMemberId(userDetails);
+
+        return calendarService.findAll(memberId).stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
     }
 
-    @Operation(summary = "특정 날짜 조회", description = "입력한 날짜(YYYYMMDD)에 저장된 엔트리를 조회합니다.")
+    @Operation(
+            summary = "특정 멤버 전체 조회",
+            description = "입력받은 memberId의 캘린더 엔트리를 모두 조회합니다."
+    )
+    @GetMapping("/member/{memberId}")
+    public List<ScheduleCalendarResponseDto> getAllEntriesByMemberId(
+            @PathVariable(name = "memberId") Long memberId
+    ) {
+        // ❌ 존재하지 않는 유저
+        if (!memberRepository.existsById(memberId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "존재하지 않는 사용자입니다."
+            );
+        }
+
+        return calendarService.findAll(memberId).stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Operation(
+            summary = "특정 멤버 월별 조회",
+            description = "입력받은 memberId의 캘린더 엔트리를 특정 월(YYYYMM) 기준으로 조회합니다."
+    )
+    @GetMapping("/member/{memberId}/month/{yyyymm}")
+    public List<ScheduleCalendarResponseDto> getEntriesByMemberIdAndMonth(
+            @PathVariable(name = "memberId") Long memberId,
+            @PathVariable(name = "yyyymm") String yyyymm
+    ) {
+        // 존재하지 않는 유저
+        if (!memberRepository.existsById(memberId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "존재하지 않는 사용자입니다."
+            );
+        }
+
+        // YYYYMM 유효성 검사
+        if (yyyymm == null || !yyyymm.matches("\\d{6}")) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "month 형식이 올바르지 않습니다. 예) 202601"
+            );
+        }
+
+        return calendarService.findByMonth(memberId, yyyymm).stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Operation(summary = "특정 날짜 조회", description = "현재 로그인한 유저의 입력한 날짜(YYYYMMDD) 엔트리를 조회합니다.")
     @GetMapping("/{date}")
-    public List<ScheduleCalendarEntity> getEntriesByDate(@PathVariable(name = "date") String date) {
-        return calendarService.findByDate(date);
+    public ResponseEntity<ScheduleCalendarResponseDto> getEntriesByDate(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable(name = "date") String date
+    ) {
+        Long memberId = getMemberId(userDetails);
+
+        Optional<ScheduleCalendarEntity> entity = calendarService.findByDate(memberId, date);
+        return entity.map(e -> ResponseEntity.ok(toResponse(e)))
+                .orElse(ResponseEntity.notFound().build());
     }
 
-    @Operation(summary = "월별 조회", description = "입력한 월(YYYYMM)에 저장된 엔트리를 조회합니다.")
+    @Operation(summary = "월별 조회", description = "현재 로그인한 유저의 입력한 월(YYYYMM) 엔트리를 조회합니다.")
     @GetMapping("/month/{date}")
-    public List<ScheduleCalendarEntity> getEntriesByMonth(@PathVariable(name = "date") String month) {
-        return calendarService.findByMonth(month);
+    public List<ScheduleCalendarResponseDto> getEntriesByMonth(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable(name = "date") String month
+    ) {
+        Long memberId = getMemberId(userDetails);
+
+        return calendarService.findByMonth(memberId, month).stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
     }
 
     @Operation(summary = "새로운 날짜에 이벤트 생성",
-            description = "입력한 날짜(YYYYMMDD)에 새로운 이벤트 리스트를 생성합니다.")
+            description = "현재 로그인한 유저의 입력한 날짜(YYYYMMDD)에 새로운 이벤트 리스트를 생성합니다.")
     @PostMapping("/create/{date}/events")
-    public ResponseEntity<ScheduleCalendarEntity> createEvent(
+    public ResponseEntity<ScheduleCalendarResponseDto> createEvent(
+            @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable(name = "date") String date,
-            @RequestBody List<String> events) {
-        ScheduleCalendarEntity entry = calendarService.createEvent(date, events);
-        return ResponseEntity.ok(entry);
+            @RequestBody List<String> events
+    ) {
+        Long memberId = getMemberId(userDetails);
+
+        ScheduleCalendarEntity entry = calendarService.createEvent(memberId, date, events);
+        return ResponseEntity.ok(toResponse(entry));
     }
 
     @Operation(summary = "캘린더 엔티티 생성",
-            description = "캘린더 엔티티를 생성합니다. 날짜 형식은 YYYYMMDD이며, TODO 리스트는 기본값으로 NULL로 설정됩니다.")
+            description = "현재 로그인한 유저의 캘린더 엔티티를 생성합니다. 날짜 형식은 YYYYMMDD이며, TODO 리스트는 기본값으로 NULL로 설정됩니다.")
     @PostMapping("/create")
-    public ResponseEntity<ScheduleCalendarEntity> createDay(@RequestBody ScheduleCalendarEntity calendarEntity) {
-        ScheduleCalendarEntity entry = calendarService.createCalendarEntity(calendarEntity);
-        return ResponseEntity.ok(entry);
+    public ResponseEntity<ScheduleCalendarResponseDto> createDay(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam("date") String date
+    ) {
+        Long memberId = getMemberId(userDetails);
+
+        ScheduleCalendarEntity calendarEntity = new ScheduleCalendarEntity();
+        calendarEntity.setDate(date);
+
+        ScheduleCalendarEntity entry = calendarService.createCalendarEntity(memberId, calendarEntity);
+        return ResponseEntity.ok(toResponse(entry));
     }
 
     @Operation(summary = "특정 날짜에 항목 추가",
-            description = "입력한 날짜(YYYYMMDD)에 이벤트를 추가하거나 기존 이벤트를 수정합니다.")
+            description = "현재 로그인한 유저의 입력한 날짜(YYYYMMDD)에 이벤트를 추가하거나 기존 이벤트를 수정합니다.")
     @PostMapping("/{date}/add")
-    public ResponseEntity<ScheduleCalendarEntity> addEvent(
+    public ResponseEntity<ScheduleCalendarResponseDto> addEvent(
+            @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable(name = "date") String date,
-            @RequestBody String event) {
-        ScheduleCalendarEntity entry = calendarService.addOrUpdateEvent(date, event);
-        return ResponseEntity.ok(entry);
+            @RequestBody EventRequestDto request
+    ) {
+        Long memberId = getMemberId(userDetails);
+
+        ScheduleCalendarEntity entry = calendarService.addOrUpdateEvent(memberId, date, request.getEvent());
+        return ResponseEntity.ok(toResponse(entry));
     }
 
     @Operation(summary = "특정 날짜의 모든 항목 삭제",
-            description = "입력한 날짜(YYYYMMDD)의 모든 엔트리를 삭제합니다.")
+            description = "현재 로그인한 유저의 입력한 날짜(YYYYMMDD) 엔트리를 삭제합니다.")
     @DeleteMapping("/{date}")
-    public ResponseEntity<String> deleteEventByDate(@PathVariable(name = "date") String date) {
-        boolean deleted = calendarService.deleteEventByDate(date);
+    public ResponseEntity<String> deleteEventByDate(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable(name = "date") String date
+    ) {
+        Long memberId = getMemberId(userDetails);
+
+        boolean deleted = calendarService.deleteEventByDate(memberId, date);
         if (deleted) {
             return ResponseEntity.ok("삭제되었습니다.");
         } else {
@@ -77,14 +202,18 @@ public class ScheduleCalendarController {
     }
 
     @Operation(summary = "특정 날짜의 특정 항목 삭제",
-            description = "입력한 날짜(YYYYMMDD)와 이벤트 내용을 기반으로 특정 엔트리를 삭제합니다.")
+            description = "현재 로그인한 유저의 입력한 날짜(YYYYMMDD)와 이벤트 내용을 기반으로 특정 이벤트를 삭제합니다.")
     @DeleteMapping("/{date}/event")
-    public ResponseEntity<ScheduleCalendarEntity> deleteSpecificEvent(
+    public ResponseEntity<ScheduleCalendarResponseDto> deleteSpecificEvent(
+            @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable(name = "date") String date,
-            @RequestBody String event) {
-        ScheduleCalendarEntity entry = calendarService.deleteSpecificEvent(date, event);
+            @RequestBody EventRequestDto request
+    ) {
+        Long memberId = getMemberId(userDetails);
+
+        ScheduleCalendarEntity entry = calendarService.deleteSpecificEvent(memberId, date, request.getEvent());
         if (entry != null) {
-            return ResponseEntity.ok(entry);
+            return ResponseEntity.ok(toResponse(entry));
         } else {
             return ResponseEntity.status(404).build();
         }

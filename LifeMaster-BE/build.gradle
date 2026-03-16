@@ -21,29 +21,84 @@ configurations {
 }
 
 repositories {
+	google()
 	mavenCentral()
 }
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	// 기본
 	implementation 'org.springframework.boot:spring-boot-starter-web'
-	compileOnly 'org.projectlombok:lombok'
-	developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+	// WebSocket
+	implementation 'org.springframework.boot:spring-boot-starter-websocket'
+	// implementation 'org.springframework.boot:spring-boot-starter-messaging'
+
+	// Redis + Cache
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+	implementation 'org.springframework.boot:spring-boot-starter-cache'
+	implementation 'org.springframework:spring-context-support'
+
+	// DB
 	runtimeOnly 'com.mysql:mysql-connector-j'
-	annotationProcessor 'org.projectlombok:lombok'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-	implementation 'jakarta.servlet:jakarta.servlet-api:5.0.0'
+
+	// Swagger(OpenAPI)
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0'
-	implementation 'org.springframework.security:spring-security-core:5.8.0'
+
+	// Security OAuth2 Client (1개만!)
+	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+
+	// AWS
 	implementation 'org.springframework.cloud:spring-cloud-starter-aws:2.2.6.RELEASE'
-	// implementation 'org.springframework.security:spring-security-web:6.3.4'
+
+	// JWT
+	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
+
+	// 구글 API
+	implementation 'com.google.api-client:google-api-client:2.7.0'
+	implementation 'com.google.auth:google-auth-library-oauth2-http:1.28.0'
+	implementation 'com.google.apis:google-api-services-androidpublisher:v3-rev20241003-2.0.0'
+	implementation 'com.google.http-client:google-http-client-jackson2:1.42.3'
+	implementation 'com.google.http-client:google-http-client-gson:1.42.3'
+
+	// JSON
+	implementation 'org.json:json:20240303'
+
+	// Mapstruct
+	implementation 'org.mapstruct:mapstruct:1.5.5.Final'
+	annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
+	annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
+
+	// Lombok
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+
+	// 테스트
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.springframework.security:spring-security-test'
+
+	testImplementation 'org.mockito:mockito-core:5.11.0'
+	testImplementation 'org.mockito:mockito-junit-jupiter:5.11.0'
 }
 
+
 tasks.withType(JavaCompile) {
-	options.compilerArgs += "-parameters"
+	options.compilerArgs += ['-parameters']
 }
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+tasks.named("bootJar") {
+	enabled = true
+}
+
+tasks.named("jar") {
+	enabled = false
 }

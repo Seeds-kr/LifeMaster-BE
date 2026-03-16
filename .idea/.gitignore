@@ -6,3 +6,8 @@
 # Datasource local storage ignored files
 /dataSources/
 /dataSources.local.xml
+# Spring application config (secrets)
+application.properties
+application-*.properties
+application.yml
+application-*.yml

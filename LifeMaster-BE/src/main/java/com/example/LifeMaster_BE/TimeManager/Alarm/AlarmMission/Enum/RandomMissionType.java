@@ -1,0 +1,36 @@
+package com.example.LifeMaster_BE.TimeManager.Alarm.AlarmMission.Enum;
+
+import lombok.Getter;
+
+@Getter
+public enum RandomMissionType {
+
+    MATH_PROBLEM("수학 문제"),
+    TYPING_SENTENCE("문장 따라쓰기"),
+    FOLLOW_CLICK("따라 누르기");
+
+
+    private final String displayName;
+
+    RandomMissionType(String displayName) {
+        this.displayName = displayName;
+    }
+
+    /**
+     * 문자열을 enum으로 변환.
+     * null, "none", "", 찾을 수 없는 값 → null 반환
+     */
+    public static RandomMissionType fromString(String value) {
+        if (value == null) return null;
+
+        String v = value.trim().toLowerCase();
+        if (v.isEmpty() || v.equals("none")) return null;
+
+        return switch (v) {
+            case "math", "math_problem" -> MATH_PROBLEM;
+            case "typing", "typing_sentence" -> TYPING_SENTENCE;
+            case "follow", "follow_click" -> FOLLOW_CLICK;
+            default -> null;
+        };
+    }
+}

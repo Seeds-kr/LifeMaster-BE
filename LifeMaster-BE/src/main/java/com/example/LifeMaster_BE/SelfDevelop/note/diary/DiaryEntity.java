@@ -1,13 +1,23 @@
 package com.example.LifeMaster_BE.SelfDevelop.note.diary;
 
+import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
 @Entity
+@Builder(toBuilder = true)
+@NoArgsConstructor
+@AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class) // Auditing 설정
 public class DiaryEntity {
 
@@ -15,16 +25,19 @@ public class DiaryEntity {
     @GeneratedValue
     private Long id;
 
-    private LocalDateTime diaryDate;
-
     @Lob
     private String diaryContent;
 
-    // 추후에 User 엔티티가 추가된다면
-    /*
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
-     */
+    private LocalDate diaryDate;
+
+    @CreatedDate
+    private LocalDateTime createdAt;
+
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    private MemberEntity member;
+
 
 }

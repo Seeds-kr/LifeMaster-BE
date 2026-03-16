@@ -1,70 +1,44 @@
 package com.example.LifeMaster_BE.FunctionManager.Calender;
 
 
-import jakarta.persistence.*;
-import java.util.List;
 import com.example.LifeMaster_BE.FunctionManager.ToDoList.TodoEntity;
+import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.util.List;
 
 @Entity
+@Getter @Setter
+@Table(
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_calendar_member_date", columnNames = {"member_id", "date"})
+        }
+)
 public class ScheduleCalendarEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_id", nullable = false)
+    @JsonIgnore
+    private MemberEntity member;
 
-    @Column(unique = true)
-    private String date; // 날짜
+    @Column(nullable = false)
+    private String date; // yyyyMMdd (더 이상 전역 unique 아님)
 
-    private String day; // 요일
+    private String day;
 
     @ElementCollection
-    private List<String> events; // 이벤트 리스트
+    private List<String> events;
 
-    @OneToMany
-    @JoinColumn(name = "calendar_date", referencedColumnName = "date", insertable = false, updatable = false)
-    private List<TodoEntity> todos; // To-Do 리스트 (외래키 관계)
-
-    // Getter와 Setter
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-
-    public String getDate() {
-        return date;
-    }
-
-    public void setDate(String date) {
-        this.date = date;
-    }
-
-    public String getday() {
-        return day;
-    }
-
-    public void setDay(String day) {
-        this.day = day;
-    }
-
-    public List<String> getEvents() {
-        return events;
-    }
-
-    public void setEvents(List<String> events) {
-        this.events = events;
-    }
-
-    public List<TodoEntity> getToDoList() {
-        return todos;
-    }
-
-    public void setToDoList(List<TodoEntity> todos) {
-        this.todos = todos;
-    }
+    @OneToMany(mappedBy = "calendar", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties("calendar")
+    @JsonIgnore
+    private List<TodoEntity> todos;
 }
 

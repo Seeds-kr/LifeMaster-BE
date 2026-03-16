@@ -1,14 +1,21 @@
 package com.example.LifeMaster_BE.SelfDevelop.note.thank;
 
+import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
 @Entity
+@Builder(toBuilder = true)
+@NoArgsConstructor
+@AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class) // Auditing 설정
 public class ThankEntity {
 
@@ -17,7 +24,7 @@ public class ThankEntity {
     private Long id;
 
 //    @CreatedDate
-    private LocalDateTime thankDate;
+    private LocalDate thankDate;
 
     @CreatedDate
     private LocalDateTime createdAt;
@@ -28,11 +35,9 @@ public class ThankEntity {
     private String thankFour;
     private String thankFive;
 
-    // 추후에 User 엔티티가 추가된다면
-    /*
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
-     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    private MemberEntity member;
 
 }

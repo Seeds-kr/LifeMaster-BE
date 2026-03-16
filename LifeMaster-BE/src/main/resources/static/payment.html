@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <script src="https://checkout.naver.com/naverpay.js"></script>
+</head>
+<body>
+<button id="payButton">네이버페이 결제</button>
+
+<script>
+    document.getElementById("payButton").onclick = function () {
+        fetch("http://localhost:8080/naverpay/createPayment", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                orderId: "ORD12345",
+                productName: "LifeMaster Subscription",
+                amount: 5000
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+                const paymentId = data.paymentId;
+
+                // 네이버페이 결제창 호출
+                window.location.href = `https://checkout.naver.com/naverpay?paymentId=${paymentId}`;
+            })
+            .catch(error => console.error("결제 생성 실패:", error));
+    }
+</script>
+</body>
+</html>

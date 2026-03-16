@@ -1,0 +1,76 @@
+package com.example.LifeMaster_BE.Community.Comment;
+
+import com.example.LifeMaster_BE.Community.Comment.Like.CommentLikeEntity;
+import com.example.LifeMaster_BE.Community.Post.PostEntity;
+import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.persistence.*;
+import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+@Entity
+@Getter
+@Builder(toBuilder = true)
+@AllArgsConstructor
+@NoArgsConstructor
+@EntityListeners(AuditingEntityListener.class)
+@Table(
+        indexes = {
+                @Index(name = "idx_postId", columnList = "post_id")
+        }
+)
+public class CommentEntity {
+
+    // 테스트코드를 위한 setter
+    @Setter
+    @Id
+    @GeneratedValue
+    private Long id;
+
+    @Column(length = 50)
+    private String comment;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    @CreatedDate
+    private LocalDateTime createdAt;
+
+    // 작성자 연결
+    @Setter
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
+    private MemberEntity member;
+
+    // 게시글 연결
+    @Setter
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "post_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
+    private PostEntity post;
+
+    // 좋아요
+    @OneToMany(mappedBy = "comment", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CommentLikeEntity> likes = new ArrayList<>();
+
+    public void updateComment(String newComment) {
+        if (newComment == null || newComment.isBlank()){
+            throw new IllegalArgumentException("Comment cannot be blank");
+        }
+
+        this.comment = newComment;
+    }
+
+    public void addLike(CommentLikeEntity like) {
+        this.likes.add(like);
+        like.setComment(this);
+    }
+    public CommentEntity(String comment, PostEntity post) {
+        this.comment = comment;
+        this.post = post;
+    }
+}

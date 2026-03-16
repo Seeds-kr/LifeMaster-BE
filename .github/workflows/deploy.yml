@@ -1,0 +1,76 @@
+name: Deploy to EC2 via VPN
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up SSH private key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+      - name: Check SSH key
+        run: |
+          ls -al ~/.ssh
+          head -n 2 ~/.ssh/id_rsa
+
+      - name: Create VPN auth file
+        run: |
+          echo "${{ secrets.VPN_USER }}" > ~/vpn_auth.txt
+          echo "${{ secrets.VPN_PASSWORD }}" >> ~/vpn_auth.txt
+          chmod 600 ~/vpn_auth.txt
+
+      - name: Create VPN config file
+        run: |
+          echo "${{ secrets.VPN_OVPN_FILE }}" > ~/vpn_config.ovpn
+          chmod 600 ~/vpn_config.ovpn
+
+      - name: Install OpenVPN and connect
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y openvpn
+          sudo openvpn --config ~/vpn_config.ovpn --auth-user-pass ~/vpn_auth.txt --daemon
+          sleep 10
+
+      - name: Fix VPN MTU
+        run: |
+          ip a
+          sudo ip link set mtu 1300 dev tun0 || true
+          sudo ip link set mtu 1300 dev tun1 || true
+
+      - name: Check VPN connection
+        run: |
+          ip a
+          ping -c 3 ${{ secrets.EC2_HOST }} || true
+
+      - name: Add EC2 host to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -t rsa -p ${{ secrets.EC2_PORT }} -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts || true
+
+      - name: Deploy to EC2
+        run: |
+          ssh -vvv \
+          -o HostKeyAlgorithms=+ssh-rsa \
+          -o PubkeyAcceptedAlgorithms=+ssh-rsa \
+          -o KexAlgorithms=curve25519-sha256 \
+          -o PreferredAuthentications=publickey \
+          -o StrictHostKeyChecking=no \
+          -o ConnectTimeout=10 \
+          -o ServerAliveInterval=10 \
+          -o ServerAliveCountMax=3 \
+          -o IPQoS=throughput \
+          -i ~/.ssh/id_rsa \
+          -p ${{ secrets.EC2_PORT }} \
+          ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+          "bash ~/deploy.sh"
