@@ -1,6 +1,6 @@
 package com.example.LifeMaster_BE.Challenge.Detox;
 
-import com.example.LifeMaster_BE.UserManager.User;
+import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -30,5 +30,5 @@ public class RepeatDetox {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "userId")
-    private User user;
+    private MemberEntity member;
 }

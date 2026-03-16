@@ -1,6 +1,5 @@
 package com.example.LifeMaster_BE.Challenge.Detox;
 
-import com.example.LifeMaster_BE.UserManager.User;
 import jakarta.persistence.*;
 import lombok.*;
 
