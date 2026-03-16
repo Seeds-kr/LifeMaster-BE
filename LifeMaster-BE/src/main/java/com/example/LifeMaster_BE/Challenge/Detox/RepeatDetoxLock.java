@@ -1,6 +1,5 @@
 package com.example.LifeMaster_BE.Challenge.Detox;
 
-import com.example.LifeMaster_BE.UserManager.User;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -10,7 +9,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class DetoxLock {
+public class RepeatDetoxLock {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long DetoxLockId;
@@ -20,5 +19,5 @@ public class DetoxLock {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "detoxId", nullable = false)
-    private Detox detox;
+    private RepeatDetox repeatDetox;
 }
