@@ -108,7 +108,7 @@ public class TimeDetoxController {
                     required = true,
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = TimeDetoxDTO.class),
+                            schema = @Schema(implementation = TimeDetoxDto.class),
                             examples = @ExampleObject(
                                     value = """
                                 {
@@ -124,16 +124,16 @@ public class TimeDetoxController {
             ),
             responses = {
                     @ApiResponse(responseCode = "200", description = "일정 생성 성공",
-                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = TimeDetoxDTO.class))),
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = TimeDetoxDto.class))),
                     @ApiResponse(responseCode = "400", description = "잘못된 입력 데이터")
             })
     @PostMapping
-    public ResponseEntity<?> createSchedule(@RequestBody TimeDetoxDTO scheduleDto,
+    public ResponseEntity<?> createSchedule(@RequestBody TimeDetoxDto scheduleDto,
                                                        @AuthenticationPrincipal CustomUserDetails user) {
         Long memberId = user.getId();
         ResponseEntity<?> loginCheck = login.checkLogin(user);
         if (loginCheck != null) return loginCheck;
-        TimeDetoxDTO createdSchedule = service.createSchedule(scheduleDto, memberId);
+        TimeDetoxDto createdSchedule = service.createSchedule(scheduleDto, memberId);
 
         // 오늘 날짜 "yyyyMMdd"로 변환
         String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
@@ -182,7 +182,7 @@ public class TimeDetoxController {
 
         Long memberId = user.getId();
 
-        List<TimeDetoxDTO> schedules = service.getAllTimeDetoxSchedulesByMember(memberId);
+        List<TimeDetoxDto> schedules = service.getAllTimeDetoxSchedulesByMember(memberId);
         return ResponseEntity.ok(schedules);
     }
 

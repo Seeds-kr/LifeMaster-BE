@@ -4,10 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.List;
-
 @Getter @Setter
-public class TimeDetoxDTO {
+public class TimeDetoxDto {
     private Long id;
     private String cycle;
     private String day;

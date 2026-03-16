@@ -7,9 +7,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+
 import java.time.format.DateTimeFormatter;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -45,7 +44,7 @@ public class TimeDetoxService {
         this.currentRandomPhrase = randomPhraseProvider.getRandomPhrase();
     }
 
-    public TimeDetoxDTO createSchedule(TimeDetoxDTO dto, Long memberId) {
+    public TimeDetoxDto createSchedule(TimeDetoxDto dto, Long memberId) {
 
         TimeDetoxEntity entity = new TimeDetoxEntity();
         entity.setCycle(dto.getCycle());
@@ -84,8 +83,8 @@ public class TimeDetoxService {
         }
     }
 
-    private TimeDetoxDTO convertToDTO(TimeDetoxEntity entity) {
-        TimeDetoxDTO dto = new TimeDetoxDTO();
+    private TimeDetoxDto convertToDTO(TimeDetoxEntity entity) {
+        TimeDetoxDto dto = new TimeDetoxDto();
         dto.setId(entity.getId());
         dto.setCycle(entity.getCycle());
         dto.setDay(entity.getDay());
@@ -301,7 +300,7 @@ public class TimeDetoxService {
         }
     }
 
-    public List<TimeDetoxDTO> getAllTimeDetoxSchedulesByMember(Long memberId) {
+    public List<TimeDetoxDto> getAllTimeDetoxSchedulesByMember(Long memberId) {
         return repository.findAllByMember_Id(memberId)
                 .stream()
                 .map(this::convertToDTO)
