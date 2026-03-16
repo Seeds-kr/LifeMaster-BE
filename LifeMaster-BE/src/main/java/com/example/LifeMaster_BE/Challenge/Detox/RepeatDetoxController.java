@@ -13,10 +13,7 @@ public class RepeatDetoxController {
     private final RepeatDetoxService repeatDetoxService;
 
     // 생성
-    @Operation(
-            summary = "반복 디톡스 생성",
-            description = "요일과 시간 정보를 기반으로 반복되는 앱 잠금(디톡스) 설정을 생성합니다."
-    )
+    @Operation(summary = "반복 디톡스 생성", description = "요일과 시간 정보를 기반으로 반복되는 앱 잠금(디톡스) 설정을 생성합니다.")
     @PostMapping
     public ResponseEntity<Void> createRepeatDetox(
             @RequestBody RepeatDetoxDto.Request request
@@ -27,10 +24,7 @@ public class RepeatDetoxController {
     }
 
     // 조회
-    @Operation(
-            summary = "반복 디톡스 목록 조회",
-            description = "사용자가 설정한 반복 디톡스 목록을 조회합니다."
-    )
+    @Operation(summary = "반복 디톡스 목록 조회", description = "사용자가 설정한 반복 디톡스 목록을 조회합니다.")
     @GetMapping
     public ResponseEntity<RepeatDetoxDto.ListResponse> getRepeatDetox() {
 
@@ -40,10 +34,7 @@ public class RepeatDetoxController {
     }
 
     // 삭제
-    @Operation(
-            summary = "반복 디톡스 삭제",
-            description = "특정 반복 디톡스 설정을 삭제합니다."
-    )
+    @Operation(summary = "반복 디톡스 삭제", description = "특정 반복 디톡스 설정을 삭제합니다.")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteRepeatDetox(
             @PathVariable Long id
