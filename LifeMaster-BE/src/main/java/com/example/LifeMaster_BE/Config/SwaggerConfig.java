@@ -54,6 +54,14 @@ public class SwaggerConfig implements WebMvcConfigurer {
     }
 
     @Bean
+    public GroupedOpenApi DetoxRermanentApi() {
+        return GroupedOpenApi.builder()
+                .group("detox-permanent")
+                .pathsToMatch("/detox/permanent/**")
+                .build();
+    }
+
+    @Bean
     public GroupedOpenApi DetoxRepeatApi() {
         return GroupedOpenApi.builder()
                 .group("detox-repeat")
