@@ -73,6 +73,10 @@ public class MemberEntity {
     @Column(name = "member_status")
     private MemberStatus memberStatus = MemberStatus.ACTIVE;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "member_level", nullable = true)
+    private MemberStatus memberLevel;
+
     @Column(name = "warning_count")
     private int warningCount = 0;
 
@@ -177,5 +181,6 @@ public class MemberEntity {
         this.expirationDate = expirationDate;
         this.paymentStatus = PaymentStatus.PAID;
     }
+
 }
 
