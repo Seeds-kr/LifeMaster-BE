@@ -14,6 +14,8 @@ import com.example.LifeMaster_BE.TimeManager.Sleep.SleepRepository;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import com.example.LifeMaster_BE.Group.GroupMember.GroupMemberService;
+import com.example.LifeMaster_BE.UserManager.Member.Subscription.FeatureType;
+import com.example.LifeMaster_BE.UserManager.Member.Subscription.SubscriptionAccessService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -48,6 +50,8 @@ public class GroupService {
 
     private final GoalAchievementRepository goalAchievementRepository;
 
+    private final SubscriptionAccessService subscriptionAccessService;
+
 
     // Create a group
     @Transactional
@@ -78,6 +82,9 @@ public class GroupService {
                             "Member not found by id=" + creatorId + " or email=" + creatorEmail));
         }
         if (creator == null) throw new IllegalArgumentException("Creator not resolved (id/email both invalid).");
+
+        // 프리미엄 기능 접근 검사
+        subscriptionAccessService.validateFeatureAccess(creator, FeatureType.GROUP);
 
         // 2) null 처리
         String effectiveIcon = (icon != null) ? icon : "";

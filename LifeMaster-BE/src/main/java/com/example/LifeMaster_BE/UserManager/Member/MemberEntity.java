@@ -101,6 +101,13 @@ public class MemberEntity {
     @Column(name = "expiration_date")
     private LocalDate expirationDate; // 결제 만료일
 
+    public boolean hasActivePremiumAccess() {
+        return this.subscriptionPlan == SubscriptionPlan.PREMIUM
+                && this.paymentStatus == PaymentStatus.PAID
+                && this.expirationDate != null
+                && !this.expirationDate.isBefore(LocalDate.now());
+    }
+
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_status", nullable = false)
     private PaymentStatus paymentStatus = PaymentStatus.UNPAID; // 기본 상태: 미결제
