@@ -178,4 +178,3 @@ public class MemberEntity {
         this.paymentStatus = PaymentStatus.PAID;
     }
 }
-
