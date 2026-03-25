@@ -224,6 +224,14 @@ public class SwaggerConfig implements WebMvcConfigurer {
     }
 
     @Bean
+    public GroupedOpenApi couponApi() {
+        return GroupedOpenApi.builder()
+                .group("coupon")
+                .pathsToMatch("/coupon/**")
+                .build();
+    }
+
+    @Bean
     public GroupedOpenApi emailSendApi() {
         return GroupedOpenApi.builder()
                 .group("email-send")
