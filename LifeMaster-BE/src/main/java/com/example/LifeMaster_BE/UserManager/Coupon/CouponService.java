@@ -58,7 +58,7 @@ public class CouponService { private final CouponRepository couponRepository;
     // 3. 사용자 쿠폰 조회
     @Transactional(readOnly = true)
     public List<Coupon> getUserCoupons(Long userId) {
-        return couponRepository.findByUserUserIdAndCouponStatus(userId, CouponStatus.REGISTER);
+        return couponRepository.findByUserIdAndCouponStatus(userId, CouponStatus.REGISTER);
     }
 
     // 4. 관리자 쿠폰 생성
