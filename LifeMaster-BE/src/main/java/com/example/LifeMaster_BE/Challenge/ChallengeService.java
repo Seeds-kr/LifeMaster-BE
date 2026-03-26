@@ -1,13 +1,17 @@
 package com.example.LifeMaster_BE.Challenge;
 
+import com.example.LifeMaster_BE.Security.CustomUserDetails;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
+import com.example.LifeMaster_BE.UserManager.Member.Subscription.FeatureType;
+import com.example.LifeMaster_BE.UserManager.Member.Subscription.SubscriptionAccessService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +32,7 @@ public class ChallengeService {
     private final ChallengeRepository challengeRepository;
     private final ChallengeUserRepository challengeUserRepository;
     private final MemberRepository memberRepository;
+    private final SubscriptionAccessService subscriptionAccessService;
 
     private final Map<Long, SseEmitter> emitters = new ConcurrentHashMap<>();
 
@@ -100,9 +105,13 @@ public class ChallengeService {
 
     /** 5. 챌린지 참여 */
     @Transactional
-    public String joinChallenge(Long challId, @AuthenticationPrincipal UserDetails userDetails) {
+    public String joinChallenge(Long challId, @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        MemberEntity member = getMemberOrThrow(userDetails.getId());
+
         MemberEntity user = memberRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다."));
+
         Challenge challenge = challengeRepository.findById(challId)
                 .orElseThrow(() -> new RuntimeException("챌린지를 찾을 수 없습니다."));
 
@@ -110,10 +119,17 @@ public class ChallengeService {
             return "이미 참여 중인 챌린지입니다.";
         }
 
+        // 현재 사용자가 참여 중인 챌린지 개수 확인
+        long joinedChallengeCount = challengeUserRepository.countByUser(user);
+
+        // 이미 1개 이상 참여 중이면, 추가 참여는 프리미엄만 가능
+        if (joinedChallengeCount >= 1) {
+            subscriptionAccessService.validateFeatureAccess(member, FeatureType.MULTI_CHALLENGE);
+        }
+
         Challenge updatedChallenge = challenge.toBuilder()
                 .challCnt(challenge.getChallCnt() + 1)
                 .build();
-
 
         ChallengeUser challengeUser = ChallengeUser.builder()
                 .challenge(updatedChallenge)
@@ -249,4 +265,8 @@ public class ChallengeService {
                 .countByUser_IdAndCreatedAtBetween(memberId, start, end);
     }
 
+    private MemberEntity getMemberOrThrow(Long userId) {
+        return memberRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
+    }
 }

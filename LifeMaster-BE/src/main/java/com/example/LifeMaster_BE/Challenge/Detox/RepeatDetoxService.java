@@ -1,5 +1,9 @@
 package com.example.LifeMaster_BE.Challenge.Detox;
 
+import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
+import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
+import com.example.LifeMaster_BE.UserManager.Member.Subscription.FeatureType;
+import com.example.LifeMaster_BE.UserManager.Member.Subscription.SubscriptionAccessService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -11,9 +15,15 @@ import java.util.stream.Collectors;
 public class RepeatDetoxService {
 
     private final RepeatDetoxRepository repeatDetoxRepository;
+    private final SubscriptionAccessService subscriptionAccessService;
+    private final MemberRepository memberRepository;
 
     // 반복 잠금 생성
-    public void createRepeatDetox(RepeatDetoxDto.Request request) {
+    public void createRepeatDetox(Long userId, RepeatDetoxDto.Request request) {
+
+        MemberEntity member = getMemberOrThrow(userId);
+        // 프리미엄 기능 접근 검사
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
 
         RepeatDetox repeatDetox = RepeatDetox.builder()
                 .lockedApp(request.getLockedApp())
@@ -26,7 +36,11 @@ public class RepeatDetoxService {
     }
 
     // 전체 반복 잠금 조회
-    public RepeatDetoxDto.ListResponse getAllRepeatDetox() {
+    public RepeatDetoxDto.ListResponse getAllRepeatDetox(Long userId) {
+
+        MemberEntity member = getMemberOrThrow(userId);
+        // 프리미엄 기능 접근 검사
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
 
         List<RepeatDetoxDto.Response> list =
                 repeatDetoxRepository.findAll()
@@ -46,7 +60,17 @@ public class RepeatDetoxService {
     }
 
     // 반복 잠금 삭제
-    public void deleteRepeatDetox(Long id) {
+    public void deleteRepeatDetox(Long userId, Long id) {
+
+        MemberEntity member = getMemberOrThrow(userId);
+        // 프리미엄 기능 접근 검사
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
+
         repeatDetoxRepository.deleteById(id);
+    }
+
+    private MemberEntity getMemberOrThrow(Long userId) {
+        return memberRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
     }
 }

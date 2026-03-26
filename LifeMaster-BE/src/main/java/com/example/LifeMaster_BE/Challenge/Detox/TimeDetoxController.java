@@ -89,14 +89,17 @@ public class TimeDetoxController {
                     @ApiResponse(responseCode = "400", description = "잘못된 입력 데이터")
             })
     @GetMapping("/lock-status")
-    public ResponseEntity<TimeDetoxService.LockedAppDetails> isAppLockedWithDetails() {
+    public ResponseEntity<TimeDetoxService.LockedAppDetails> isAppLockedWithDetails(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
         // 현재 날짜와 시간 가져오기
         LocalDateTime now = LocalDateTime.now();
-        String day = now.getDayOfWeek().name(); // 요일 (MONDAY 등)
-        LocalTime currentTime = now.toLocalTime(); // 현재 시간 (HH:mm:ss)
+        String day = now.getDayOfWeek().name(); // MONDAY
+        LocalTime currentTime = now.toLocalTime();
 
-        // 서비스 호출
-        TimeDetoxService.LockedAppDetails details = service.isAppLockedWithDetails(day, currentTime);
+        TimeDetoxService.LockedAppDetails details =
+                service.isAppLockedWithDetails(userDetails.getId(), day, currentTime);
+
         return ResponseEntity.ok(details);
     }
 
@@ -152,9 +155,9 @@ public class TimeDetoxController {
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = TimeDetoxEntity.class)))
             })
     @GetMapping
-    public ResponseEntity<List<TimeDetoxEntity>> getAllSchedules(@AuthenticationPrincipal UserDetails user) {
+    public ResponseEntity<List<TimeDetoxEntity>> getAllSchedules(@AuthenticationPrincipal CustomUserDetails user) {
         String email = user.getUsername();
-        return ResponseEntity.ok(service.getAllSchedules(email));
+        return ResponseEntity.ok(service.getAllSchedules(user.getId(), email));
     }
 
     @Operation(

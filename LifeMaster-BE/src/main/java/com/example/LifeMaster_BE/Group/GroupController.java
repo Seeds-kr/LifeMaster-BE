@@ -216,7 +216,7 @@ public class GroupController {
         goal.setValue(goalDTO.getValue());
         goal.setGroup(group);
 
-        GroupEntity updatedGroup = groupService.addGoalToGroup(groupId, goal);
+        GroupEntity updatedGroup = groupService.addGoalToGroup(user.getId(), groupId, goal);
         return ResponseEntity.ok(updatedGroup);
     }
 
@@ -233,7 +233,7 @@ public class GroupController {
         ResponseEntity<?> loginCheck = login.checkLogin(user);
         if (loginCheck != null) return loginCheck;
         try {
-            groupService.deleteGoal(groupId, goalId);
+            groupService.deleteGoal(user.getId(), groupId, goalId);
             return ResponseEntity.ok("Goal deleted successfully.");
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
@@ -298,7 +298,7 @@ public class GroupController {
             @AuthenticationPrincipal CustomUserDetails user) {
         ResponseEntity<?> loginCheck = login.checkLogin(user);
         if (loginCheck != null) return loginCheck;
-        GroupEntity updatedGroup = groupService.addStatisticGoal(groupId, goalId);
+        GroupEntity updatedGroup = groupService.addStatisticGoal(user.getId() ,groupId, goalId);
         return ResponseEntity.ok(updatedGroup);
     }
 
@@ -308,7 +308,7 @@ public class GroupController {
     public ResponseEntity<?> getUsersByGroup(@PathVariable("groupId") Long groupId,@AuthenticationPrincipal CustomUserDetails user) {
         ResponseEntity<?> loginCheck = login.checkLogin(user);
         if (loginCheck != null) return loginCheck;
-        List<MemberEntity> users = groupService.getUsersByGroup(groupId);
+        List<MemberEntity> users = groupService.getUsersByGroup(user.getId(), groupId);
         return ResponseEntity.ok(users);
     }
 
@@ -321,7 +321,7 @@ public class GroupController {
             return ResponseEntity.status(401).build(); // 로그인되지 않은 경우 401 Unauthorized 반환
         }
         Long memberId = user.getId();
-        List<GoalEntity> goals = groupService.getGoalsByMemberId(memberId);
+        List<GoalEntity> goals = groupService.getGoalsByMemberId(user.getId(), memberId);
         return ResponseEntity.ok(goals);
     }
 
@@ -334,14 +334,14 @@ public class GroupController {
             @AuthenticationPrincipal CustomUserDetails user) {
         ResponseEntity<?> loginCheck = login.checkLogin(user);
         if (loginCheck != null) return loginCheck;
-        GroupEntity updatedGroup = groupService.removeStatisticFromGroup(groupId, statistic);
+        GroupEntity updatedGroup = groupService.removeStatisticFromGroup(user.getId(), groupId, statistic);
         return ResponseEntity.ok(updatedGroup);
     }
 
     @Operation(summary = "그룹 목표별 진행률", description = "그룹 목표별 진행률")
     @GetMapping("/{groupId}/goals/progress")
     public ResponseEntity<?> getGroupGoalProgress(@PathVariable("groupId") Long groupId,@AuthenticationPrincipal CustomUserDetails user) {
-        List<Map<String, Object>> groupProgress = groupService.getGroupGoalProgress(groupId);
+        List<Map<String, Object>> groupProgress = groupService.getGroupGoalProgress(user.getId(), groupId);
         return ResponseEntity.ok(groupProgress);
     }
 
@@ -372,15 +372,15 @@ public class GroupController {
     @Operation(summary = "그룹 통계", description = "일주일치 수면 통계 반환")
     @GetMapping("/{groupId}/sleep-stats")
     public ResponseEntity<GroupDto.Static> getUserSleepStats(
-            @AuthenticationPrincipal UserDetails userdetails,
+            @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable Long groupId) {
 
-        String email = userdetails.getUsername();
+        String email = user.getUsername();
 
         GroupEntity group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new RuntimeException("그룹을 찾을 수 없습니다."));
 
-        GroupDto.Static sleepStats = groupService.getUserStatic(email, group);
+        GroupDto.Static sleepStats = groupService.getUserStatic(user.getId(), email, group);
         return ResponseEntity.ok(sleepStats);
     }
 }

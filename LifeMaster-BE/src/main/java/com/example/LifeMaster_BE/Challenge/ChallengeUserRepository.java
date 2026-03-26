@@ -11,4 +11,6 @@ public interface ChallengeUserRepository extends JpaRepository<ChallengeUser, Lo
     Optional<ChallengeUser> findByUserAndChallenge(MemberEntity user, Challenge challenge);
     void deleteByChallenge(Challenge challenge);
     boolean existsByChallengeAndUser(Challenge challenge, MemberEntity user);
+
+    long countByUser(MemberEntity user);
 }

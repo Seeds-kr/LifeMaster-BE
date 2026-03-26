@@ -6,5 +6,7 @@ public enum FeatureType {
     FULL_RECORD_VIEW,       // 전체 기록 열람
     ADVANCED_STATISTICS,    // 통계 열람
     SLEEP_PATTERN,          // 수면 패턴 / 성공 기록
-    CUSTOM_SCREEN           // 화면 커스터마이징
+    CUSTOM_SCREEN,          // 화면 커스터마이징
+
+    Detox
 }
