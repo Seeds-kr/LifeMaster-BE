@@ -9,13 +9,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Random;
 
 @Service
 @RequiredArgsConstructor
-public class CouponService { private final CouponRepository couponRepository;
-
+public class CouponService {
+    private final CouponRepository couponRepository;
     private final MemberRepository memberRepository;
     private final MemberSubscriptionService memberSubscriptionService;
+    private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    private static final int CODE_LENGTH = 16;
 
     // 1. 사용자 쿠폰 등록
     @Transactional
@@ -70,7 +73,8 @@ public class CouponService { private final CouponRepository couponRepository;
 
     // 4. 관리자 쿠폰 생성
     @Transactional
-    public Coupon createCoupon(String code, Integer percent) {
+    public Coupon createCoupon(Integer percent) {
+        String code = generateUniqueCouponCode();
         Coupon coupon = Coupon.builder()
                 .couponCode(code)
                 .couponPercent(percent)
@@ -78,5 +82,27 @@ public class CouponService { private final CouponRepository couponRepository;
                 .build();
 
         return couponRepository.save(coupon);
+    }
+
+    public String generateCouponCode() {
+        StringBuilder code = new StringBuilder();
+        Random random = new Random();
+
+        for (int i = 0; i < CODE_LENGTH; i++) {
+            int index = random.nextInt(CHARACTERS.length());
+            code.append(CHARACTERS.charAt(index));
+        }
+
+        return code.toString();
+    }
+
+    public String generateUniqueCouponCode() {
+        String code;
+
+        do {
+            code = generateCouponCode();
+        } while (couponRepository.existsByCouponCode(code));
+
+        return code;
     }
 }

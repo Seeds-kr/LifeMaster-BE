@@ -30,6 +30,10 @@ public class Coupon extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column( nullable = true)
+    private CouponType couponType; //UNLIMIT,LIMIT
+
+    @Enumerated(EnumType.STRING)
+    @Column( nullable = true)
     private CouponStatus couponStatus = CouponStatus.UNUSE;//UNUSE,REGISTER,USE
 
     @ManyToOne(fetch = FetchType.LAZY)
