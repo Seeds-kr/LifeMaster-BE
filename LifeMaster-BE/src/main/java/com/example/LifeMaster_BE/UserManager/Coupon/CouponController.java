@@ -61,6 +61,6 @@ public class CouponController {
     public Coupon createCoupon(
             @RequestBody CouponDto.Create dto
     ) {
-        return couponService.createCoupon(dto.getCouponCode(), dto.getCouponPercent());
+        return couponService.createCoupon(dto.getCouponPercent());
     }
 }

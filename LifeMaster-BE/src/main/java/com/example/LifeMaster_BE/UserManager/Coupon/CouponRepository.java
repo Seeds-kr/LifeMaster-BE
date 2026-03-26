@@ -10,4 +10,6 @@ public interface CouponRepository extends JpaRepository<Coupon, Long> {
     Optional<Coupon> findByCouponCode(String couponCode);
 
     List<Coupon> findByUserIdAndCouponStatus(Long userId, CouponStatus couponStatus);
+
+    boolean existsByCouponCode(String code);
 }

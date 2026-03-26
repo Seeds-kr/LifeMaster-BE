@@ -16,7 +16,6 @@ public class CouponDto {
 
     @Getter
     public static class Create {
-        private String couponCode;
         private Integer couponPercent;
     }
 }
