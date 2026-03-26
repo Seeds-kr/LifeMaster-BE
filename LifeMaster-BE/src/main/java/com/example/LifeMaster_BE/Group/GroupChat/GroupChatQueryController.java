@@ -1,6 +1,8 @@
 package com.example.LifeMaster_BE.Group.GroupChat;
 
+import com.example.LifeMaster_BE.Security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,8 +17,9 @@ public class GroupChatQueryController {
     // 채팅방 최초 로딩용
     @GetMapping("/{groupId}/chats")
     public List<GroupChatDto.ChatMessage> getChats(
-            @PathVariable Long groupId
+            @PathVariable Long groupId,
+            @AuthenticationPrincipal CustomUserDetails user
     ) {
-        return chatService.getChatsByGroup(groupId);
+        return chatService.getChatsByGroup(user.getId(), groupId);
     }
 }

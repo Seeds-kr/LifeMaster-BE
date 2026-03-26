@@ -22,7 +22,7 @@ public class PermanentDetoxService {
         MemberEntity member = getMemberOrThrow(loginMemberId);
 
         // 프리미엄 기능 접근 검사
-        subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
 
         if (permanentDetoxRepository.existsByMember_Id(loginMemberId)) {
             throw new IllegalArgumentException("이미 영구 잠금 디톡스가 존재합니다.");
@@ -42,7 +42,7 @@ public class PermanentDetoxService {
         MemberEntity member = getMemberOrThrow(loginMemberId);
 
         // 프리미엄 기능 접근 검사
-        subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
 
         PermanentDetoxEntity entity = permanentDetoxRepository.findByMember_Id(loginMemberId)
                 .orElseThrow(() -> new IllegalArgumentException("영구 잠금 디톡스가 존재하지 않습니다."));
@@ -55,7 +55,7 @@ public class PermanentDetoxService {
         MemberEntity member = getMemberOrThrow(loginMemberId);
 
         // 프리미엄 기능 접근 검사
-        subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
 
         PermanentDetoxEntity entity = permanentDetoxRepository.findByMember_Id(loginMemberId)
                 .orElseThrow(() -> new IllegalArgumentException("영구 잠금 디톡스가 존재하지 않습니다."));
@@ -71,7 +71,7 @@ public class PermanentDetoxService {
         MemberEntity member = getMemberOrThrow(loginMemberId);
 
         // 프리미엄 기능 접근 검사
-        subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
 
         PermanentDetoxEntity entity = permanentDetoxRepository.findByMember_Id(loginMemberId)
                 .orElseThrow(() -> new IllegalArgumentException("영구 잠금 디톡스가 존재하지 않습니다."));

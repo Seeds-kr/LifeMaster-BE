@@ -18,7 +18,8 @@ public class SubscriptionAccessService {
                     FULL_RECORD_VIEW,
                     ADVANCED_STATISTICS,
                     SLEEP_PATTERN,
-                    CUSTOM_SCREEN -> validatePremiumAccess(member);
+                    CUSTOM_SCREEN,
+                    Detox-> validatePremiumAccess(member);
 
             default -> {
                 // FREE도 허용되는 기능이면 통과

@@ -59,7 +59,12 @@ public class GroupChatService {
         });
     }
 
-    public List<GroupChatDto.ChatMessage> getChatsByGroup(Long groupId) {
+    public List<GroupChatDto.ChatMessage> getChatsByGroup(Long userId, Long groupId) {
+
+        MemberEntity member = getMemberOrThrow(userId);
+        // 프리미엄 기능 접근 검사
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
+
         return chatMessageRepository
                 .findByGroupIdOrderByTimestampAsc(groupId)
                 .stream()

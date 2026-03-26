@@ -52,7 +52,7 @@ public class TimeDetoxService {
 
         MemberEntity member = getMemberOrThrow(memberId);
         // 프리미엄 기능 접근 검사
-        subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
 
         TimeDetoxEntity entity = new TimeDetoxEntity();
         entity.setCycle(dto.getCycle());
@@ -116,7 +116,7 @@ public class TimeDetoxService {
 
         MemberEntity member = getMemberOrThrow(userId);
         // 프리미엄 기능 접근 검사
-        subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
 
         MemberEntity user = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다."));
@@ -128,7 +128,7 @@ public class TimeDetoxService {
 
         MemberEntity member = getMemberOrThrow(id);
         // 프리미엄 기능 접근 검사
-        subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
 
         return repository.findById(id).orElseThrow(() -> new RuntimeException("Schedule not found"));
     }
@@ -137,7 +137,7 @@ public class TimeDetoxService {
 
         MemberEntity member = getMemberOrThrow(memberId);
         // 프리미엄 기능 접근 검사
-        subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
 
         // 내 스케줄만 조회 (소유권 체크)
         TimeDetoxEntity schedule = repository
@@ -158,7 +158,7 @@ public class TimeDetoxService {
 
         MemberEntity member = getMemberOrThrow(memberId);
         // 프리미엄 기능 접근 검사
-        subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
 
         TimeDetoxEntity schedule = repository
                 .findByIdAndMember_Id(id, memberId)
@@ -174,7 +174,7 @@ public class TimeDetoxService {
 
         MemberEntity member = getMemberOrThrow(memberId);
         // 프리미엄 기능 접근 검사
-        subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
 
         // 내 스케줄만 조회 (소유권 체크)
         TimeDetoxEntity schedule = repository.findByIdAndMember_Id(id, memberId)
@@ -210,7 +210,7 @@ public class TimeDetoxService {
         MemberEntity member = getMemberOrThrow(memberId);
 
         // 프리미엄 기능 접근 검사
-        subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
 
         String phrase = randomPhraseProvider.getRandomPhrase();
 
@@ -234,7 +234,7 @@ public class TimeDetoxService {
 
         MemberEntity member = getMemberOrThrow(memberId);
         // 프리미엄 기능 접근 검사
-        subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
 
         // 1) 토큰 조회
         DetoxVerificationEntity token = detoxVerificationRepository
@@ -278,7 +278,7 @@ public class TimeDetoxService {
 
         MemberEntity member = getMemberOrThrow(userId);
         // 프리미엄 기능 접근 검사
-        subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
 
         List<TimeDetoxEntity> activeSchedules = repository.findByIsActiveTrue();
         List<String> lockedApps = new ArrayList<>();
@@ -348,7 +348,7 @@ public class TimeDetoxService {
 
         MemberEntity member = getMemberOrThrow(memberId);
         // 프리미엄 기능 접근 검사
-        subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
 
         return repository.findAllByMember_Id(memberId)
                 .stream()
