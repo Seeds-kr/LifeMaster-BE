@@ -3,6 +3,10 @@ package com.example.LifeMaster_BE.Group.GoalAchievement;
 import com.example.LifeMaster_BE.Group.Goal.GoalEntity;
 import com.example.LifeMaster_BE.Group.Goal.GoalRepository;
 import com.example.LifeMaster_BE.Group.GroupRepository;
+import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
+import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
+import com.example.LifeMaster_BE.UserManager.Member.Subscription.FeatureType;
+import com.example.LifeMaster_BE.UserManager.Member.Subscription.SubscriptionAccessService;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -14,6 +18,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
+
 public class GoalAchievementService {
 
     private static final ZoneId ZONE_ID = ZoneId.of("Asia/Seoul");
@@ -21,18 +26,28 @@ public class GoalAchievementService {
     private final GoalAchievementRepository goalAchievementRepository;
     private final GroupRepository groupRepository;
     private final GoalRepository goalRepository;
+    private final MemberRepository memberRepository;
+
+    private final SubscriptionAccessService subscriptionAccessService;
 
     public GoalAchievementService(
             GoalAchievementRepository goalAchievementRepository,
             GroupRepository groupRepository,
-            GoalRepository goalRepository
+            GoalRepository goalRepository, MemberRepository memberRepository, SubscriptionAccessService subscriptionAccessService
     ) {
         this.goalAchievementRepository = goalAchievementRepository;
         this.groupRepository = groupRepository;
         this.goalRepository = goalRepository;
+        this.memberRepository = memberRepository;
+        this.subscriptionAccessService = subscriptionAccessService;
     }
 
-    public List<GoalAchievementHeatmapDto> getLast30DaysHeatmapByGroup(Long groupId) {
+    public List<GoalAchievementHeatmapDto> getLast30DaysHeatmapByGroup(Long userId, Long groupId) {
+
+        MemberEntity member = getMemberOrThrow(userId);
+        // 프리미엄 기능 접근 검사
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
+
         if (!groupRepository.existsById(groupId)) {
             throw new IllegalArgumentException("Group not found with id: " + groupId);
         }
@@ -68,7 +83,12 @@ public class GoalAchievementService {
         return result;
     }
 
-    public List<GoalAchievementHeatmapDto> getLast30DaysHeatmapByGroupAndGoal(Long groupId, Long goalId) {
+    public List<GoalAchievementHeatmapDto> getLast30DaysHeatmapByGroupAndGoal(Long userId, Long groupId, Long goalId) {
+
+        MemberEntity member = getMemberOrThrow(userId);
+        // 프리미엄 기능 접근 검사
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
+
         if (!groupRepository.existsById(groupId)) {
             throw new IllegalArgumentException("Group not found with id: " + groupId);
         }
@@ -109,5 +129,10 @@ public class GoalAchievementService {
         }
 
         return result;
+    }
+
+    private MemberEntity getMemberOrThrow(Long userId) {
+        return memberRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
     }
 }

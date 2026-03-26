@@ -2,6 +2,8 @@ package com.example.LifeMaster_BE.Challenge.Detox;
 
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
+import com.example.LifeMaster_BE.UserManager.Member.Subscription.FeatureType;
+import com.example.LifeMaster_BE.UserManager.Member.Subscription.SubscriptionAccessService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityNotFoundException;
@@ -31,6 +33,8 @@ public class TimeDetoxService {
     private final DetoxVerificationRepository detoxVerificationRepository;
     private final TimeDetoxRepository timeDetoxRepository;
 
+    private final SubscriptionAccessService subscriptionAccessService;
+
     @Getter
     private String currentRandomPhrase;
     //@Autowired
@@ -45,6 +49,10 @@ public class TimeDetoxService {
     }
 
     public TimeDetoxDto createSchedule(TimeDetoxDto dto, Long memberId) {
+
+        MemberEntity member = getMemberOrThrow(memberId);
+        // 프리미엄 기능 접근 검사
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
 
         TimeDetoxEntity entity = new TimeDetoxEntity();
         entity.setCycle(dto.getCycle());
@@ -67,6 +75,7 @@ public class TimeDetoxService {
     }
 
     private List<String> parseLockedApps(String lockedAppsRaw) {
+
         if (lockedAppsRaw == null || lockedAppsRaw.isBlank()) return Collections.emptyList();
 
         String s = lockedAppsRaw.trim();
@@ -103,7 +112,12 @@ public class TimeDetoxService {
         return dto;
     }
 
-    public List<TimeDetoxEntity> getAllSchedules(String email) {
+    public List<TimeDetoxEntity> getAllSchedules(Long userId, String email) {
+
+        MemberEntity member = getMemberOrThrow(userId);
+        // 프리미엄 기능 접근 검사
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
+
         MemberEntity user = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다."));
 
@@ -111,10 +125,19 @@ public class TimeDetoxService {
     }
 
     public TimeDetoxEntity getScheduleById(Long id) {
+
+        MemberEntity member = getMemberOrThrow(id);
+        // 프리미엄 기능 접근 검사
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
+
         return repository.findById(id).orElseThrow(() -> new RuntimeException("Schedule not found"));
     }
 
     public TimeDetoxEntity updateSchedule(Long memberId, Long id, TimeDetoxEntity updatedSchedule) {
+
+        MemberEntity member = getMemberOrThrow(memberId);
+        // 프리미엄 기능 접근 검사
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
 
         // 내 스케줄만 조회 (소유권 체크)
         TimeDetoxEntity schedule = repository
@@ -133,6 +156,10 @@ public class TimeDetoxService {
 
     public void deleteSchedule(Long memberId, Long id) {
 
+        MemberEntity member = getMemberOrThrow(memberId);
+        // 프리미엄 기능 접근 검사
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
+
         TimeDetoxEntity schedule = repository
                 .findByIdAndMember_Id(id, memberId)
                 .orElseThrow(() ->
@@ -144,6 +171,10 @@ public class TimeDetoxService {
 
     // 특정 디톡스 활성화/비활성화 로직 수정
     public TimeDetoxEntity toggleActivation(Long memberId, Long id, String currentDay, LocalTime currentTime) {
+
+        MemberEntity member = getMemberOrThrow(memberId);
+        // 프리미엄 기능 접근 검사
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
 
         // 내 스케줄만 조회 (소유권 체크)
         TimeDetoxEntity schedule = repository.findByIdAndMember_Id(id, memberId)
@@ -175,21 +206,24 @@ public class TimeDetoxService {
 
     // 유저별 랜덤 문구 생성
     public String generateRandomPhrase(Long memberId) {
+
+        MemberEntity member = getMemberOrThrow(memberId);
+
+        // 프리미엄 기능 접근 검사
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
+
         String phrase = randomPhraseProvider.getRandomPhrase();
 
-        // 기존 토큰 있으면 재사용 대신 덮어쓰기
         DetoxVerificationEntity token = detoxVerificationRepository
                 .findByMember_IdAndUsedFalse(memberId)
-                .orElseGet(() -> {
-                    MemberEntity member = new MemberEntity();
-                    member.setId(memberId);
-                    return DetoxVerificationEntity.create(member, phrase, null);
-                });
+                .orElseGet(() ->
+                        DetoxVerificationEntity.create(member, phrase, null) // ✅ 기존 member 사용
+                );
 
         token.setPhrase(phrase);
         token.setCreatedAt(LocalDateTime.now());
         token.setUsed(false);
-        // 필요하면 expiresAt도 여기서 설정
+
         detoxVerificationRepository.save(token);
 
         return phrase;
@@ -197,6 +231,11 @@ public class TimeDetoxService {
 
     // 디톡스 종료
     public boolean verifyPhraseAndEndDetox(Long memberId, String inputPhrase) {
+
+        MemberEntity member = getMemberOrThrow(memberId);
+        // 프리미엄 기능 접근 검사
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
+
         // 1) 토큰 조회
         DetoxVerificationEntity token = detoxVerificationRepository
                 .findByMember_IdAndUsedFalse(memberId)
@@ -235,7 +274,12 @@ public class TimeDetoxService {
     }
 
     // 앱 잠금 여부 확인 및 잠긴 앱 목록 반환
-    public LockedAppDetails isAppLockedWithDetails(String day, LocalTime currentTime) {
+    public LockedAppDetails isAppLockedWithDetails(Long userId, String day, LocalTime currentTime) {
+
+        MemberEntity member = getMemberOrThrow(userId);
+        // 프리미엄 기능 접근 검사
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
+
         List<TimeDetoxEntity> activeSchedules = repository.findByIsActiveTrue();
         List<String> lockedApps = new ArrayList<>();
 
@@ -268,7 +312,7 @@ public class TimeDetoxService {
         // 격주인지 여부를 계산 (주 차이가 짝수이면 격주 주기에 포함됨)
         return weeksDifference % 2 == 0;
     }
-/*
+    /*
     @Transactional
     public void addAllowedApps(TimeDetoxDto.App request) {
         TimeDetoxEntity detox = timeDetoxRepository.findById(request.getDetoxId())
@@ -301,9 +345,19 @@ public class TimeDetoxService {
     }
 
     public List<TimeDetoxDto> getAllTimeDetoxSchedulesByMember(Long memberId) {
+
+        MemberEntity member = getMemberOrThrow(memberId);
+        // 프리미엄 기능 접근 검사
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
+
         return repository.findAllByMember_Id(memberId)
                 .stream()
                 .map(this::convertToDTO)
                 .toList();
+    }
+
+    private MemberEntity getMemberOrThrow(Long userId) {
+        return memberRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
     }
 }

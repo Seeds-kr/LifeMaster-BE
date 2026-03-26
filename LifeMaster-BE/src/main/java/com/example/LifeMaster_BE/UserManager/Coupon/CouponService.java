@@ -2,6 +2,8 @@ package com.example.LifeMaster_BE.UserManager.Coupon;
 
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
+import com.example.LifeMaster_BE.UserManager.Member.Subscription.MemberSubscriptionService;
+import com.example.LifeMaster_BE.UserManager.Member.Subscription.SubscriptionPlan;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +16,7 @@ import java.util.Random;
 public class CouponService {
     private final CouponRepository couponRepository;
     private final MemberRepository memberRepository;
+    private final MemberSubscriptionService memberSubscriptionService;
     private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private static final int CODE_LENGTH = 16;
 
@@ -55,6 +58,9 @@ public class CouponService {
         coupon = coupon.toBuilder()
                 .couponStatus(CouponStatus.USE)
                 .build();
+
+        // 쿠폰 사용 성공 시 프리미엄 1개월 적용
+        memberSubscriptionService.updateSubscription(userId, SubscriptionPlan.PREMIUM);
 
         return couponRepository.save(coupon);
     }

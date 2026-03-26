@@ -5,6 +5,8 @@ import com.example.LifeMaster_BE.Group.GroupRepository;
 import com.example.LifeMaster_BE.Group.GoalAchievement.GoalAchievementRepository;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
+import com.example.LifeMaster_BE.UserManager.Member.Subscription.FeatureType;
+import com.example.LifeMaster_BE.UserManager.Member.Subscription.SubscriptionAccessService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,8 +28,14 @@ public class GroupStatsService {
     private final GroupRepository groupRepository;
     private final MemberRepository memberRepository;
     private final GoalAchievementRepository goalAchievementRepository;
+    private final SubscriptionAccessService subscriptionAccessService;
 
     public GroupRankingResponseDTO getGroupRanking(Long groupId, Long loginUserId, RankingScope scope) {
+
+        MemberEntity member = getMemberOrThrow(loginUserId);
+        // 프리미엄 기능 접근 검사
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
+
         GroupEntity group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new RuntimeException("Group not found with id: " + groupId));
 
@@ -36,7 +44,7 @@ public class GroupStatsService {
 
         boolean isMember = group.getMembers()
                 .stream()
-                .anyMatch(member -> member.getId().equals(loginUserId));
+                .anyMatch(groupMember -> groupMember.getId().equals(loginUserId));
 
         if (!isMember) {
             throw new RuntimeException("해당 그룹의 멤버만 랭킹을 조회할 수 있습니다.");
@@ -106,5 +114,10 @@ public class GroupStatsService {
         }
 
         return goalAchievementRepository.findGroupRankingTotal(groupId);
+    }
+
+    private MemberEntity getMemberOrThrow(Long userId) {
+        return memberRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
     }
 }

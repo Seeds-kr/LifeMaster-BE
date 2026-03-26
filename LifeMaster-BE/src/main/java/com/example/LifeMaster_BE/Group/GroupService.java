@@ -14,6 +14,8 @@ import com.example.LifeMaster_BE.TimeManager.Sleep.SleepRepository;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import com.example.LifeMaster_BE.Group.GroupMember.GroupMemberService;
+import com.example.LifeMaster_BE.UserManager.Member.Subscription.FeatureType;
+import com.example.LifeMaster_BE.UserManager.Member.Subscription.SubscriptionAccessService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -48,6 +50,8 @@ public class GroupService {
 
     private final GoalAchievementRepository goalAchievementRepository;
 
+    private final SubscriptionAccessService subscriptionAccessService;
+
 
     // Create a group
     @Transactional
@@ -78,6 +82,9 @@ public class GroupService {
                             "Member not found by id=" + creatorId + " or email=" + creatorEmail));
         }
         if (creator == null) throw new IllegalArgumentException("Creator not resolved (id/email both invalid).");
+
+        // 프리미엄 기능 접근 검사
+        subscriptionAccessService.validateFeatureAccess(creator, FeatureType.GROUP);
 
         // 2) null 처리
         String effectiveIcon = (icon != null) ? icon : "";
@@ -120,9 +127,11 @@ public class GroupService {
 
     // 사용자가 속한 그룹들을 반환하는 메소드
     public List<GroupResponseDto> getGroupsByUser(Long userId) {
-        // user 존재 확인만 하고(원하면 생략 가능), 실제 그룹은 count 포함 쿼리로 반환
-        memberRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
+
+        MemberEntity member = getMemberOrThrow(userId);
+
+        // 프리미엄 기능 접근 검사
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
 
         return groupRepository.findMyGroupsWithMemberCount(userId);
     }
@@ -139,6 +148,10 @@ public class GroupService {
             GroupAccessType accessType,
             Long requestUserId
     ) {
+        MemberEntity member = getMemberOrThrow(requestUserId);
+        // 프리미엄 기능 접근 검사
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
+
         GroupEntity existingGroup = groupRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found with ID: " + id));
 
@@ -186,6 +199,10 @@ public class GroupService {
     @Transactional
     public void deleteGroup(Long id, Long requestUserId, String password) {
 
+        MemberEntity member = getMemberOrThrow(requestUserId);
+        // 프리미엄 기능 접근 검사
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
+
         groupMemberService.requireOwner(id, requestUserId);
 
         GroupEntity group = groupRepository.findById(id)
@@ -229,7 +246,12 @@ public class GroupService {
     }
 
     // 목표를 그룹에 추가
-    public GroupEntity addGoalToGroup(Long groupId, GoalEntity goal) {
+    public GroupEntity addGoalToGroup(Long userId, Long groupId, GoalEntity goal) {
+
+        MemberEntity member = getMemberOrThrow(userId);
+        // 프리미엄 기능 접근 검사
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
+
         GroupEntity group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new RuntimeException("Group not found with id: " + groupId));
 
@@ -276,7 +298,12 @@ public class GroupService {
     }
 
     @Transactional
-    public void deleteGoal(Long groupId, Long goalId) {
+    public void deleteGoal(Long userId, Long groupId, Long goalId) {
+
+        MemberEntity member = getMemberOrThrow(userId);
+        // 프리미엄 기능 접근 검사
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
+
         GoalEntity goal = goalRepository.findById(goalId)
                 .orElseThrow(() -> new RuntimeException("Goal not found with id: " + goalId));
 
@@ -303,14 +330,15 @@ public class GroupService {
     @Transactional
     public String addUserToGroup(Long groupId, Long requestUserId, Long targetUserId) {
 
+        MemberEntity member = getMemberOrThrow(requestUserId);
+        // 프리미엄 기능 접근 검사
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
+
         // 권한 설정
         groupMemberService.requireAtLeastAdmin(groupId, requestUserId);
 
         GroupEntity group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found with ID: " + groupId));
-
-        MemberEntity member = memberRepository.findById(targetUserId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + targetUserId));
 
         if (group.getMembers().contains(member)) {
             return "User already in the group.";
@@ -329,7 +357,12 @@ public class GroupService {
 
     // 목표 ID를 그룹의 통계에 추가하는 메소드
     @Transactional
-    public GroupEntity addStatisticGoal(Long groupId, Long goalId) {
+    public GroupEntity addStatisticGoal(Long UserId,Long groupId, Long goalId) {
+
+        MemberEntity member = getMemberOrThrow(UserId);
+        // 프리미엄 기능 접근 검사
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.ADVANCED_STATISTICS);
+
         // 그룹과 목표를 조회
         GroupEntity group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found with ID: " + groupId));
@@ -346,14 +379,24 @@ public class GroupService {
     }
 
     // 그룹에 속한 사용자들을 반환하는 메소드
-    public List<MemberEntity> getUsersByGroup(Long groupId) {
+    public List<MemberEntity> getUsersByGroup(Long UserId, Long groupId) {
+
+        MemberEntity member = getMemberOrThrow(UserId);
+        // 프리미엄 기능 접근 검사
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
+
         GroupEntity group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found with ID: " + groupId));
         return new ArrayList<>(group.getMembers());
     }
 
     // 그룹에서 통계 항목 삭제하는 메소드
-    public GroupEntity removeStatisticFromGroup(Long groupId, Long statistic) {
+    public GroupEntity removeStatisticFromGroup(Long UserId, Long groupId, Long statistic) {
+
+        MemberEntity member = getMemberOrThrow(UserId);
+        // 프리미엄 기능 접근 검사
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.ADVANCED_STATISTICS);
+
         GroupEntity group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found with ID: " + groupId));
 
@@ -369,7 +412,12 @@ public class GroupService {
         return groupRepository.save(group);
     }
 
-    public List<Map<String, Object>> getGroupGoalProgress(Long groupId) {
+    public List<Map<String, Object>> getGroupGoalProgress(Long UserId, Long groupId) {
+
+        MemberEntity member = getMemberOrThrow(UserId);
+        // 프리미엄 기능 접근 검사
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
+
         GroupEntity group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new RuntimeException("Group not found with id: " + groupId));
 
@@ -448,6 +496,10 @@ public class GroupService {
     // 새 메서드 추가 (요청자 기반 권한처리 가능)
     @Transactional
     public void kickMember(Long groupId, Long requestUserId, Long targetUserId) {
+
+        MemberEntity member = getMemberOrThrow(requestUserId);
+        // 프리미엄 기능 접근 검사
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
 
         // OWNER만 강퇴 가능
         groupMemberService.requireOwner(groupId, requestUserId);
@@ -539,6 +591,10 @@ public class GroupService {
     // 초대 코드 생성 (그룹 ID + 해싱된 비밀번호 조합)
     public String generateInviteCode(Long groupId, Long requestUserId) {
 
+        MemberEntity member = getMemberOrThrow(requestUserId);
+        // 프리미엄 기능 접근 검사
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
+
         groupMemberService.requireAtLeastAdmin(groupId, requestUserId);
 
         GroupEntity group = groupRepository.findById(groupId)
@@ -560,6 +616,10 @@ public class GroupService {
     @Transactional
     public String joinGroupWithInviteCode(Long userId, String inviteCode) {
 
+        MemberEntity member = getMemberOrThrow(userId);
+        // 프리미엄 기능 접근 검사
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
+
         String[] parts = inviteCode.split(":");
         if (parts.length != 2) {
             throw new IllegalArgumentException("Invalid invite code format. Expected: groupId:passwordHash");
@@ -580,9 +640,6 @@ public class GroupService {
         if (!dbHash.equals(inviteHash)) {
             throw new IllegalArgumentException("Invalid invite code.");
         }
-
-        MemberEntity member = memberRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
 
         if (group.getMembers().contains(member)) {
             return "User already in the group.";
@@ -643,7 +700,12 @@ public class GroupService {
         }
     }
 
-    public GroupDto.Static getUserStatic(String email, GroupEntity group) {
+    public GroupDto.Static getUserStatic(Long userId, String email, GroupEntity group) {
+
+        MemberEntity member = getMemberOrThrow(userId);
+        // 프리미엄 기능 접근 검사
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.ADVANCED_STATISTICS);
+
         MemberEntity user = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다."));
         List<Long> userSleepDurations = new ArrayList<>();
@@ -683,13 +745,22 @@ public class GroupService {
                 .build();
     }
     //유저 id로 목표 조회
-    public List<GoalEntity> getGoalsByMemberId (Long memberId){
+    public List<GoalEntity> getGoalsByMemberId (Long userId, Long memberId){
+
+        MemberEntity member = getMemberOrThrow(userId);
+        // 프리미엄 기능 접근 검사
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
+
         return groupRepository.findGoalsByMemberId(memberId);
     }
 
     //그룹 비밀번호 재설정
     @Transactional
     public void resetGroupPassword(Long groupId, Long requestUserId, String ownerPassword, String newGroupPassword) {
+
+        MemberEntity member = getMemberOrThrow(requestUserId);
+        // 프리미엄 기능 접근 검사
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
 
         groupMemberService.requireOwner(groupId, requestUserId);
 
@@ -723,11 +794,12 @@ public class GroupService {
     @Transactional
     public String joinGroup(Long groupId, Long userId, String password) {
 
+        MemberEntity member = getMemberOrThrow(userId);
+        // 프리미엄 기능 접근 검사
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
+
         GroupEntity group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found with ID: " + groupId));
-
-        MemberEntity member = memberRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
 
         // 이미 가입 여부
         if (group.getMembers().contains(member)) {
@@ -770,5 +842,10 @@ public class GroupService {
     @Transactional
     public void clearGroupPassword(Long groupId, Long requestUserId, String ownerPassword) {
         resetGroupPassword(groupId, requestUserId, ownerPassword, null);
+    }
+
+    private MemberEntity getMemberOrThrow(Long userId) {
+        return memberRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
     }
 }

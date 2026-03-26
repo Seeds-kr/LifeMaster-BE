@@ -9,6 +9,8 @@ import com.example.LifeMaster_BE.Group.GroupEntity;
 import com.example.LifeMaster_BE.Group.GroupRepository;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
+import com.example.LifeMaster_BE.UserManager.Member.Subscription.FeatureType;
+import com.example.LifeMaster_BE.UserManager.Member.Subscription.SubscriptionAccessService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,25 +31,33 @@ public class GoalProgressService {
     private final MemberRepository memberRepository;
     private final GoalAchievementRepository goalAchievementRepository;
 
+    private final SubscriptionAccessService subscriptionAccessService;
+
     public GoalProgressService(
             GoalProgressRepository goalProgressRepository,
             GoalRepository goalRepository,
             GroupRepository groupRepository,
             MemberRepository memberRepository,
-            GoalAchievementRepository goalAchievementRepository
+            GoalAchievementRepository goalAchievementRepository, SubscriptionAccessService subscriptionAccessService
     ) {
         this.goalProgressRepository = goalProgressRepository;
         this.goalRepository = goalRepository;
         this.groupRepository = groupRepository;
         this.memberRepository = memberRepository;
         this.goalAchievementRepository = goalAchievementRepository;
+        this.subscriptionAccessService = subscriptionAccessService;
     }
 
     /**
      * 그룹 목표 전체 진행률
      * 공식: (현재 기간 총 진행값 / (목표값 * 참여 유저 수)) * 100
      */
-    public double calculateProgress(GoalEntity goal) {
+    public double calculateProgress(Long userId, GoalEntity goal) {
+
+        MemberEntity member = getMemberOrThrow(userId);
+        // 프리미엄 기능 접근 검사
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
+
         LocalDateTime startTime = getStartDateTimeForCurrentPeriod(goal.getDuration());
 
         List<GoalProgressEntity> progressList =
@@ -78,6 +88,11 @@ public class GoalProgressService {
      * 공식: (현재 기간 유저 진행값 / 목표값) * 100
      */
     public double calculateUserProgress(GoalEntity goal, MemberEntity user) {
+
+        MemberEntity member = getMemberOrThrow(user.getId());
+        // 프리미엄 기능 접근 검사
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
+
         LocalDateTime startTime = getStartDateTimeForCurrentPeriod(goal.getDuration());
 
         List<GoalProgressEntity> progressList =
@@ -147,6 +162,11 @@ public class GoalProgressService {
      */
     @Transactional
     public GoalProgressEntity addGoalProgress(Long groupId, Long goalId, Long userId, int progressValue) {
+
+        MemberEntity member = getMemberOrThrow(userId);
+        // 프리미엄 기능 접근 검사
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
+
         GroupEntity group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new RuntimeException("Group not found with id: " + groupId));
 
@@ -211,7 +231,12 @@ public class GoalProgressService {
     /**
      * 목표 진행 기록 삭제
      */
-    public void deleteGoalProgress(Long progressId) {
+    public void deleteGoalProgress(Long userId, Long progressId) {
+
+        MemberEntity member = getMemberOrThrow(userId);
+        // 프리미엄 기능 접근 검사
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
+
         if (!goalProgressRepository.existsById(progressId)) {
             throw new RuntimeException("Goal progress not found with id: " + progressId);
         }
@@ -261,5 +286,10 @@ public class GoalProgressService {
      */
     public void deleteByGroupId(Long groupId) {
         goalProgressRepository.deleteByGroupId(groupId);
+    }
+
+    private MemberEntity getMemberOrThrow(Long userId) {
+        return memberRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
     }
 }

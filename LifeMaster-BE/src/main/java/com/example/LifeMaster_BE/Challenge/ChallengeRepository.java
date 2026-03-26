@@ -1,5 +1,6 @@
 package com.example.LifeMaster_BE.Challenge;
 
+import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

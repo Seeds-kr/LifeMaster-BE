@@ -42,6 +42,20 @@ public class MemberSubscriptionService {
     }
 
     /**
+     * 사용자의 영구적 요금제 변경
+     */
+    @Transactional
+    public MemberEntity updateSubscriptionPermanent(Long memberId, SubscriptionPlan newPlan) {
+        MemberEntity member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 ID의 멤버를 찾을 수 없습니다."));
+
+        LocalDate now = LocalDate.now();
+        LocalDate expirationDate = LocalDate.of(9999, 12, 31); // 사실상 영구
+
+        member.updateSubscription(newPlan, now, expirationDate);
+        return memberRepository.save(member);
+    }
+    /**
      * 결제 내역 추가
      */
     @Transactional
