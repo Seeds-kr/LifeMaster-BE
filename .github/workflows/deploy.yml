@@ -61,8 +61,6 @@ jobs:
       - name: Deploy to EC2
         run: |
           ssh -vvv \
-          -o HostKeyAlgorithms=+ssh-rsa \
-          -o PubkeyAcceptedAlgorithms=+ssh-rsa \
           -o KexAlgorithms=curve25519-sha256 \
           -o PreferredAuthentications=publickey \
           -o StrictHostKeyChecking=no \
@@ -74,3 +72,4 @@ jobs:
           -p ${{ secrets.EC2_PORT }} \
           ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
           "bash ~/deploy.sh"
+          
