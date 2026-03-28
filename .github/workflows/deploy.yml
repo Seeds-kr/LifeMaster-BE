@@ -16,7 +16,7 @@ jobs:
       - name: Set up SSH private key
         run: |
           mkdir -p ~/.ssh
-          printf "${{ secrets.EC2_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
+          printf "%s" "${{ secrets.EC2_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
       - name: Check SSH key
