@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Optional;
 
 @Service("selfDevelopCalendarService")
 @Transactional
@@ -21,23 +22,25 @@ public class SelfDevelopCalendarService {
 
     public CalendarDailyContentDto getEventsByDate(LocalDate date){
 
-        DiaryEntity diary = diaryRepository.findByDiaryDate(date)
-                .orElseThrow(() -> new EntityNotFoundException("Diary not found"));
-        ThankEntity thank = thankRepository.findByThankDate(date)
-                .orElseThrow(() -> new EntityNotFoundException("Thank not found"));
+        Optional<DiaryEntity> diary = diaryRepository.findByDiaryDate(date);
+        Optional<ThankEntity> thank = thankRepository.findByThankDate(date);
 
-        return convertToDto(diary, thank);
+        if (diary.isEmpty() && thank.isEmpty()) {
+            throw new EntityNotFoundException("해당 날짜에 작성된 일기 또는 감사 기록이 없습니다.");
+        }
+
+        return convertToDto(diary.orElse(null), thank.orElse(null));
     }
 
     public CalendarDailyContentDto convertToDto(DiaryEntity diary, ThankEntity thank) {
         return new CalendarDailyContentDto(
-                diary.getId(),
-                thank.getId(),
-                diary.getDiaryContent(),
-                thank.getThankOne(),
-                thank.getThankTwo(),
-                thank.getThankThree(),
-                thank.getThankFour(),
-                thank.getThankFive());
+                diary != null ? diary.getId() : null,
+                thank != null ? thank.getId() : null,
+                diary != null ? diary.getDiaryContent() : null,
+                thank != null ? thank.getThankOne() : null,
+                thank != null ? thank.getThankTwo() : null,
+                thank != null ? thank.getThankThree() : null,
+                thank != null ? thank.getThankFour() : null,
+                thank != null ? thank.getThankFive() : null);
     }
 }
