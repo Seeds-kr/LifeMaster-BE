@@ -1,7 +1,7 @@
 package com.example.LifeMaster_BE.Payment.PayPal;
 
-import com.example.LifeMaster_BE.Payment.PurchaseEntity;
 import com.example.LifeMaster_BE.Payment.PurchaseDto;
+import com.example.LifeMaster_BE.Payment.PurchaseEntity;
 import com.example.LifeMaster_BE.Security.CustomUserDetails;
 import com.example.LifeMaster_BE.UserManager.Login;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -28,6 +29,7 @@ public class PayPalController {
 
     private final PayPalService payPalService;
     private final Login login;
+    private final PayPalOrderRepository payPalOrderRepository;
 
     @Operation(
             summary = "PayPal 주문 생성",
@@ -45,13 +47,14 @@ public class PayPalController {
         ResponseEntity<?> loginCheck = login.checkLogin(user);
         if (loginCheck != null) return loginCheck;
 
-        Map<String, String> result = payPalService.createOrder();
+        MemberEntity member = buildMemberFromUser(user);
+        Map<String, String> result = payPalService.createOrder(member);
         return ResponseEntity.ok(result);
     }
 
     @Operation(
-            summary = "PayPal 결제 캡처",
-            description = "승인 완료된 주문(orderId)을 캡처하고 DB에 결제 정보를 저장합니다.",
+            summary = "PayPal 결제 수동 캡처",
+            description = "승인 완료된 주문(orderId)을 수동으로 캡처하고 DB에 결제 정보를 저장합니다.",
             responses = {
                     @ApiResponse(responseCode = "200", description = "결제 캡처 및 저장 성공",
                             content = @Content(schema = @Schema(implementation = String.class))),
@@ -70,6 +73,51 @@ public class PayPalController {
         MemberEntity member = buildMemberFromUser(user);
         String result = payPalService.captureOrder(orderId, member);
         return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/success")
+    @Operation(
+            summary = "PayPal 결제 성공 콜백",
+            description = "PayPal 결제 승인 후 자동으로 호출되며, 저장된 orderId-member 매핑으로 결제를 캡처하고 DB에 저장합니다."
+    )
+    public ResponseEntity<?> success(
+            @RequestParam("token") String orderId,
+            @RequestParam(value = "PayerID", required = false) String payerId
+    ) {
+        PayPalOrderEntity paypalOrder = payPalOrderRepository.findByPaypalOrderId(orderId)
+                .orElseThrow(() -> new RuntimeException("주문 매핑 정보를 찾을 수 없습니다. orderId=" + orderId));
+
+        MemberEntity member = paypalOrder.getMember();
+        String result = payPalService.captureOrder(orderId, member);
+
+        return ResponseEntity.ok(Map.of(
+                "message", "결제 성공 및 저장 완료",
+                "orderId", orderId,
+                "payerId", payerId == null ? "" : payerId,
+                "result", result
+        ));
+    }
+
+    @GetMapping("/cancel")
+    @Operation(
+            summary = "PayPal 결제 취소 콜백",
+            description = "사용자가 결제를 취소했을 때 호출됩니다."
+    )
+    public ResponseEntity<?> cancel(
+            @RequestParam(value = "token", required = false) String orderId
+    ) {
+        if (orderId != null) {
+            payPalOrderRepository.findByPaypalOrderId(orderId).ifPresent(paypalOrder -> {
+                paypalOrder.setStatus("CANCELLED");
+                payPalOrderRepository.save(paypalOrder);
+            });
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "message", "결제가 취소되었습니다.",
+                "orderId", orderId == null ? "" : orderId,
+                "cancelledAt", LocalDateTime.now().toString()
+        ));
     }
 
     @Operation(
@@ -91,7 +139,6 @@ public class PayPalController {
         MemberEntity member = buildMemberFromUser(user);
         List<PurchaseEntity> purchases = payPalService.getPurchasesByMember(member);
 
-        // ✅ Entity → DTO 매핑
         List<PurchaseDto> dtoList = purchases.stream()
                 .map(PurchaseDto::from)
                 .toList();
@@ -99,7 +146,6 @@ public class PayPalController {
         return ResponseEntity.ok(dtoList);
     }
 
-    /** 로그인 사용자로부터 최소 MemberEntity 스텁 생성 (ID만 사용) */
     private MemberEntity buildMemberFromUser(CustomUserDetails user) {
         MemberEntity member = new MemberEntity();
         member.setId(user.getId());

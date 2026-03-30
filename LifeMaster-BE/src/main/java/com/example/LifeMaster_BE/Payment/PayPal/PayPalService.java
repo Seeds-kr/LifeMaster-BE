@@ -27,6 +27,7 @@ import java.util.*;
 @RequiredArgsConstructor
 public class PayPalService {
 
+    private final PayPalOrderRepository payPalOrderRepository;
     private static final String PROVIDER = "PAYPAL";
     private static final String DEFAULT_SUBSCRIPTION = "DEFAULT";
     private static final String COMPLETED = "COMPLETED";
@@ -36,9 +37,8 @@ public class PayPalService {
     private final RestTemplate restTemplate = new RestTemplate();
 
     private static final String DEFAULT_PRODUCT_NAME = "LifeMaster Premium";
-    private static final String RETURN_URL = "http://localhost:8080/paypal/success";
-    private static final String CANCEL_URL = "http://localhost:8080/paypal/cancel";
-
+    private static final String RETURN_URL = "https://lifemaster.harvester.kr/payments/paypal/success";
+    private static final String CANCEL_URL = "https://lifemaster.harvester.kr/payments/paypal/cancel";
     /**
      * OAuth 토큰 발급
      */
@@ -62,7 +62,7 @@ public class PayPalService {
      * 결제 주문 생성
      * - 현재는 하드코딩(USD 10.00). 필요 시 파라미터로 금액/상품명/통화 받도록 확장
      */
-    public Map<String, String> createOrder() {
+    public Map<String, String> createOrder(MemberEntity member) {
         final String url = payPalConfig.getBaseUrl() + "/v2/checkout/orders";
 
         HttpHeaders headers = new HttpHeaders();
@@ -126,6 +126,13 @@ public class PayPalService {
             throw new RuntimeException("Invalid PayPal order response: missing approve link");
         }
 
+        PayPalOrderEntity paypalOrder = new PayPalOrderEntity();
+        paypalOrder.setPaypalOrderId(orderId);
+        paypalOrder.setMember(member);
+        paypalOrder.setStatus("CREATED");
+        paypalOrder.setCreatedAt(LocalDateTime.now());
+        payPalOrderRepository.save(paypalOrder);
+
         return Map.of(
                 "orderId", orderId,
                 "approveUrl", approveUrl
@@ -170,6 +177,12 @@ public class PayPalService {
         // 엔티티 구성 및 저장
         PurchaseEntity entity = buildPurchaseEntity(orderId, purchaseUnit, capture, member);
         purchaseRepository.save(entity);
+
+        payPalOrderRepository.findByPaypalOrderId(orderId).ifPresent(paypalOrder -> {
+            paypalOrder.setStatus("COMPLETED");
+            paypalOrder.setCompletedAt(LocalDateTime.now());
+            payPalOrderRepository.save(paypalOrder);
+        });
 
         return "결제가 성공적으로 완료되었습니다: " + entity.getPurchaseToken();
     }
