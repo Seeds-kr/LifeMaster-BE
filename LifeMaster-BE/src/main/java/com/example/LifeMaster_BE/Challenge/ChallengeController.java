@@ -56,7 +56,7 @@ public class ChallengeController {
     /** 3. 내가 참여한 챌린지 목록 */
     @GetMapping("/my")
     @Operation(summary = "내 챌린지 목록 조회", description = "내가 참여한 챌린지 목록을 조회합니다.")
-    public List<Challenge> getMyChallenges(@AuthenticationPrincipal UserDetails userDetails) {
+    public List<ChallengeDto.List> getMyChallenges(@AuthenticationPrincipal UserDetails userDetails) {
         return challengeService.getMyChallenges(userDetails);
     }
 
