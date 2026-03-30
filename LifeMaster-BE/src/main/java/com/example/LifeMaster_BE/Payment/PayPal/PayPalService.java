@@ -29,12 +29,15 @@ public class PayPalService {
 
     private static final String PROVIDER = "PAYPAL";
     private static final String DEFAULT_SUBSCRIPTION = "DEFAULT";
-    private static final String DEFAULT_PRODUCT_NAME = "PayPal Purchase";
     private static final String COMPLETED = "COMPLETED";
 
     private final PayPalConfig payPalConfig;
     private final PurchaseRepo purchaseRepository;
     private final RestTemplate restTemplate = new RestTemplate();
+
+    private static final String DEFAULT_PRODUCT_NAME = "LifeMaster Premium";
+    private static final String RETURN_URL = "http://localhost:8080/paypal/success";
+    private static final String CANCEL_URL = "http://localhost:8080/paypal/cancel";
 
     /**
      * OAuth 토큰 발급
@@ -65,46 +68,62 @@ public class PayPalService {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(getAccessToken());
         headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
 
-        Map<String, Object> amount = Map.of(
-                "currency_code", "USD",
-                "value", "10.00"
-        );
+        Map<String, Object> amount = new HashMap<>();
+        amount.put("currency_code", "USD");
+        amount.put("value", "10.00");
 
-        // description 등 상품명을 넣으면 나중에 productName에 반영 가능
         Map<String, Object> purchaseUnit = new HashMap<>();
         purchaseUnit.put("amount", amount);
         purchaseUnit.put("description", DEFAULT_PRODUCT_NAME);
 
-        Map<String, Object> payload = Map.of(
-                "intent", "CAPTURE",
-                "purchase_units", List.of(purchaseUnit)
-        );
+        Map<String, Object> applicationContext = new HashMap<>();
+        applicationContext.put("return_url", RETURN_URL);
+        applicationContext.put("cancel_url", CANCEL_URL);
+        applicationContext.put("shipping_preference", "NO_SHIPPING");
+        applicationContext.put("user_action", "PAY_NOW");
+        applicationContext.put("brand_name", "LifeMaster");
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("intent", "CAPTURE");
+        payload.put("purchase_units", List.of(purchaseUnit));
+        payload.put("application_context", applicationContext);
 
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(payload, headers);
-        ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
+
+        ResponseEntity<Map> response =
+                restTemplate.exchange(url, HttpMethod.POST, request, Map.class);
 
         Map<String, Object> responseBody = response.getBody();
         if (responseBody == null) {
             throw new RuntimeException("Invalid PayPal order response: null body");
         }
 
-        String orderId = String.valueOf(responseBody.get("id"));
-        if (orderId == null || orderId.isBlank()) {
+        Object idObj = responseBody.get("id");
+        if (idObj == null || String.valueOf(idObj).isBlank()) {
             throw new RuntimeException("Invalid PayPal order response: missing id");
         }
+        String orderId = String.valueOf(idObj);
 
-        String approveUrl = "";
+        String approveUrl = null;
         Object linksObj = responseBody.get("links");
         if (linksObj instanceof List<?> linksList) {
             for (Object linkObj : linksList) {
                 if (linkObj instanceof Map<?, ?> link) {
-                    if ("approve".equals(String.valueOf(link.get("rel")))) {
-                        approveUrl = String.valueOf(link.get("href"));
+                    Object rel = link.get("rel");
+                    Object href = link.get("href");
+
+                    if ("approve".equals(String.valueOf(rel)) && href != null) {
+                        approveUrl = String.valueOf(href);
                         break;
                     }
                 }
             }
+        }
+
+        if (approveUrl == null || approveUrl.isBlank()) {
+            throw new RuntimeException("Invalid PayPal order response: missing approve link");
         }
 
         return Map.of(
