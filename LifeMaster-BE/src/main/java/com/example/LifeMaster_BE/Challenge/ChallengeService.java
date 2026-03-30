@@ -80,21 +80,18 @@ public class ChallengeService {
 
 
     /** 3. 내가 참여한 챌린지 목록 */
-    public List<Challenge> getMyChallenges(@AuthenticationPrincipal UserDetails userDetails) {
-        // 유저 정보 가져오기
+    public List<ChallengeDto.List> getMyChallenges(UserDetails userDetails) {
+
         MemberEntity user = memberRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다."));
 
-        // 유저가 참여한 챌린지 사용자 엔티티 목록 가져오기
         List<ChallengeUser> challengeUsers = challengeUserRepository.findByUser(user);
 
-        // 각 챌린지 사용자 엔티티에서 챌린지 정보만 추출
-        List<Challenge> challenges = challengeUsers.stream()
-                .map(ChallengeUser::getChallenge)  // ChallengeUser에서 Challenge 객체 추출
-                .collect(Collectors.toList());
-
-        return challenges;
+        return challengeUsers.stream()
+                .map(cu -> new ChallengeDto.List(cu.getChallenge(), true))
+                .toList();
     }
+
 
 
     /** 4. 특정 챌린지 상세 정보 조회 */

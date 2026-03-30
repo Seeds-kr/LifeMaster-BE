@@ -40,5 +40,14 @@ public class ChallengeDto {
         private String challImg;
         private Boolean challMe;
         private Integer challCnt;
+
+        public List(Challenge challenge, boolean isMe) {
+            this.challId = Math.toIntExact(challenge.getChallId());
+            this.challName = challenge.getChallName();
+            this.challDesc = challenge.getChallDesc();
+            this.challImg = challenge.getChallImg();
+            this.challMe = isMe;
+            this.challCnt = challenge.getChallCnt();
+        }
     }
 }
