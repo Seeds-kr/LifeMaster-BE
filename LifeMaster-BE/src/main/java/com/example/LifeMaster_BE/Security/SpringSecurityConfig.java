@@ -55,6 +55,10 @@ public class SpringSecurityConfig {
                                 "/oauth2/**",
                                 "/login/oauth2/**",
 
+                                //페이팔 결제 콜백
+                                "/payments/paypal/success",
+                                "/payments/paypal/cancel",
+
                                 // 네이버
                                 "/naverLogin/callback",
                                 "/naverLogin/public",
