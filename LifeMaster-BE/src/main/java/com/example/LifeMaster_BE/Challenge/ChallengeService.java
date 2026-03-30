@@ -88,7 +88,14 @@ public class ChallengeService {
         List<ChallengeUser> challengeUsers = challengeUserRepository.findByUser(user);
 
         return challengeUsers.stream()
-                .map(cu -> new ChallengeDto.List(cu.getChallenge(), true))
+                .map(cu -> ChallengeDto.List.builder()
+                        .challId(Math.toIntExact(cu.getChallenge().getChallId()))
+                        .challName(cu.getChallenge().getChallName())
+                        .challDesc(cu.getChallenge().getChallDesc())
+                        .challImg(cu.getChallenge().getChallImg())
+                        .challMe(true)
+                        .challCnt(cu.getChallenge().getChallCnt())
+                        .build())
                 .toList();
     }
 
