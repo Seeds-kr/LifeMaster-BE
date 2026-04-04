@@ -26,7 +26,7 @@ public class CouponService {
         MemberEntity user = memberRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("유저 없음"));
 
-        Coupon coupon = couponRepository.findByCouponCode(couponCode)
+        Coupon coupon = couponRepository.findByCouponCodeForUpdate(couponCode)
                 .orElseThrow(() -> new IllegalArgumentException("쿠폰 없음"));
 
         if (coupon.getCouponStatus() != CouponStatus.UNUSE) {

@@ -74,6 +74,7 @@ class CouponConcurrencyTest {
     }
 
     @Test
+    @org.junit.jupiter.api.Disabled("Stage 1: Pessimistic Lock 적용 전 정합성 문제 증명용 (락 적용 후 더 이상 재현 불가)")
     @DisplayName("[락 없음] 동일 쿠폰에 100명이 동시 등록 시 1명만 성공해야 하지만, 락이 없으면 여러 명이 등록될 수 있다")
     void 락_없이_동일_쿠폰_동시_등록() throws InterruptedException {
         int threadCount = 100;
@@ -129,5 +130,59 @@ class CouponConcurrencyTest {
         assertThat(successCount.get())
                 .as("락이 없으면 동시 등록 시 1명 이상이 성공 응답을 받는다 (정합성 문제 증명)")
                 .isGreaterThan(1);
+    }
+
+    @Test
+    @DisplayName("[Pessimistic Lock] 동일 쿠폰에 100명이 동시 등록 시 정확히 1명만 성공해야 한다")
+    void Pessimistic_Lock_동일_쿠폰_동시_등록() throws InterruptedException {
+        int threadCount = 100;
+        ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch readyLatch = new CountDownLatch(threadCount);
+        CountDownLatch startLatch = new CountDownLatch(1);
+        CountDownLatch doneLatch = new CountDownLatch(threadCount);
+
+        AtomicInteger successCount = new AtomicInteger(0);
+        AtomicInteger failCount = new AtomicInteger(0);
+        List<String> successUsers = Collections.synchronizedList(new ArrayList<>());
+
+        for (int i = 0; i < threadCount; i++) {
+            final int index = i;
+            executorService.submit(() -> {
+                try {
+                    readyLatch.countDown();
+                    startLatch.await();
+
+                    couponService.registerCoupon(testUsers.get(index).getId(), "TEST-COUPON-001");
+                    successCount.incrementAndGet();
+                    successUsers.add("testuser" + index);
+                } catch (Exception e) {
+                    failCount.incrementAndGet();
+                } finally {
+                    doneLatch.countDown();
+                }
+            });
+        }
+
+        readyLatch.await();
+        startLatch.countDown();
+        doneLatch.await();
+
+        executorService.shutdown();
+
+        // 결과 출력
+        log.warn("=== [Pessimistic Lock] 동시성 테스트 결과 ===");
+        log.warn("성공 횟수: " + successCount.get());
+        log.warn("실패 횟수: " + failCount.get());
+        log.warn("성공 유저: " + successUsers);
+
+        // 실제 DB 상태 확인
+        Coupon result = couponRepository.findByCouponCode("TEST-COUPON-001").orElseThrow();
+        log.warn("쿠폰 상태: " + result.getCouponStatus());
+        log.warn("쿠폰 소유자 ID: " + (result.getUser() != null ? result.getUser().getId() : "null"));
+
+        // Pessimistic Lock 적용 후 정확히 1명만 성공해야 한다
+        assertThat(successCount.get())
+                .as("Pessimistic Lock 적용 시 동시 등록에서 정확히 1명만 성공해야 한다")
+                .isEqualTo(1);
     }
 }
