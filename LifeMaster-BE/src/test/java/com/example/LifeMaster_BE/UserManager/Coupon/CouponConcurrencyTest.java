@@ -8,6 +8,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import com.zaxxer.hikari.HikariPoolMXBean;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -86,14 +87,14 @@ class CouponConcurrencyTest {
     }
 
     @Test
-    @org.junit.jupiter.api.Disabled("Stage 1: Pessimistic Lock 적용 전 정합성 문제 증명용 (락 적용 후 더 이상 재현 불가)")
+    @Disabled("Stage 1: Pessimistic Lock 적용 전 정합성 문제 증명용 (락 적용 후 더 이상 재현 불가)")
     @DisplayName("[락 없음] 동일 쿠폰에 100명이 동시 등록 시 1명만 성공해야 하지만, 락이 없으면 여러 명이 등록될 수 있다")
     void 락_없이_동일_쿠폰_동시_등록() throws InterruptedException {
         int threadCount = 100;
         ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
-        CountDownLatch readyLatch = new CountDownLatch(threadCount);  // 모든 스레드 준비 대기
-        CountDownLatch startLatch = new CountDownLatch(1);             // 동시 시작 신호
-        CountDownLatch doneLatch = new CountDownLatch(threadCount);    // 완료 대기
+        CountDownLatch readyLatch = new CountDownLatch(threadCount);
+        CountDownLatch startLatch = new CountDownLatch(1);
+        CountDownLatch doneLatch = new CountDownLatch(threadCount);
 
         AtomicInteger successCount = new AtomicInteger(0);
         AtomicInteger failCount = new AtomicInteger(0);
@@ -103,8 +104,8 @@ class CouponConcurrencyTest {
             final int index = i;
             executorService.submit(() -> {
                 try {
-                    readyLatch.countDown();   // 준비 완료 알림
-                    startLatch.await();        // 시작 신호 대기 (모든 스레드가 동시에 출발)
+                    readyLatch.countDown();
+                    startLatch.await();
 
                     couponService.registerCoupon(testUsers.get(index).getId(), "TEST-COUPON-001");
                     successCount.incrementAndGet();
@@ -117,34 +118,30 @@ class CouponConcurrencyTest {
             });
         }
 
-        readyLatch.await();   // 100개 스레드 모두 준비될 때까지 대기
-        startLatch.countDown(); // 동시 시작!
-        doneLatch.await();     // 모든 스레드 완료 대기
+        readyLatch.await();
+        startLatch.countDown();
+        doneLatch.await();
 
         executorService.shutdown();
 
-        // 결과 출력
         log.warn("=== [락 없음] 동시성 테스트 결과 ===");
         log.warn("성공 횟수: " + successCount.get());
         log.warn("실패 횟수: " + failCount.get());
         log.warn("성공 유저: " + successUsers);
 
-        // 실제 DB 상태 확인
         Coupon result = couponRepository.findByCouponCode("TEST-COUPON-001").orElseThrow();
         log.warn("쿠폰 상태: " + result.getCouponStatus());
         log.warn("쿠폰 소유자 ID: " + (result.getUser() != null ? result.getUser().getId() : "null"));
 
-        // 정합성 검증: 정상이라면 1명만 성공해야 한다
-        // 락이 없으므로 여러 명이 성공 응답을 받을 수 있다 (정합성 깨짐)
         log.warn("[검증] 정합성 깨짐 여부: " + (successCount.get() > 1 ? "YES - " + successCount.get() + "명이 성공" : "NO"));
 
-        // 이 테스트는 "문제가 발생함"을 증명하는 것이므로, 성공 횟수가 1보다 큰지 확인
         assertThat(successCount.get())
                 .as("락이 없으면 동시 등록 시 1명 이상이 성공 응답을 받는다 (정합성 문제 증명)")
                 .isGreaterThan(1);
     }
 
     @Test
+    @Disabled("Stage 2: Pessimistic Lock 테스트 (Redisson 분산 락으로 대체됨)")
     @DisplayName("[Pessimistic Lock] 동일 쿠폰에 100명이 동시 등록 시 정확히 1명만 성공해야 한다")
     void Pessimistic_Lock_동일_쿠폰_동시_등록() throws InterruptedException {
         int threadCount = 100;
@@ -158,7 +155,6 @@ class CouponConcurrencyTest {
         AtomicInteger connectionTimeoutCount = new AtomicInteger(0);
         List<String> successUsers = Collections.synchronizedList(new ArrayList<>());
 
-        // HikariCP 커넥션 풀 모니터링 (10ms 간격으로 샘플링)
         HikariPoolMXBean poolMXBean = getPoolMXBean();
         AtomicInteger peakActiveConnections = new AtomicInteger(0);
         AtomicInteger peakPendingThreads = new AtomicInteger(0);
@@ -201,10 +197,92 @@ class CouponConcurrencyTest {
         monitor.shutdown();
         executorService.shutdown();
 
-        // 결과 출력
         log.warn("=== [Pessimistic Lock] 동시성 테스트 결과 ===");
         log.warn("성공 횟수: {}", successCount.get());
         log.warn("실패 횟수: {}", failCount.get());
+        log.warn("성공 유저: {}", successUsers);
+        log.warn("=== 성능 지표 ===");
+        log.warn("전체 소요 시간: {}ms", totalTimeMs);
+        log.warn("최대 동시 Active 커넥션: {}", peakActiveConnections.get());
+        log.warn("최대 커넥션 대기 스레드: {}", peakPendingThreads.get());
+        log.warn("커넥션 타임아웃 발생: {}건", connectionTimeoutCount.get());
+        log.warn("HikariCP 풀 크기: {}", ((HikariDataSource) dataSource).getMaximumPoolSize());
+
+        Coupon result = couponRepository.findByCouponCode("TEST-COUPON-001").orElseThrow();
+        log.warn("쿠폰 상태: {}", result.getCouponStatus());
+        log.warn("쿠폰 소유자 ID: {}", result.getUser() != null ? result.getUser().getId() : "null");
+
+        assertThat(successCount.get())
+                .as("Pessimistic Lock 적용 시 동시 등록에서 정확히 1명만 성공해야 한다")
+                .isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("[Redisson 분산 락] 동일 쿠폰에 100명이 동시 등록 시 정확히 1명만 성공해야 한다")
+    void Redisson_분산_락_동일_쿠폰_동시_등록() throws InterruptedException {
+        int threadCount = 100;
+        ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch readyLatch = new CountDownLatch(threadCount);
+        CountDownLatch startLatch = new CountDownLatch(1);
+        CountDownLatch doneLatch = new CountDownLatch(threadCount);
+
+        AtomicInteger successCount = new AtomicInteger(0);
+        AtomicInteger failCount = new AtomicInteger(0);
+        AtomicInteger lockFailCount = new AtomicInteger(0);
+        AtomicInteger connectionTimeoutCount = new AtomicInteger(0);
+        List<String> successUsers = Collections.synchronizedList(new ArrayList<>());
+
+        // HikariCP 커넥션 풀 모니터링 (10ms 간격으로 샘플링)
+        HikariPoolMXBean poolMXBean = getPoolMXBean();
+        AtomicInteger peakActiveConnections = new AtomicInteger(0);
+        AtomicInteger peakPendingThreads = new AtomicInteger(0);
+
+        ScheduledExecutorService monitor = Executors.newSingleThreadScheduledExecutor();
+        monitor.scheduleAtFixedRate(() -> {
+            int active = poolMXBean.getActiveConnections();
+            int pending = poolMXBean.getThreadsAwaitingConnection();
+            peakActiveConnections.updateAndGet(current -> Math.max(current, active));
+            peakPendingThreads.updateAndGet(current -> Math.max(current, pending));
+        }, 0, 10, TimeUnit.MILLISECONDS);
+
+        for (int i = 0; i < threadCount; i++) {
+            final int index = i;
+            executorService.submit(() -> {
+                try {
+                    readyLatch.countDown();
+                    startLatch.await();
+
+                    couponService.registerCoupon(testUsers.get(index).getId(), "TEST-COUPON-001");
+                    successCount.incrementAndGet();
+                    successUsers.add("testuser" + index);
+                } catch (Exception e) {
+                    failCount.incrementAndGet();
+                    if (e.getMessage() != null && e.getMessage().contains("락 획득 실패")) {
+                        lockFailCount.incrementAndGet();
+                    }
+                    if (e.getMessage() != null && e.getMessage().contains("Connection is not available")) {
+                        connectionTimeoutCount.incrementAndGet();
+                    }
+                } finally {
+                    doneLatch.countDown();
+                }
+            });
+        }
+
+        readyLatch.await();
+        long startTime = System.nanoTime();
+        startLatch.countDown();
+        doneLatch.await();
+        long totalTimeMs = (System.nanoTime() - startTime) / 1_000_000;
+
+        monitor.shutdown();
+        executorService.shutdown();
+
+        // 결과 출력
+        log.warn("=== [Redisson 분산 락] 동시성 테스트 결과 ===");
+        log.warn("성공 횟수: {}", successCount.get());
+        log.warn("실패 횟수: {}", failCount.get());
+        log.warn("락 획득 실패: {}건", lockFailCount.get());
         log.warn("성공 유저: {}", successUsers);
         log.warn("=== 성능 지표 ===");
         log.warn("전체 소요 시간: {}ms", totalTimeMs);
@@ -218,9 +296,9 @@ class CouponConcurrencyTest {
         log.warn("쿠폰 상태: {}", result.getCouponStatus());
         log.warn("쿠폰 소유자 ID: {}", result.getUser() != null ? result.getUser().getId() : "null");
 
-        // Pessimistic Lock 적용 후 정확히 1명만 성공해야 한다
+        // Redisson 분산 락 적용 후 정확히 1명만 성공해야 한다
         assertThat(successCount.get())
-                .as("Pessimistic Lock 적용 시 동시 등록에서 정확히 1명만 성공해야 한다")
+                .as("Redisson 분산 락 적용 시 동시 등록에서 정확히 1명만 성공해야 한다")
                 .isEqualTo(1);
     }
 }
