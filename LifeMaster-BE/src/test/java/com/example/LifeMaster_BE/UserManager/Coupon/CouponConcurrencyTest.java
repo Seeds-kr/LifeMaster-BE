@@ -4,6 +4,8 @@ import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import com.example.LifeMaster_BE.UserManager.Member.Payment.PaymentStatus;
 import com.example.LifeMaster_BE.UserManager.Member.Subscription.SubscriptionPlan;
+import com.zaxxer.hikari.HikariDataSource;
+import com.zaxxer.hikari.HikariPoolMXBean;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -12,12 +14,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
+import javax.sql.DataSource;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
@@ -40,8 +45,15 @@ class CouponConcurrencyTest {
     @Autowired
     private MemberRepository memberRepository;
 
+    @Autowired
+    private DataSource dataSource;
+
     private List<MemberEntity> testUsers = new ArrayList<>();
     private Coupon testCoupon;
+
+    private HikariPoolMXBean getPoolMXBean() {
+        return ((HikariDataSource) dataSource).getHikariPoolMXBean();
+    }
 
     @BeforeEach
     void setUp() {
@@ -143,7 +155,21 @@ class CouponConcurrencyTest {
 
         AtomicInteger successCount = new AtomicInteger(0);
         AtomicInteger failCount = new AtomicInteger(0);
+        AtomicInteger connectionTimeoutCount = new AtomicInteger(0);
         List<String> successUsers = Collections.synchronizedList(new ArrayList<>());
+
+        // HikariCP 커넥션 풀 모니터링 (10ms 간격으로 샘플링)
+        HikariPoolMXBean poolMXBean = getPoolMXBean();
+        AtomicInteger peakActiveConnections = new AtomicInteger(0);
+        AtomicInteger peakPendingThreads = new AtomicInteger(0);
+
+        ScheduledExecutorService monitor = Executors.newSingleThreadScheduledExecutor();
+        monitor.scheduleAtFixedRate(() -> {
+            int active = poolMXBean.getActiveConnections();
+            int pending = poolMXBean.getThreadsAwaitingConnection();
+            peakActiveConnections.updateAndGet(current -> Math.max(current, active));
+            peakPendingThreads.updateAndGet(current -> Math.max(current, pending));
+        }, 0, 10, TimeUnit.MILLISECONDS);
 
         for (int i = 0; i < threadCount; i++) {
             final int index = i;
@@ -157,6 +183,9 @@ class CouponConcurrencyTest {
                     successUsers.add("testuser" + index);
                 } catch (Exception e) {
                     failCount.incrementAndGet();
+                    if (e.getMessage() != null && e.getMessage().contains("Connection is not available")) {
+                        connectionTimeoutCount.incrementAndGet();
+                    }
                 } finally {
                     doneLatch.countDown();
                 }
@@ -164,21 +193,30 @@ class CouponConcurrencyTest {
         }
 
         readyLatch.await();
+        long startTime = System.nanoTime();
         startLatch.countDown();
         doneLatch.await();
+        long totalTimeMs = (System.nanoTime() - startTime) / 1_000_000;
 
+        monitor.shutdown();
         executorService.shutdown();
 
         // 결과 출력
         log.warn("=== [Pessimistic Lock] 동시성 테스트 결과 ===");
-        log.warn("성공 횟수: " + successCount.get());
-        log.warn("실패 횟수: " + failCount.get());
-        log.warn("성공 유저: " + successUsers);
+        log.warn("성공 횟수: {}", successCount.get());
+        log.warn("실패 횟수: {}", failCount.get());
+        log.warn("성공 유저: {}", successUsers);
+        log.warn("=== 성능 지표 ===");
+        log.warn("전체 소요 시간: {}ms", totalTimeMs);
+        log.warn("최대 동시 Active 커넥션: {}", peakActiveConnections.get());
+        log.warn("최대 커넥션 대기 스레드: {}", peakPendingThreads.get());
+        log.warn("커넥션 타임아웃 발생: {}건", connectionTimeoutCount.get());
+        log.warn("HikariCP 풀 크기: {}", ((HikariDataSource) dataSource).getMaximumPoolSize());
 
         // 실제 DB 상태 확인
         Coupon result = couponRepository.findByCouponCode("TEST-COUPON-001").orElseThrow();
-        log.warn("쿠폰 상태: " + result.getCouponStatus());
-        log.warn("쿠폰 소유자 ID: " + (result.getUser() != null ? result.getUser().getId() : "null"));
+        log.warn("쿠폰 상태: {}", result.getCouponStatus());
+        log.warn("쿠폰 소유자 ID: {}", result.getUser() != null ? result.getUser().getId() : "null");
 
         // Pessimistic Lock 적용 후 정확히 1명만 성공해야 한다
         assertThat(successCount.get())
