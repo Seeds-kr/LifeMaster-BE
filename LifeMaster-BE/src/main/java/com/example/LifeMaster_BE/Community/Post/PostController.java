@@ -7,6 +7,10 @@ import com.example.LifeMaster_BE.Community.Post.Dto.PostGetResponse;
 import com.example.LifeMaster_BE.Security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -24,10 +28,12 @@ public class PostController {
 
     @Operation(summary = "게시글 전체 조회", description = "특정 유형(type)의 게시글 목록을 조회합니다.")
     @GetMapping
-    public ResponseEntity<List<AllPostsDto>> getAllPosts(@RequestParam("type") PostType type,
-                                                         @AuthenticationPrincipal CustomUserDetails user) {
+    public ResponseEntity<Page<AllPostsDto>> getAllPosts(
+            @RequestParam("type") PostType type,
+            @PageableDefault(size = 10000, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
+            @AuthenticationPrincipal CustomUserDetails user) {
 
-        List<AllPostsDto> allPosts = postService.getAllPosts(user.getId(), type);
+        Page<AllPostsDto> allPosts = postService.getAllPosts(user.getId(), type, pageable);
         return ResponseEntity.ok(allPosts);
     }
 

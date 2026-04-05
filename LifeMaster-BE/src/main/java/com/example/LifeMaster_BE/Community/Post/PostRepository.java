@@ -21,6 +21,10 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
     @EntityGraph(attributePaths = {"member", "likes"})
     List<PostEntity> findByType(PostType type, Sort sort);
 
+    // 페이지네이션 적용 조회
+    @EntityGraph(attributePaths = {"member"})
+    Page<PostEntity> findByType(PostType type, Pageable pageable);
+
     @EntityGraph(attributePaths = {"member"})
     Optional<PostEntity> findByIdAndMemberId(Long postId, Long memberId);
 
@@ -41,6 +45,10 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
     @Query("SELECT p FROM PostEntity p WHERE " +
             "(:keyword IS NULL OR p.title LIKE %:keyword% OR p.content LIKE %:keyword%)")
     Page<PostEntity> searchPosts(@Param("keyword") String keyword, Pageable pageable);
+
+    // 게시글별 좋아요 수 조회
+    @Query("SELECT l.post.id, COUNT(l) FROM PostLikeEntity l WHERE l.post.id IN :postIds GROUP BY l.post.id")
+    List<Object[]> countLikesByPostIds(@Param("postIds") List<Long> postIds);
 
     // 통계용 메서드
     @Query("SELECT COUNT(p) FROM PostEntity p WHERE p.createdAt >= :startDate")

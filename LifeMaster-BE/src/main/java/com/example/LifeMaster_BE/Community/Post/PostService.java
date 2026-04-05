@@ -13,6 +13,8 @@ import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -20,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -38,31 +41,37 @@ public class PostService {
 
     private static final String POPULAR_POSTS_KEY = "popularPosts"; // 인기글 캐싱 키
 
-    public List<AllPostsDto> getAllPosts(Long memberId, PostType type) {
-        List<PostEntity> posts = postRepository.findByType(type, Sort.by(Sort.Direction.DESC, "createdAt"));
+    public Page<AllPostsDto> getAllPosts(Long memberId, PostType type, Pageable pageable) {
+        Page<PostEntity> postPage = postRepository.findByType(type, pageable);
 
-        List<Long> postIds = posts.stream()
+        List<Long> postIds = postPage.getContent().stream()
                 .map(PostEntity::getId)
                 .toList();
 
+        // 좋아요 수: COUNT 쿼리로 조회
+        Map<Long, Long> likeCountMap = postRepository.countLikesByPostIds(postIds).stream()
+                .collect(Collectors.toMap(
+                        row -> (Long) row[0],
+                        row -> (Long) row[1]
+                ));
+
+        // 사용자 좋아요 여부
         List<PostLikeEntity> userLikes = likeRepository.findByMemberIdAndPostIdIn(memberId, postIds);
 
         Set<Long> likedPostIds = userLikes.stream()
                 .map(like -> like.getPost().getId())
                 .collect(Collectors.toSet());
 
-        return posts.stream()
-                .map(post -> new AllPostsDto(
-                        post.getId(),
-                        post.getTitle(),
-                        post.getMember().getNickname(),
-                        post.getViewCount(),
-                        post.getCommentCount(),
-                        post.getLikes().size(),
-                        post.getCreatedAt(),
-                        likedPostIds.contains(post.getId())
-                ))
-                .toList();
+        return postPage.map(post -> new AllPostsDto(
+                post.getId(),
+                post.getTitle(),
+                post.getMember().getNickname(),
+                post.getViewCount(),
+                post.getCommentCount(),
+                likeCountMap.getOrDefault(post.getId(), 0L).intValue(),
+                post.getCreatedAt(),
+                likedPostIds.contains(post.getId())
+        ));
     }
 
     public PostGetResponse getPost(Long postId, Long memberId){
