@@ -93,11 +93,15 @@ class PostQueryPerformanceTest {
     void stage0_noIndex() throws Exception {
         Assumptions.assumeTrue(dataReady, "데이터 준비가 완료되지 않아 스킵");
 
-        // 인덱스 제거
+        // 인덱스 전부 제거 (Entity에서 자동 생성된 것 포함)
         try (Connection conn = dataSource.getConnection(); Statement stmt = conn.createStatement()) {
             stmt.executeUpdate("DROP INDEX `idx_type` ON `post_entity`");
+            stmt.executeUpdate("DROP INDEX `idx_type_created_at` ON `post_entity`");
             stmt.executeUpdate("ALTER TABLE `post_like` DROP INDEX `uq_post_like_member_post`");
-            log.info("Stage 0: 인덱스 제거 완료");
+            // FK 제약조건 유지를 위해 임시 인덱스 생성 후 커버링 인덱스 제거
+            stmt.executeUpdate("CREATE INDEX `idx_post_like_fk_temp` ON `post_like` (`post_id`)");
+            stmt.executeUpdate("DROP INDEX `idx_post_like_post_member` ON `post_like`");
+            log.info("Stage 0: 인덱스 전부 제거 완료");
         }
 
         // EXPLAIN
@@ -129,14 +133,13 @@ class PostQueryPerformanceTest {
 
     @Test
     @Order(1)
-    @DisplayName("Stage 1: 단일 인덱스 - type, (member_id, post_id)")
+    @DisplayName("Stage 1: 단일 인덱스 - type")
     void stage1_singleIndex() throws Exception {
         Assumptions.assumeTrue(dataReady, "데이터 준비가 완료되지 않아 스킵");
 
-        // 단일 인덱스 추가
+        // post_entity 단일 인덱스만 추가 (post_like 인덱스는 Stage 3에서)
         try (Connection conn = dataSource.getConnection(); Statement stmt = conn.createStatement()) {
             stmt.executeUpdate("CREATE INDEX `idx_type` ON `post_entity` (`type`)");
-            stmt.executeUpdate("ALTER TABLE `post_like` ADD CONSTRAINT `uq_post_like_member_post` UNIQUE (`member_id`, `post_id`)");
             log.info("Stage 1: 단일 인덱스 추가 완료");
         }
 
@@ -158,6 +161,92 @@ class PostQueryPerformanceTest {
         long queryCount = stats.getQueryExecutionCount();
 
         log.info("===== Stage 1 결과 =====");
+        log.info("조회 건수: {}", result.getNumberOfElements());
+        log.info("전체 건수: {}", result.getTotalElements());
+        log.info("실행 시간: {}ms", elapsed);
+        log.info("Hibernate 쿼리 수: {}", queryCount);
+        log.info("========================");
+
+        Assertions.assertFalse(result.isEmpty(), "조회 결과가 비어있으면 안 됨");
+    }
+
+    @Test
+    @Order(2)
+    @DisplayName("Stage 2: 복합 인덱스 - (type, created_at DESC)")
+    void stage2_compositeIndex() throws Exception {
+        Assumptions.assumeTrue(dataReady, "데이터 준비가 완료되지 않아 스킵");
+
+        // Stage 1의 단일 인덱스 제거 후 복합 인덱스 추가
+        try (Connection conn = dataSource.getConnection(); Statement stmt = conn.createStatement()) {
+            stmt.executeUpdate("DROP INDEX `idx_type` ON `post_entity`");
+            stmt.executeUpdate("CREATE INDEX `idx_type_created_at` ON `post_entity` (`type`, `created_at` DESC)");
+            log.info("Stage 2: 단일 → 복합 인덱스 교체 완료");
+        }
+
+        // EXPLAIN
+        logExplain("Stage 2 - post_entity 조회",
+                "EXPLAIN SELECT * FROM `post_entity` WHERE `type` = 'FREE' ORDER BY `created_at` DESC LIMIT 20");
+
+        logExplain("Stage 2 - post_like 좋아요 확인",
+                "EXPLAIN SELECT * FROM `post_like` WHERE `member_id` = 1 AND `post_id` IN (1, 2, 3, 4, 5)");
+
+        // 앱 서버 단 측정
+        Statistics stats = getHibernateStatistics();
+        stats.clear();
+
+        long start = System.nanoTime();
+        Page<AllPostsDto> result = postService.getAllPosts(1L, PostType.FREE, TEST_PAGEABLE);
+        long elapsed = (System.nanoTime() - start) / 1_000_000;
+
+        long queryCount = stats.getQueryExecutionCount();
+
+        log.info("===== Stage 2 결과 =====");
+        log.info("조회 건수: {}", result.getNumberOfElements());
+        log.info("전체 건수: {}", result.getTotalElements());
+        log.info("실행 시간: {}ms", elapsed);
+        log.info("Hibernate 쿼리 수: {}", queryCount);
+        log.info("========================");
+
+        Assertions.assertFalse(result.isEmpty(), "조회 결과가 비어있으면 안 됨");
+    }
+
+    @Test
+    @Order(3)
+    @DisplayName("Stage 3: post_like 인덱스 - (member_id, post_id) + (post_id, member_id)")
+    void stage3_coveringIndex() throws Exception {
+        Assumptions.assumeTrue(dataReady, "데이터 준비가 완료되지 않아 스킵");
+
+        // post_like 인덱스 추가: unique constraint + 커버링 인덱스
+        try (Connection conn = dataSource.getConnection(); Statement stmt = conn.createStatement()) {
+            stmt.executeUpdate("ALTER TABLE `post_like` ADD CONSTRAINT `uq_post_like_member_post` UNIQUE (`member_id`, `post_id`)");
+            stmt.executeUpdate("CREATE INDEX `idx_post_like_post_member` ON `post_like` (`post_id`, `member_id`)");
+            stmt.executeUpdate("DROP INDEX `idx_post_like_fk_temp` ON `post_like`");
+            log.info("Stage 3: post_like 인덱스 추가 완료");
+        }
+
+        // EXPLAIN - post_entity 조회 (Stage 2와 동일)
+        logExplain("Stage 3 - post_entity 조회",
+                "EXPLAIN SELECT * FROM `post_entity` WHERE `type` = 'FREE' ORDER BY `created_at` DESC LIMIT 20");
+
+        // EXPLAIN - post_like COUNT 쿼리 (커버링 인덱스 효과 확인)
+        logExplain("Stage 3 - post_like COUNT (좋아요 수)",
+                "EXPLAIN SELECT `post_id`, COUNT(*) FROM `post_like` WHERE `post_id` IN (1, 2, 3, 4, 5) GROUP BY `post_id`");
+
+        // EXPLAIN - post_like 사용자 좋아요 확인
+        logExplain("Stage 3 - post_like 좋아요 확인",
+                "EXPLAIN SELECT * FROM `post_like` WHERE `member_id` = 1 AND `post_id` IN (1, 2, 3, 4, 5)");
+
+        // 앱 서버 단 측정
+        Statistics stats = getHibernateStatistics();
+        stats.clear();
+
+        long start = System.nanoTime();
+        Page<AllPostsDto> result = postService.getAllPosts(1L, PostType.FREE, TEST_PAGEABLE);
+        long elapsed = (System.nanoTime() - start) / 1_000_000;
+
+        long queryCount = stats.getQueryExecutionCount();
+
+        log.info("===== Stage 3 결과 =====");
         log.info("조회 건수: {}", result.getNumberOfElements());
         log.info("전체 건수: {}", result.getTotalElements());
         log.info("실행 시간: {}ms", elapsed);
