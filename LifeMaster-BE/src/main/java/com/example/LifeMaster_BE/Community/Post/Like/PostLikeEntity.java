@@ -13,6 +13,9 @@ import lombok.Setter;
         name = "post_like",
         uniqueConstraints = {
                 @UniqueConstraint(name = "uq_post_like_member_post", columnNames = {"member_id", "post_id"})
+        },
+        indexes = {
+                @Index(name = "idx_post_like_post_member", columnList = "post_id, member_id")
         }
 )
 public class PostLikeEntity {

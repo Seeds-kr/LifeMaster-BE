@@ -23,7 +23,8 @@ import java.util.List;
 @Table(
         indexes = {
                 @Index(name = "idx_type", columnList = "type"),
-                @Index(name = "idx_viewCount", columnList = "view_count")
+                @Index(name = "idx_viewCount", columnList = "view_count"),
+                @Index(name = "idx_type_created_at", columnList = "type, created_at DESC")
         }
 )
 public class PostEntity {
