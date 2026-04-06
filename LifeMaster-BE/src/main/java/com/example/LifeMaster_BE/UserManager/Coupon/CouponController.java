@@ -36,11 +36,10 @@ public class CouponController {
             @RequestBody CouponDto.Use dto,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-
         Long memberId = user.getId();
         String email = user.getUsername(); // 기존 로직 유지
 
-        return couponService.useCoupon(memberId, dto.getCouponId());
+        return couponService.useCoupon(memberId, dto.getCouponCode());
     }
 
     /** 3. 사용자 쿠폰 조회 */

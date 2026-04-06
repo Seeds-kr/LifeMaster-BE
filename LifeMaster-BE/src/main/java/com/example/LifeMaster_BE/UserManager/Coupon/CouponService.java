@@ -41,10 +41,10 @@ public class CouponService {
         return couponRepository.save(coupon);
     }
 
-    // 2. 사용자 쿠폰 사용
+    // 2. 사용자 쿠폰 사용 (코드 입력 방식)
     @Transactional
-    public Coupon useCoupon(Long userId, Long couponId) {
-        Coupon coupon = couponRepository.findById(couponId)
+    public Coupon useCoupon(Long userId, String couponCode) {
+        Coupon coupon = couponRepository.findByCouponCode(couponCode)
                 .orElseThrow(() -> new IllegalArgumentException("쿠폰 없음"));
 
         if (coupon.getUser() == null || !coupon.getUser().getId().equals(userId)) {
@@ -59,7 +59,7 @@ public class CouponService {
             throw new IllegalArgumentException("쿠폰 타입 정보가 없습니다.");
         }
 
-        // 쿠폰 타입별 요금제 적용
+        // 타입별 요금제 적용
         switch (coupon.getCouponType()) {
             case LIMIT -> memberSubscriptionService.updateSubscriptionOneYear(userId, SubscriptionPlan.PREMIUM);
             case UNLIMIT -> memberSubscriptionService.updateSubscriptionPermanent(userId, SubscriptionPlan.PREMIUM);

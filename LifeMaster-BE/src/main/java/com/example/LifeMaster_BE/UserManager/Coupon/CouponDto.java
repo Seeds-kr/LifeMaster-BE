@@ -11,8 +11,9 @@ public class CouponDto {
     }
 
     @Getter
+    @Setter
     public static class Use {
-        private Long couponId;
+        private String couponCode;
     }
 
     @Getter
