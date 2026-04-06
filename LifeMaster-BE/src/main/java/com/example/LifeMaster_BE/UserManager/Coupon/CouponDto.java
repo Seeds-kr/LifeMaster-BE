@@ -1,6 +1,7 @@
 package com.example.LifeMaster_BE.UserManager.Coupon;
 
 import lombok.Getter;
+import lombok.Setter;
 
 public class CouponDto {
 
@@ -15,7 +16,9 @@ public class CouponDto {
     }
 
     @Getter
+    @Setter
     public static class Create {
         private Integer couponPercent;
+        private CouponType couponType;
     }
 }

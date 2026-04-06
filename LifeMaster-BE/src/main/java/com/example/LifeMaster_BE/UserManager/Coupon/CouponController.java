@@ -56,11 +56,17 @@ public class CouponController {
     }
 
     /** 4. 관리자 쿠폰 생성 */
+    /** 4. 관리자 쿠폰 생성 */
     @PostMapping("/admin")
     @Operation(summary = "쿠폰 생성 (관리자)", description = "관리자가 새로운 쿠폰을 생성합니다.")
-    public Coupon createCoupon(
-            @RequestBody CouponDto.Create dto
-    ) {
-        return couponService.createCoupon(dto.getCouponPercent());
+    public Coupon createCoupon(@RequestBody CouponDto.Create dto) {
+        if (dto.getCouponType() == null) {
+            throw new IllegalArgumentException("쿠폰 타입은 필수입니다.");
+        }
+
+        return switch (dto.getCouponType()) {
+            case LIMIT -> couponService.createLimitCoupon(dto.getCouponPercent());
+            case UNLIMIT -> couponService.createUnlimitCoupon(dto.getCouponPercent());
+        };
     }
 }

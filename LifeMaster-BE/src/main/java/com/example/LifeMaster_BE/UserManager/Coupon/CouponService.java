@@ -55,12 +55,20 @@ public class CouponService {
             throw new IllegalArgumentException("사용 불가능한 상태");
         }
 
+        if (coupon.getCouponType() == null) {
+            throw new IllegalArgumentException("쿠폰 타입 정보가 없습니다.");
+        }
+
+        // 쿠폰 타입별 요금제 적용
+        switch (coupon.getCouponType()) {
+            case LIMIT -> memberSubscriptionService.updateSubscriptionOneYear(userId, SubscriptionPlan.PREMIUM);
+            case UNLIMIT -> memberSubscriptionService.updateSubscriptionPermanent(userId, SubscriptionPlan.PREMIUM);
+            default -> throw new IllegalArgumentException("지원하지 않는 쿠폰 타입입니다.");
+        }
+
         coupon = coupon.toBuilder()
                 .couponStatus(CouponStatus.USE)
                 .build();
-
-        // 쿠폰 사용 성공 시 프리미엄 1개월 적용
-        memberSubscriptionService.updateSubscription(userId, SubscriptionPlan.PREMIUM);
 
         return couponRepository.save(coupon);
     }
@@ -73,11 +81,22 @@ public class CouponService {
 
     // 4. 관리자 쿠폰 생성
     @Transactional
-    public Coupon createCoupon(Integer percent) {
+    public Coupon createLimitCoupon(Integer percent) {
+        return createCoupon(percent, CouponType.LIMIT);
+    }
+
+    @Transactional
+    public Coupon createUnlimitCoupon(Integer percent) {
+        return createCoupon(percent, CouponType.UNLIMIT);
+    }
+
+    private Coupon createCoupon(Integer percent, CouponType couponType) {
         String code = generateUniqueCouponCode();
+
         Coupon coupon = Coupon.builder()
                 .couponCode(code)
                 .couponPercent(percent)
+                .couponType(couponType)
                 .couponStatus(CouponStatus.UNUSE)
                 .build();
 

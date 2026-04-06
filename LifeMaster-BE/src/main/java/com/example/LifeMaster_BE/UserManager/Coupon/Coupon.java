@@ -29,8 +29,8 @@ public class Coupon extends BaseEntity {
     private Integer couponPercent;
 
     @Enumerated(EnumType.STRING)
-    @Column( nullable = true)
-    private CouponType couponType; //UNLIMIT,LIMIT
+    @Column(nullable = false)
+    private CouponType couponType;
 
     @Enumerated(EnumType.STRING)
     @Column( nullable = true)
