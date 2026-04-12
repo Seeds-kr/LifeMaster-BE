@@ -42,7 +42,7 @@ public class MemberSubscriptionService {
     }
 
     @Transactional
-    public MemberEntity updateSubscriptionOneYear(Long memberId, SubscriptionPlan newPlan) {
+    public MemberEntity updateSubscription13Month(Long memberId, SubscriptionPlan newPlan) {
         Optional<MemberEntity> optionalMember = memberRepository.findById(memberId);
         if (optionalMember.isEmpty()) {
             throw new IllegalArgumentException("해당 ID의 멤버를 찾을 수 없습니다.");
@@ -50,7 +50,7 @@ public class MemberSubscriptionService {
 
         MemberEntity member = optionalMember.get();
         LocalDate now = LocalDate.now();
-        LocalDate expirationDate = now.plusMonths(12); // 1년 후 만료
+        LocalDate expirationDate = now.plusMonths(13); // 13개월 후
 
         member.updateSubscription(newPlan, now, expirationDate);
         return memberRepository.save(member);

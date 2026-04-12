@@ -61,7 +61,7 @@ public class CouponService {
 
         // 타입별 요금제 적용
         switch (coupon.getCouponType()) {
-            case LIMIT -> memberSubscriptionService.updateSubscriptionOneYear(userId, SubscriptionPlan.PREMIUM);
+            case LIMIT -> memberSubscriptionService.updateSubscription13Month(userId, SubscriptionPlan.PREMIUM);
             case UNLIMIT -> memberSubscriptionService.updateSubscriptionPermanent(userId, SubscriptionPlan.PREMIUM);
             default -> throw new IllegalArgumentException("지원하지 않는 쿠폰 타입입니다.");
         }
