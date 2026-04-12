@@ -28,14 +28,28 @@ public class MemberSubscriptionService {
      */
     @Transactional
     public MemberEntity updateSubscription(Long memberId, SubscriptionPlan newPlan) {
-        Optional<MemberEntity> optionalMember = memberRepository.findById(memberId);
-        if (optionalMember.isEmpty()) {
-            throw new IllegalArgumentException("해당 ID의 멤버를 찾을 수 없습니다.");
+        MemberEntity member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 ID의 멤버를 찾을 수 없습니다."));
+
+        LocalDate now = LocalDate.now();
+
+        LocalDate startDate;
+        LocalDate currentExpirationDate = member.getSubscriptionExpirationDate();
+
+        if (member.getSubscriptionPlan() == SubscriptionPlan.PREMIUM
+                && currentExpirationDate != null
+                && !currentExpirationDate.isBefore(now)) {
+
+            // 🔥 기존 기간 남아있으면 이어서 연장
+            startDate = currentExpirationDate.plusDays(1);
+
+        } else {
+            // 🔥 무료 or 만료 → 오늘부터 시작
+            startDate = now;
         }
 
-        MemberEntity member = optionalMember.get();
-        LocalDate now = LocalDate.now();
-        LocalDate expirationDate = now.plusMonths(1); // 1개월 후 만료
+        // 🔥 1개월 연장
+        LocalDate expirationDate = startDate.plusMonths(1).minusDays(1);
 
         member.updateSubscription(newPlan, now, expirationDate);
         return memberRepository.save(member);
@@ -43,14 +57,27 @@ public class MemberSubscriptionService {
 
     @Transactional
     public MemberEntity updateSubscription13Month(Long memberId, SubscriptionPlan newPlan) {
-        Optional<MemberEntity> optionalMember = memberRepository.findById(memberId);
-        if (optionalMember.isEmpty()) {
-            throw new IllegalArgumentException("해당 ID의 멤버를 찾을 수 없습니다.");
+        MemberEntity member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 ID의 멤버를 찾을 수 없습니다."));
+
+        LocalDate now = LocalDate.now();
+
+        LocalDate startDate;
+        LocalDate currentExpirationDate = member.getSubscriptionExpirationDate();
+
+        if (member.getSubscriptionPlan() == SubscriptionPlan.PREMIUM
+                && currentExpirationDate != null
+                && !currentExpirationDate.isBefore(now)) {
+
+            // 아직 남아있으면 이어서 연장
+            startDate = currentExpirationDate.plusDays(1);
+
+        } else {
+            // 무료 or 만료됨 → 오늘부터
+            startDate = now;
         }
 
-        MemberEntity member = optionalMember.get();
-        LocalDate now = LocalDate.now();
-        LocalDate expirationDate = now.plusMonths(13); // 13개월 후
+        LocalDate expirationDate = startDate.plusMonths(13).minusDays(1);
 
         member.updateSubscription(newPlan, now, expirationDate);
         return memberRepository.save(member);

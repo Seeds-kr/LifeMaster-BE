@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Random;
 
@@ -59,7 +60,17 @@ public class CouponService {
             throw new IllegalArgumentException("쿠폰 타입 정보가 없습니다.");
         }
 
-        // 타입별 요금제 적용
+        MemberEntity member = memberRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("유저 없음"));
+
+        // 이미 영구 프리미엄이면 LIMIT 쿠폰 사용 불가
+        if (coupon.getCouponType() == CouponType.LIMIT
+                && member.getSubscriptionPlan() == SubscriptionPlan.PREMIUM
+                && member.getSubscriptionExpirationDate() != null
+                && member.getSubscriptionExpirationDate().equals(LocalDate.of(9999, 12, 31))) {
+            throw new IllegalArgumentException("무제한 프리미엄 이용 중에는 기간제 쿠폰을 사용할 수 없습니다.");
+        }
+
         switch (coupon.getCouponType()) {
             case LIMIT -> memberSubscriptionService.updateSubscription13Month(userId, SubscriptionPlan.PREMIUM);
             case UNLIMIT -> memberSubscriptionService.updateSubscriptionPermanent(userId, SubscriptionPlan.PREMIUM);

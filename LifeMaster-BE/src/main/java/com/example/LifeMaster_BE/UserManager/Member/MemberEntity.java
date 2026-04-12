@@ -184,4 +184,8 @@ public class MemberEntity {
         this.expirationDate = expirationDate;
         this.paymentStatus = PaymentStatus.PAID;
     }
+
+    public LocalDate getSubscriptionExpirationDate() {
+        return expirationDate;
+    }
 }
