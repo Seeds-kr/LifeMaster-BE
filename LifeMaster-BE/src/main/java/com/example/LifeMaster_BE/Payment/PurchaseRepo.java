@@ -1,5 +1,6 @@
 package com.example.LifeMaster_BE.Payment;
 
+import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -35,4 +36,10 @@ public interface PurchaseRepo extends JpaRepository<PurchaseEntity, String> {
 
     // 회원 + 주문ID
     Optional<PurchaseEntity> findByMember_IdAndOrderId(Long memberId, String orderId);
+
+    // 어드민 전체 조회용
+    Page<PurchaseEntity> findAllByOrderByPurchaseTimeDesc(Pageable pageable);
+
+    // 필요하면 회원별 조회도 pageable 버전 추가 가능
+    Page<PurchaseEntity> findAllByMember(MemberEntity member, Pageable pageable);
 }

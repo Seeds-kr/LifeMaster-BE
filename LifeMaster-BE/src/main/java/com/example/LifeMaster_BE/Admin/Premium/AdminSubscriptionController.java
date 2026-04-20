@@ -9,7 +9,7 @@ import java.util.List;
 
 @Tag(name = "Admin - User", description = "관리자 프리미엄 계정 관리 API")
 @RestController
-@RequestMapping("/admin/subscriptions")
+@RequestMapping("/admin/premium")
 @RequiredArgsConstructor
 public class AdminSubscriptionController {
 

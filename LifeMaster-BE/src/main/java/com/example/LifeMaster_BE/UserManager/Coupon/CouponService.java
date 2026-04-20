@@ -1,5 +1,6 @@
 package com.example.LifeMaster_BE.UserManager.Coupon;
 
+import com.example.LifeMaster_BE.Admin.Coupon.AdminCouponStatusResponse;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import com.example.LifeMaster_BE.UserManager.Member.Subscription.MemberSubscriptionService;
@@ -7,6 +8,7 @@ import com.example.LifeMaster_BE.UserManager.Member.Subscription.SubscriptionPla
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.stream.Collectors;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -134,5 +136,21 @@ public class CouponService {
         } while (couponRepository.existsByCouponCode(code));
 
         return code;
+    }
+
+    // 5. 관리자 - 전체 쿠폰 상태 조회
+    @Transactional(readOnly = true)
+    public List<AdminCouponStatusResponse> getAllCouponsForAdmin() {
+        return couponRepository.findAllWithUser().stream()
+                .map(AdminCouponStatusResponse::from)
+                .collect(Collectors.toList());
+    }
+
+    // 6. 관리자 - 상태별 쿠폰 조회
+    @Transactional(readOnly = true)
+    public List<AdminCouponStatusResponse> getCouponsForAdminByStatus(CouponStatus status) {
+        return couponRepository.findAllWithUserByStatus(status).stream()
+                .map(AdminCouponStatusResponse::from)
+                .collect(Collectors.toList());
     }
 }
