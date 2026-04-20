@@ -1,5 +1,6 @@
 package com.example.LifeMaster_BE.UserManager.Member.Subscription;
 
+import com.example.LifeMaster_BE.Admin.Premium.PremiumMemberAdminDto;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import com.example.LifeMaster_BE.UserManager.Member.Payment.PaymentDto;
@@ -151,6 +152,17 @@ public class MemberSubscriptionService {
 
         return member.getPayments().stream()
                 .map(PaymentDto::from) // DTO 변환
+                .toList();
+    }
+
+    /**
+     * 어드민용 - 전체 프리미엄 유저의 유효기간 조회
+     */
+    @Transactional(readOnly = true)
+    public List<PremiumMemberAdminDto> getAllPremiumMembersForAdmin() {
+        return memberRepository.findAllBySubscriptionPlan(SubscriptionPlan.PREMIUM)
+                .stream()
+                .map(PremiumMemberAdminDto::from)
                 .toList();
     }
 }
