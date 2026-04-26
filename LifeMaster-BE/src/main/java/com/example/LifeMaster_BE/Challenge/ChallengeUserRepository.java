@@ -13,4 +13,6 @@ public interface ChallengeUserRepository extends JpaRepository<ChallengeUser, Lo
     boolean existsByChallengeAndUser(Challenge challenge, MemberEntity user);
 
     long countByUser(MemberEntity user);
+
+    long countByUserId(Long userId);
 }

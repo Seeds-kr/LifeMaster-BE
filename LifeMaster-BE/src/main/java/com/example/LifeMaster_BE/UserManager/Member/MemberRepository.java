@@ -36,6 +36,8 @@ public interface MemberRepository extends JpaRepository<MemberEntity, Long> {
     long countNewMembersSince(@Param("startDate") LocalDateTime startDate);
 
     List<MemberEntity> findAllBySubscriptionPlan(SubscriptionPlan subscriptionPlan);
+
+    List<MemberEntity> findAll();
 }
 
 

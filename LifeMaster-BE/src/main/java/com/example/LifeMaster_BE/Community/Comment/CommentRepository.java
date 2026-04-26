@@ -35,4 +35,6 @@ public interface CommentRepository extends JpaRepository<CommentEntity, Long> {
     // 통계용 메서드
     @Query("SELECT COUNT(c) FROM CommentEntity c WHERE c.createdAt >= :startDate")
     long countNewCommentsSince(@Param("startDate") LocalDateTime startDate);
+
+    long countByMemberId(Long memberId);
 }
