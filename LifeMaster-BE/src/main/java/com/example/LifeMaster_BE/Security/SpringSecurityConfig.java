@@ -41,6 +41,7 @@ public class SpringSecurityConfig {
 
                         .requestMatchers(
                                 "/admin/coupons-page",
+                                "/admin/coupons",
 
                                 "/user/login",
                                 "/swagger-ui/**",
