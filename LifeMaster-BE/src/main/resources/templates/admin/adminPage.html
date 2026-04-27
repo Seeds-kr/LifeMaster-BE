@@ -1,417 +1,306 @@
+<!--
 <!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <title>관리자 페이지</title>
-    <link rel="stylesheet" href="/css/admin-coupons.css">
-</head>
-<body>
+    <html lang="ko">
+    <head>
+        <meta charset="UTF-8">
+        <title>관리자 페이지</title>
+        <link rel="stylesheet" href="/css/admin-coupons.css">
+    </head>
+    <body>
 
-<div class="admin-layout">
-    <aside class="sidebar">
-        <div class="logo">LIFEMASTER</div>
+    <div class="admin-layout">
+        <aside class="sidebar">
+            <div class="logo">LIFEMASTER</div>
 
-        <nav>
-            <a href="#" class="nav-item active" onclick="showPage('coupons', this)">📊 전체 쿠폰 조회</a>
-            <a href="#" class="nav-item" onclick="showPage('payments', this)">💳 결제 내역</a>
-            <a href="#" class="nav-item" onclick="showPage('premium', this)">⭐ 프리미엄 계정</a>
-            <a href="#" class="nav-item">👤 회원 관리</a>
-            <a href="#" class="nav-item">⚙ 설정</a>
-        </nav>
-    </aside>
+            <nav>
+                <a href="#" class="nav-item active" onclick="showPage('coupons', this)">📊 전체 쿠폰 조회</a>
+                <a href="#" class="nav-item" onclick="showPage('payments', this)">💳 결제 내역</a>
+                <a href="#" class="nav-item" onclick="showPage('premium', this)">⭐ 프리미엄 계정</a>
+                <a href="#" class="nav-item">👤 회원 관리</a>
+                <a href="#" class="nav-item">⚙ 설정</a>
+            </nav>
+        </aside>
 
-    <div class="main">
-        <header class="topbar">
-            <div>
-                <span class="menu-btn">☰</span>
-                <strong id="pageTitle">Coupon Dashboard</strong>
-            </div>
-
-            <button class="logout-btn" onclick="logout()">로그아웃</button>
-        </header>
-
-        <section class="content">
-
-            <!-- 쿠폰 조회 -->
-            <div id="page-coupons" class="page-section">
-                <div class="breadcrumb">Home / <span>전체 쿠폰 조회</span></div>
-
-                <div class="summary-grid">
-                    <div class="summary-card purple">
-                        <h3 id="totalCount">0</h3>
-                        <p>전체 쿠폰</p>
-                    </div>
-                    <div class="summary-card blue">
-                        <h3 id="unusedCount">0</h3>
-                        <p>미사용 쿠폰</p>
-                    </div>
-                    <div class="summary-card yellow">
-                        <h3 id="registeredCount">0</h3>
-                        <p>등록 쿠폰</p>
-                    </div>
-                    <div class="summary-card red">
-                        <h3 id="usedCount">0</h3>
-                        <p>사용 완료</p>
-                    </div>
+        <div class="main">
+            <header class="topbar">
+                <div>
+                    <span class="menu-btn">☰</span>
+                    <strong id="pageTitle">Coupon Dashboard</strong>
                 </div>
 
-                <div class="table-card">
-                    <div class="table-header">
-                        <div>
-                            <h2>전체 쿠폰 조회</h2>
-                            <p>쿠폰 코드, 할인율, 상태를 확인합니다.</p>
-                        </div>
+                <button class="logout-btn" onclick="logout()">로그아웃</button>
+            </header>
 
-                        <div class="filter-box">
-                            <select id="statusSelect">
-                                <option value="">전체</option>
-                                <option value="UNUSE">미사용</option>
-                                <option value="REGISTER">등록됨</option>
-                                <option value="USE">사용완료</option>
-                            </select>
-                            <button onclick="loadCoupons()">조회</button>
+            <section class="content">
+
+                <div id="page-coupons" class="page-section">
+                    <div class="breadcrumb">Home / <span>전체 쿠폰 조회</span></div>
+
+                    <div class="summary-grid">
+                        <div class="summary-card purple">
+                            <h3 id="totalCount">0</h3>
+                            <p>전체 쿠폰</p>
+                        </div>
+                        <div class="summary-card blue">
+                            <h3 id="unusedCount">0</h3>
+                            <p>미사용 쿠폰</p>
+                        </div>
+                        <div class="summary-card yellow">
+                            <h3 id="registeredCount">0</h3>
+                            <p>등록 쿠폰</p>
+                        </div>
+                        <div class="summary-card red">
+                            <h3 id="usedCount">0</h3>
+                            <p>사용 완료</p>
                         </div>
                     </div>
 
-                    <div class="table-wrap">
-                        <table>
-                            <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>쿠폰 코드</th>
-                                <th>할인율</th>
-                                <th>쿠폰 타입</th>
-                                <th>상태</th>
-                                <th>사용자</th>
-                            </tr>
-                            </thead>
-                            <tbody id="couponTableBody"></tbody>
-                        </table>
-                    </div>
+                    <div class="table-card">
+                        <div class="table-header">
+                            <div>
+                                <h2>전체 쿠폰 조회</h2>
+                                <p>쿠폰 코드, 할인율, 상태를 확인합니다.</p>
+                            </div>
 
-                    <div class="pagination-box">
-                        <button id="couponPrevBtn" onclick="prevCouponPage()">이전</button>
-                        <span id="couponPageInfo">1 / 1</span>
-                        <button id="couponNextBtn" onclick="nextCouponPage()">다음</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 결제 내역 조회 -->
-            <div id="page-payments" class="page-section" style="display:none;">
-                <div class="breadcrumb">Home / <span>결제 내역</span></div>
-
-                <div class="summary-grid">
-                    <div class="summary-card purple">
-                        <h3 id="paymentTotalCount">0</h3>
-                        <p>전체 결제</p>
-                    </div>
-                    <div class="summary-card blue">
-                        <h3 id="paymentSuccessCount">0</h3>
-                        <p>결제 성공</p>
-                    </div>
-                    <div class="summary-card yellow">
-                        <h3 id="paymentPendingCount">0</h3>
-                        <p>대기 중</p>
-                    </div>
-                    <div class="summary-card red">
-                        <h3 id="paymentFailedCount">0</h3>
-                        <p>실패/취소/환불</p>
-                    </div>
-                </div>
-
-                <div class="table-card">
-                    <div class="table-header">
-                        <div>
-                            <h2>결제 내역 조회</h2>
-                            <p>상품명, 금액, 결제 상태를 확인합니다.</p>
+                            <div class="filter-box">
+                                <select id="statusSelect">
+                                    <option value="">전체</option>
+                                    <option value="UNUSE">미사용</option>
+                                    <option value="REGISTER">등록됨</option>
+                                    <option value="USE">사용완료</option>
+                                </select>
+                                <button onclick="loadCoupons()">조회</button>
+                            </div>
                         </div>
 
-                        <button onclick="reloadPayments()">새로고침</button>
-                    </div>
-
-                    <div class="table-wrap">
-                        <table>
-                            <thead>
-                            <tr>
-                                <th>토큰</th>
-                                <th>회원 ID</th>
-                                <th>이메일</th>
-                                <th>닉네임</th>
-                                <th>상품명</th>
-                                <th>금액</th>
-                                <th>구매 타입</th>
-                                <th>상태</th>
-                                <th>결제 시간</th>
-                            </tr>
-                            </thead>
-                            <tbody id="paymentTableBody"></tbody>
-                        </table>
-                    </div>
-
-                    <div class="pagination-box">
-                        <button id="paymentPrevBtn" onclick="prevPaymentPage()">이전</button>
-                        <span id="paymentPageInfo">1 / 1</span>
-                        <button id="paymentNextBtn" onclick="nextPaymentPage()">다음</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 프리미엄 계정 조회 -->
-            <div id="page-premium" class="page-section" style="display:none;">
-                <div class="breadcrumb">Home / <span>프리미엄 계정 조회</span></div>
-
-                <div class="summary-grid">
-                    <div class="summary-card purple">
-                        <h3 id="premiumTotalCount">0</h3>
-                        <p>전체 프리미엄</p>
-                    </div>
-
-                    <div class="summary-card blue">
-                        <h3 id="premiumActiveCount">0</h3>
-                        <p>활성 계정</p>
-                    </div>
-
-                    <div class="summary-card red">
-                        <h3 id="premiumExpiredCount">0</h3>
-                        <p>만료 계정</p>
-                    </div>
-
-                    <div class="summary-card yellow">
-                        <h3 id="premiumExpireSoonCount">0</h3>
-                        <p>7일 내 만료</p>
-                    </div>
-                </div>
-
-                <div class="table-card">
-                    <div class="table-header">
-                        <div>
-                            <h2>프리미엄 계정 조회</h2>
-                            <p>프리미엄 회원의 만료일과 상태를 확인합니다.</p>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>쿠폰 코드</th>
+                                    <th>할인율</th>
+                                    <th>쿠폰 타입</th>
+                                    <th>상태</th>
+                                    <th>사용자</th>
+                                </tr>
+                                </thead>
+                                <tbody id="couponTableBody"></tbody>
+                            </table>
                         </div>
 
-                        <button onclick="loadPremiumMembers()">새로고침</button>
-                    </div>
-
-                    <div class="table-wrap">
-                        <table>
-                            <thead>
-                            <tr>
-                                <th>회원 ID</th>
-                                <th>이메일</th>
-                                <th>이름</th>
-                                <th>구독 만료일</th>
-                                <th>상태</th>
-                            </tr>
-                            </thead>
-                            <tbody id="premiumTableBody"></tbody>
-                        </table>
+                        <div class="pagination-box">
+                            <button id="couponPrevBtn" onclick="prevCouponPage()">이전</button>
+                            <span id="couponPageInfo">1 / 1</span>
+                            <button id="couponNextBtn" onclick="nextCouponPage()">다음</button>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-        </section>
+                <div id="page-payments" class="page-section" style="display:none;">
+                    <div class="breadcrumb">Home / <span>결제 내역</span></div>
+
+                    <div class="summary-grid">
+                        <div class="summary-card purple">
+                            <h3 id="paymentTotalCount">0</h3>
+                            <p>전체 결제</p>
+                        </div>
+                        <div class="summary-card blue">
+                            <h3 id="paymentSuccessCount">0</h3>
+                            <p>결제 성공</p>
+                        </div>
+                        <div class="summary-card yellow">
+                            <h3 id="paymentPendingCount">0</h3>
+                            <p>대기 중</p>
+                        </div>
+                        <div class="summary-card red">
+                            <h3 id="paymentFailedCount">0</h3>
+                            <p>실패/취소/환불</p>
+                        </div>
+                    </div>
+
+                    <div class="table-card">
+                        <div class="table-header">
+                            <div>
+                                <h2>결제 내역 조회</h2>
+                                <p>상품명, 금액, 결제 상태를 확인합니다.</p>
+                            </div>
+
+                            <button onclick="reloadPayments()">새로고침</button>
+                        </div>
+
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                <tr>
+                                    <th>토큰</th>
+                                    <th>회원 ID</th>
+                                    <th>이메일</th>
+                                    <th>닉네임</th>
+                                    <th>상품명</th>
+                                    <th>금액</th>
+                                    <th>구매 타입</th>
+                                    <th>상태</th>
+                                    <th>결제 시간</th>
+                                </tr>
+                                </thead>
+                                <tbody id="paymentTableBody"></tbody>
+                            </table>
+                        </div>
+
+                        <div class="pagination-box">
+                            <button id="paymentPrevBtn" onclick="prevPaymentPage()">이전</button>
+                            <span id="paymentPageInfo">1 / 1</span>
+                            <button id="paymentNextBtn" onclick="nextPaymentPage()">다음</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="page-premium" class="page-section" style="display:none;">
+                    <div class="breadcrumb">Home / <span>프리미엄 계정 조회</span></div>
+
+                    <div class="summary-grid">
+                        <div class="summary-card purple">
+                            <h3 id="premiumTotalCount">0</h3>
+                            <p>전체 프리미엄</p>
+                        </div>
+
+                        <div class="summary-card blue">
+                            <h3 id="premiumActiveCount">0</h3>
+                            <p>활성 계정</p>
+                        </div>
+
+                        <div class="summary-card yellow">
+                            <h3 id="premiumExpireSoonCount">0</h3>
+                            <p>7일 내 만료</p>
+                        </div>
+
+                        <div class="summary-card red">
+                            <h3 id="premiumExpiredCount">0</h3>
+                            <p>만료 계정</p>
+                        </div>
+                    </div>
+
+                    <div class="table-card">
+                        <div class="table-header">
+                            <div>
+                                <h2>프리미엄 계정 조회</h2>
+                                <p>프리미엄 회원의 만료일과 상태를 확인합니다.</p>
+                            </div>
+
+                            <button onclick="loadPremiumMembers()">새로고침</button>
+                        </div>
+
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                <tr>
+                                    <th>회원 ID</th>
+                                    <th>이메일</th>
+                                    <th>이름</th>
+                                    <th>구독 만료일</th>
+                                    <th>상태</th>
+                                </tr>
+                                </thead>
+                                <tbody id="premiumTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+        </div>
     </div>
-</div>
 
-<script>
-    let allCoupons = [];
-    let couponCurrentPage = 1;
+    <script>
+        let allCoupons = [];
+        let couponCurrentPage = 1;
 
-    let paymentCurrentPage = 0;
-    let paymentTotalPages = 1;
+        let paymentCurrentPage = 0;
+        let paymentTotalPages = 1;
 
-    const couponPageSize = 10;
-    const paymentPageSize = 20;
+        const couponPageSize = 10;
+        const paymentPageSize = 20;
 
-    window.onload = function () {
-        const token = localStorage.getItem("accessToken");
+        window.onload = function () {
+            const token = localStorage.getItem("accessToken");
 
-        if (!token) {
-            alert("로그인이 필요합니다.");
-            location.href = "/admin/login";
-            return;
-        }
+            if (!token) {
+                alert("로그인이 필요합니다.");
+                location.href = "/admin/login";
+                return;
+            }
 
-        loadCoupons();
-    };
-
-    function getToken() {
-        return localStorage.getItem("accessToken");
-    }
-
-    function authHeaders() {
-        return {
-            "Authorization": "Bearer " + getToken()
-        };
-    }
-
-    async function handleAuthError(response) {
-        if (response.status === 401) {
-            alert("로그인이 만료되었습니다. 다시 로그인하세요.");
-            localStorage.removeItem("accessToken");
-            location.href = "/admin/login";
-            return true;
-        }
-
-        if (response.status === 403) {
-            alert("관리자 권한이 필요합니다.");
-            return true;
-        }
-
-        return false;
-    }
-
-    function showPage(page, element) {
-        document.querySelectorAll(".page-section").forEach(section => {
-            section.style.display = "none";
-        });
-
-        document.querySelectorAll(".nav-item").forEach(item => {
-            item.classList.remove("active");
-        });
-
-        element.classList.add("active");
-
-        if (page === "coupons") {
-            document.getElementById("page-coupons").style.display = "block";
-            document.getElementById("pageTitle").textContent = "Coupon Dashboard";
             loadCoupons();
+        };
+
+        function getToken() {
+            return localStorage.getItem("accessToken");
         }
 
-        if (page === "payments") {
-            document.getElementById("page-payments").style.display = "block";
-            document.getElementById("pageTitle").textContent = "Payment Dashboard";
-            paymentCurrentPage = 0;
-            loadPayments();
-            loadPaymentSummary();
+        function authHeaders() {
+            return {
+                "Authorization": "Bearer " + getToken()
+            };
         }
 
-        if (page === "premium") {
-            document.getElementById("page-premium").style.display = "block";
-            document.getElementById("pageTitle").textContent = "Premium Member Dashboard";
-            loadPremiumMembers();
-        }
-    }
+        async function handleAuthError(response) {
+            if (response.status === 401) {
+                alert("로그인이 만료되었습니다. 다시 로그인하세요.");
+                localStorage.removeItem("accessToken");
+                location.href = "/admin/login";
+                return true;
+            }
 
-    async function loadCoupons() {
-        const status = document.getElementById("statusSelect").value;
+            if (response.status === 403) {
+                alert("관리자 권한이 필요합니다.");
+                return true;
+            }
 
-        let url = "/admin/coupons";
-        if (status) {
-            url += "?status=" + status;
-        }
-
-        const response = await fetch(url, {
-            method: "GET",
-            headers: authHeaders()
-        });
-
-        if (await handleAuthError(response)) return;
-
-        if (!response.ok) {
-            alert("쿠폰 조회 실패");
-            return;
+            return false;
         }
 
-        allCoupons = await response.json();
-        couponCurrentPage = 1;
-
-        renderCoupons();
-        updateCouponSummary(allCoupons);
-    }
-
-    function renderCoupons() {
-        const tbody = document.getElementById("couponTableBody");
-        tbody.innerHTML = "";
-
-        const totalPages = Math.ceil(allCoupons.length / couponPageSize) || 1;
-        const start = (couponCurrentPage - 1) * couponPageSize;
-        const end = start + couponPageSize;
-        const pageCoupons = allCoupons.slice(start, end);
-
-        if (pageCoupons.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" class="empty">조회된 쿠폰이 없습니다.</td></tr>`;
-        } else {
-            pageCoupons.forEach(coupon => {
-                const tr = document.createElement("tr");
-
-                tr.innerHTML = `
-                    <td>${coupon.couponId ?? ""}</td>
-                    <td class="code">${coupon.couponCode ?? ""}</td>
-                    <td>${coupon.couponPercent ?? ""}%</td>
-                    <td>${coupon.couponType ?? ""}</td>
-                    <td>${couponStatusBadge(coupon.couponStatus)}</td>
-                    <td>${coupon.email ?? coupon.nickname ?? "-"}</td>
-                `;
-
-                tbody.appendChild(tr);
+        function showPage(page, element) {
+            document.querySelectorAll(".page-section").forEach(section => {
+                section.style.display = "none";
             });
+
+            document.querySelectorAll(".nav-item").forEach(item => {
+                item.classList.remove("active");
+            });
+
+            element.classList.add("active");
+
+            if (page === "coupons") {
+                document.getElementById("page-coupons").style.display = "block";
+                document.getElementById("pageTitle").textContent = "Coupon Dashboard";
+                loadCoupons();
+            }
+
+            if (page === "payments") {
+                document.getElementById("page-payments").style.display = "block";
+                document.getElementById("pageTitle").textContent = "Payment Dashboard";
+                paymentCurrentPage = 0;
+                loadPayments();
+                loadPaymentSummary();
+            }
+
+            if (page === "premium") {
+                document.getElementById("page-premium").style.display = "block";
+                document.getElementById("pageTitle").textContent = "Premium Member Dashboard";
+                loadPremiumMembers();
+            }
         }
 
-        document.getElementById("couponPageInfo").textContent = `${couponCurrentPage} / ${totalPages}`;
-        document.getElementById("couponPrevBtn").disabled = couponCurrentPage <= 1;
-        document.getElementById("couponNextBtn").disabled = couponCurrentPage >= totalPages;
-    }
+        async function loadCoupons() {
+            const status = document.getElementById("statusSelect").value;
 
-    function prevCouponPage() {
-        if (couponCurrentPage > 1) {
-            couponCurrentPage--;
-            renderCoupons();
-        }
-    }
+            let url = "/admin/coupons";
+            if (status) {
+                url += "?status=" + status;
+            }
 
-    function nextCouponPage() {
-        const totalPages = Math.ceil(allCoupons.length / couponPageSize) || 1;
-
-        if (couponCurrentPage < totalPages) {
-            couponCurrentPage++;
-            renderCoupons();
-        }
-    }
-
-    function updateCouponSummary(coupons) {
-        document.getElementById("totalCount").textContent = coupons.length;
-        document.getElementById("unusedCount").textContent =
-            coupons.filter(c => c.couponStatus === "UNUSE").length;
-        document.getElementById("registeredCount").textContent =
-            coupons.filter(c => c.couponStatus === "REGISTER").length;
-        document.getElementById("usedCount").textContent =
-            coupons.filter(c => c.couponStatus === "USE").length;
-    }
-
-    async function loadPayments() {
-        const url = `/admin/payments?page=${paymentCurrentPage}&size=${paymentPageSize}`;
-
-        const response = await fetch(url, {
-            method: "GET",
-            headers: authHeaders()
-        });
-
-        if (await handleAuthError(response)) return;
-
-        if (!response.ok) {
-            alert("결제 내역 조회 실패");
-            return;
-        }
-
-        const data = await response.json();
-
-        const payments = data.content ?? [];
-        paymentCurrentPage = data.number ?? paymentCurrentPage;
-        paymentTotalPages = data.totalPages ?? 1;
-
-        renderPayments(payments);
-    }
-
-    async function loadPaymentSummary() {
-        const size = 100;
-        let page = 0;
-        let totalPages = 1;
-        let allPayments = [];
-
-        while (page < totalPages) {
-            const response = await fetch(`/admin/payments?page=${page}&size=${size}`, {
+            const response = await fetch(url, {
                 method: "GET",
                 headers: authHeaders()
             });
@@ -419,227 +308,338 @@
             if (await handleAuthError(response)) return;
 
             if (!response.ok) {
+                alert("쿠폰 조회 실패");
+                return;
+            }
+
+            allCoupons = await response.json();
+            couponCurrentPage = 1;
+
+            renderCoupons();
+            updateCouponSummary(allCoupons);
+        }
+
+        function renderCoupons() {
+            const tbody = document.getElementById("couponTableBody");
+            tbody.innerHTML = "";
+
+            const totalPages = Math.ceil(allCoupons.length / couponPageSize) || 1;
+            const start = (couponCurrentPage - 1) * couponPageSize;
+            const end = start + couponPageSize;
+            const pageCoupons = allCoupons.slice(start, end);
+
+            if (pageCoupons.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="empty">조회된 쿠폰이 없습니다.</td></tr>`;
+            } else {
+                pageCoupons.forEach(coupon => {
+                    const tr = document.createElement("tr");
+
+                    tr.innerHTML = `
+                        <td>${coupon.couponId ?? ""}</td>
+                        <td class="code">${coupon.couponCode ?? ""}</td>
+                        <td>${coupon.couponPercent ?? ""}%</td>
+                        <td>${coupon.couponType ?? ""}</td>
+                        <td>${couponStatusBadge(coupon.couponStatus)}</td>
+                        <td>${coupon.email ?? coupon.nickname ?? "-"}</td>
+                    `;
+
+                    tbody.appendChild(tr);
+                });
+            }
+
+            document.getElementById("couponPageInfo").textContent = `${couponCurrentPage} / ${totalPages}`;
+            document.getElementById("couponPrevBtn").disabled = couponCurrentPage <= 1;
+            document.getElementById("couponNextBtn").disabled = couponCurrentPage >= totalPages;
+        }
+
+        function prevCouponPage() {
+            if (couponCurrentPage > 1) {
+                couponCurrentPage--;
+                renderCoupons();
+            }
+        }
+
+        function nextCouponPage() {
+            const totalPages = Math.ceil(allCoupons.length / couponPageSize) || 1;
+
+            if (couponCurrentPage < totalPages) {
+                couponCurrentPage++;
+                renderCoupons();
+            }
+        }
+
+        function updateCouponSummary(coupons) {
+            document.getElementById("totalCount").textContent = coupons.length;
+            document.getElementById("unusedCount").textContent =
+                coupons.filter(c => c.couponStatus === "UNUSE").length;
+            document.getElementById("registeredCount").textContent =
+                coupons.filter(c => c.couponStatus === "REGISTER").length;
+            document.getElementById("usedCount").textContent =
+                coupons.filter(c => c.couponStatus === "USE").length;
+        }
+
+        async function loadPayments() {
+            const url = `/admin/payments?page=${paymentCurrentPage}&size=${paymentPageSize}`;
+
+            const response = await fetch(url, {
+                method: "GET",
+                headers: authHeaders()
+            });
+
+            if (await handleAuthError(response)) return;
+
+            if (!response.ok) {
+                alert("결제 내역 조회 실패");
                 return;
             }
 
             const data = await response.json();
-            allPayments = allPayments.concat(data.content ?? []);
 
-            totalPages = data.totalPages ?? 1;
-            page++;
+            const payments = data.content ?? [];
+            paymentCurrentPage = data.number ?? paymentCurrentPage;
+            paymentTotalPages = data.totalPages ?? 1;
+
+            renderPayments(payments);
         }
 
-        updatePaymentSummary(allPayments);
-    }
+        async function loadPaymentSummary() {
+            const size = 100;
+            let page = 0;
+            let totalPages = 1;
+            let allPayments = [];
 
-    function updatePaymentSummary(payments) {
-        const successStates = ["PURCHASED", "SUCCESS", "PAID"];
-        const failedStates = ["CANCELED", "FAILED", "REFUNDED"];
+            while (page < totalPages) {
+                const response = await fetch(`/admin/payments?page=${page}&size=${size}`, {
+                    method: "GET",
+                    headers: authHeaders()
+                });
 
-        document.getElementById("paymentTotalCount").textContent = payments.length;
-        document.getElementById("paymentSuccessCount").textContent =
-            payments.filter(p => successStates.includes(p.purchaseState)).length;
-        document.getElementById("paymentPendingCount").textContent =
-            payments.filter(p => p.purchaseState === "PENDING").length;
-        document.getElementById("paymentFailedCount").textContent =
-            payments.filter(p => failedStates.includes(p.purchaseState)).length;
-    }
+                if (await handleAuthError(response)) return;
 
-    function reloadPayments() {
-        paymentCurrentPage = 0;
-        loadPayments();
-        loadPaymentSummary();
-    }
+                if (!response.ok) {
+                    return;
+                }
 
-    function renderPayments(payments) {
-        const tbody = document.getElementById("paymentTableBody");
-        tbody.innerHTML = "";
+                const data = await response.json();
+                allPayments = allPayments.concat(data.content ?? []);
 
-        if (!payments || payments.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="9" class="empty">조회된 결제 내역이 없습니다.</td></tr>`;
-        } else {
-            payments.forEach(payment => {
+                totalPages = data.totalPages ?? 1;
+                page++;
+            }
+
+            updatePaymentSummary(allPayments);
+        }
+
+        function updatePaymentSummary(payments) {
+            const successStates = ["PURCHASED", "SUCCESS", "PAID"];
+            const failedStates = ["CANCELED", "FAILED", "REFUNDED"];
+
+            document.getElementById("paymentTotalCount").textContent = payments.length;
+            document.getElementById("paymentSuccessCount").textContent =
+                payments.filter(p => successStates.includes(p.purchaseState)).length;
+            document.getElementById("paymentPendingCount").textContent =
+                payments.filter(p => p.purchaseState === "PENDING").length;
+            document.getElementById("paymentFailedCount").textContent =
+                payments.filter(p => failedStates.includes(p.purchaseState)).length;
+        }
+
+        function reloadPayments() {
+            paymentCurrentPage = 0;
+            loadPayments();
+            loadPaymentSummary();
+        }
+
+        function renderPayments(payments) {
+            const tbody = document.getElementById("paymentTableBody");
+            tbody.innerHTML = "";
+
+            if (!payments || payments.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="empty">조회된 결제 내역이 없습니다.</td></tr>`;
+            } else {
+                payments.forEach(payment => {
+                    const tr = document.createElement("tr");
+
+                    tr.innerHTML = `
+                        <td class="code">${shortText(payment.purchaseToken)}</td>
+                        <td>${payment.memberId ?? "-"}</td>
+                        <td>${payment.memberEmail ?? "-"}</td>
+                        <td>${payment.memberNickname ?? "-"}</td>
+                        <td>${payment.productName ?? "-"}</td>
+                        <td>${formatPrice(payment.amount, payment.currency)}</td>
+                        <td>${payment.purchaseType ?? "-"}</td>
+                        <td>${purchaseStateBadge(payment.purchaseState)}</td>
+                        <td>${formatDateTime(payment.purchaseTime)}</td>
+                    `;
+
+                    tbody.appendChild(tr);
+                });
+            }
+
+            document.getElementById("paymentPageInfo").textContent =
+                `${paymentCurrentPage + 1} / ${paymentTotalPages || 1}`;
+
+            document.getElementById("paymentPrevBtn").disabled = paymentCurrentPage <= 0;
+            document.getElementById("paymentNextBtn").disabled =
+                paymentCurrentPage >= (paymentTotalPages || 1) - 1;
+        }
+
+        function prevPaymentPage() {
+            if (paymentCurrentPage > 0) {
+                paymentCurrentPage--;
+                loadPayments();
+            }
+        }
+
+        function nextPaymentPage() {
+            if (paymentCurrentPage < paymentTotalPages - 1) {
+                paymentCurrentPage++;
+                loadPayments();
+            }
+        }
+
+        async function loadPremiumMembers() {
+            const response = await fetch("/admin/premium/premium-members", {
+                method: "GET",
+                headers: authHeaders()
+            });
+
+            if (await handleAuthError(response)) return;
+
+            if (!response.ok) {
+                alert("프리미엄 계정 조회 실패");
+                return;
+            }
+
+            const members = await response.json();
+
+            renderPremiumMembers(members);
+            updatePremiumSummary(members);
+        }
+
+        function renderPremiumMembers(members) {
+            const tbody = document.getElementById("premiumTableBody");
+            tbody.innerHTML = "";
+
+            if (!members || members.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="empty">조회된 프리미엄 회원이 없습니다.</td></tr>`;
+                return;
+            }
+
+            members.forEach(member => {
                 const tr = document.createElement("tr");
 
                 tr.innerHTML = `
-                    <td class="code">${shortText(payment.purchaseToken)}</td>
-                    <td>${payment.memberId ?? "-"}</td>
-                    <td>${payment.memberEmail ?? "-"}</td>
-                    <td>${payment.memberNickname ?? "-"}</td>
-                    <td>${payment.productName ?? "-"}</td>
-                    <td>${formatPrice(payment.amount, payment.currency)}</td>
-                    <td>${payment.purchaseType ?? "-"}</td>
-                    <td>${purchaseStateBadge(payment.purchaseState)}</td>
-                    <td>${formatDateTime(payment.purchaseTime)}</td>
+                    <td>${member.memberId ?? "-"}</td>
+                    <td>${member.email ?? "-"}</td>
+                    <td>${member.name ?? "-"}</td>
+                    <td>${formatDate(member.subscriptionExpirationDate)}</td>
+                    <td>${premiumStatusBadge(member.expired)}</td>
                 `;
 
                 tbody.appendChild(tr);
             });
         }
 
-        document.getElementById("paymentPageInfo").textContent =
-            `${paymentCurrentPage + 1} / ${paymentTotalPages || 1}`;
+        function updatePremiumSummary(members) {
+            const now = new Date();
+            const sevenDaysLater = new Date();
+            sevenDaysLater.setDate(now.getDate() + 7);
 
-        document.getElementById("paymentPrevBtn").disabled = paymentCurrentPage <= 0;
-        document.getElementById("paymentNextBtn").disabled =
-            paymentCurrentPage >= (paymentTotalPages || 1) - 1;
-    }
+            const activeMembers = members.filter(m => m.expired !== true);
+            const expiredMembers = members.filter(m => m.expired === true);
 
-    function prevPaymentPage() {
-        if (paymentCurrentPage > 0) {
-            paymentCurrentPage--;
-            loadPayments();
-        }
-    }
+            const expireSoonMembers = members.filter(m => {
+                if (m.expired === true || !m.subscriptionExpirationDate) return false;
 
-    function nextPaymentPage() {
-        if (paymentCurrentPage < paymentTotalPages - 1) {
-            paymentCurrentPage++;
-            loadPayments();
-        }
-    }
+                const expireDate = new Date(m.subscriptionExpirationDate);
+                if (isNaN(expireDate.getTime())) return false;
 
-    async function loadPremiumMembers() {
-        const response = await fetch("/admin/premium/premium-members", {
-            method: "GET",
-            headers: authHeaders()
-        });
+                return expireDate >= now && expireDate <= sevenDaysLater;
+            });
 
-        if (await handleAuthError(response)) return;
-
-        if (!response.ok) {
-            alert("프리미엄 계정 조회 실패");
-            return;
+            document.getElementById("premiumTotalCount").textContent = members.length;
+            document.getElementById("premiumActiveCount").textContent = activeMembers.length;
+            document.getElementById("premiumExpiredCount").textContent = expiredMembers.length;
+            document.getElementById("premiumExpireSoonCount").textContent = expireSoonMembers.length;
         }
 
-        const members = await response.json();
-
-        renderPremiumMembers(members);
-        updatePremiumSummary(members);
-    }
-
-    function renderPremiumMembers(members) {
-        const tbody = document.getElementById("premiumTableBody");
-        tbody.innerHTML = "";
-
-        if (!members || members.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" class="empty">조회된 프리미엄 회원이 없습니다.</td></tr>`;
-            return;
+        function couponStatusBadge(status) {
+            if (status === "UNUSE") return `<span class="badge gray">UNUSE</span>`;
+            if (status === "REGISTER") return `<span class="badge blue-badge">REGISTER</span>`;
+            if (status === "USE") return `<span class="badge green">USE</span>`;
+            return `<span class="badge gray">${status ?? "-"}</span>`;
         }
 
-        members.forEach(member => {
-            const tr = document.createElement("tr");
+        function purchaseStateBadge(state) {
+            if (!state) return `<span class="badge gray">-</span>`;
 
-            tr.innerHTML = `
-                <td>${member.memberId ?? "-"}</td>
-                <td>${member.email ?? "-"}</td>
-                <td>${member.name ?? "-"}</td>
-                <td>${formatDate(member.subscriptionExpirationDate)}</td>
-                <td>${premiumStatusBadge(member.expired)}</td>
-            `;
+            if (state === "PURCHASED" || state === "SUCCESS" || state === "PAID") {
+                return `<span class="badge green">${state}</span>`;
+            }
 
-            tbody.appendChild(tr);
-        });
-    }
+            if (state === "PENDING") {
+                return `<span class="badge blue-badge">${state}</span>`;
+            }
 
-    function updatePremiumSummary(members) {
-        const now = new Date();
-        const sevenDaysLater = new Date();
-        sevenDaysLater.setDate(now.getDate() + 7);
+            if (state === "CANCELED" || state === "FAILED" || state === "REFUNDED") {
+                return `<span class="badge red">${state}</span>`;
+            }
 
-        const activeMembers = members.filter(m => m.expired !== true);
-        const expiredMembers = members.filter(m => m.expired === true);
-
-        const expireSoonMembers = members.filter(m => {
-            if (m.expired === true || !m.subscriptionExpirationDate) return false;
-
-            const expireDate = new Date(m.subscriptionExpirationDate);
-            if (isNaN(expireDate.getTime())) return false;
-
-            return expireDate >= now && expireDate <= sevenDaysLater;
-        });
-
-        document.getElementById("premiumTotalCount").textContent = members.length;
-        document.getElementById("premiumActiveCount").textContent = activeMembers.length;
-        document.getElementById("premiumExpiredCount").textContent = expiredMembers.length;
-        document.getElementById("premiumExpireSoonCount").textContent = expireSoonMembers.length;
-    }
-
-    function couponStatusBadge(status) {
-        if (status === "UNUSE") return `<span class="badge gray">UNUSE</span>`;
-        if (status === "REGISTER") return `<span class="badge blue-badge">REGISTER</span>`;
-        if (status === "USE") return `<span class="badge green">USE</span>`;
-        return `<span class="badge gray">${status ?? "-"}</span>`;
-    }
-
-    function purchaseStateBadge(state) {
-        if (!state) return `<span class="badge gray">-</span>`;
-
-        if (state === "PURCHASED" || state === "SUCCESS" || state === "PAID") {
-            return `<span class="badge green">${state}</span>`;
+            return `<span class="badge gray">${state}</span>`;
         }
 
-        if (state === "PENDING") {
-            return `<span class="badge blue-badge">${state}</span>`;
+        function premiumStatusBadge(expired) {
+            if (expired === true) {
+                return `<span class="badge red">EXPIRED</span>`;
+            }
+
+            return `<span class="badge green">ACTIVE</span>`;
         }
 
-        if (state === "CANCELED" || state === "FAILED" || state === "REFUNDED") {
-            return `<span class="badge red">${state}</span>`;
+        function formatDate(value) {
+            if (!value) return "-";
+
+            const date = new Date(value);
+            if (isNaN(date.getTime())) return value;
+
+            return date.toLocaleDateString("ko-KR");
         }
 
-        return `<span class="badge gray">${state}</span>`;
-    }
+        function formatDateTime(value) {
+            if (!value) return "-";
 
-    function premiumStatusBadge(expired) {
-        if (expired === true) {
-            return `<span class="badge red">EXPIRED</span>`;
+            const date = new Date(value);
+            if (isNaN(date.getTime())) return value;
+
+            return date.toLocaleString("ko-KR");
         }
 
-        return `<span class="badge green">ACTIVE</span>`;
-    }
+        function formatPrice(amount, currency) {
+            if (amount === null || amount === undefined) return "-";
 
-    function formatDate(value) {
-        if (!value) return "-";
+            const formatted = Number(amount).toLocaleString("ko-KR");
 
-        const date = new Date(value);
-        if (isNaN(date.getTime())) return value;
+            if (currency) {
+                return `${formatted} ${currency}`;
+            }
 
-        return date.toLocaleDateString("ko-KR");
-    }
-
-    function formatDateTime(value) {
-        if (!value) return "-";
-
-        const date = new Date(value);
-        if (isNaN(date.getTime())) return value;
-
-        return date.toLocaleString("ko-KR");
-    }
-
-    function formatPrice(amount, currency) {
-        if (amount === null || amount === undefined) return "-";
-
-        const formatted = Number(amount).toLocaleString("ko-KR");
-
-        if (currency) {
-            return `${formatted} ${currency}`;
+            return `${formatted}원`;
         }
 
-        return `${formatted}원`;
-    }
+        function shortText(value) {
+            if (!value) return "-";
+            if (value.length <= 16) return value;
 
-    function shortText(value) {
-        if (!value) return "-";
-        if (value.length <= 16) return value;
+            return value.substring(0, 16) + "...";
+        }
 
-        return value.substring(0, 16) + "...";
-    }
+        function logout() {
+            localStorage.removeItem("accessToken");
+            location.href = "/admin/login";
+        }
+    </script>
 
-    function logout() {
-        localStorage.removeItem("accessToken");
-        location.href = "/admin/login";
-    }
-</script>
+    </body>
+    </html>
 
-</body>
-</html>
+-->

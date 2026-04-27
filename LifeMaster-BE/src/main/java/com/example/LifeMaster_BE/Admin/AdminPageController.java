@@ -13,6 +13,6 @@ public class AdminPageController {
 
     @GetMapping("/admin/admin-page")
     public String couponPage() {
-        return "admin/adminPage"; // ← 이렇게 수정
+        return "admin/dashboard"; // ← 이렇게 수정
     }
 }
