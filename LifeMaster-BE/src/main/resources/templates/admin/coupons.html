@@ -106,6 +106,18 @@
     let currentPage = 1;
     const pageSize = 10;
 
+    window.onload = function () {
+        const token = localStorage.getItem("accessToken");
+
+        if (!token) {
+            alert("로그인이 필요합니다.");
+            location.href = "/admin/login";
+            return;
+        }
+
+        loadCoupons();
+    };
+
     async function loadCoupons() {
         const status = document.getElementById("statusSelect").value;
 
@@ -130,7 +142,8 @@
         });
 
         if (response.status === 401) {
-            alert("로그인이 필요합니다.");
+            alert("로그인이 만료되었습니다. 다시 로그인하세요.");
+            localStorage.removeItem("accessToken");
             location.href = "/admin/login";
             return;
         }
@@ -237,8 +250,6 @@
         localStorage.removeItem("accessToken");
         location.href = "/admin/login";
     }
-
-    window.onload = loadCoupons;
 </script>
 
 </body>
