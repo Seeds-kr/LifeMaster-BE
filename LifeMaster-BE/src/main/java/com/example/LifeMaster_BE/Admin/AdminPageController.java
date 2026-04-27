@@ -14,6 +14,6 @@ public class AdminPageController {
 
     @GetMapping("/admin/coupons-page")
     public String couponPage() {
-        return "admin/coupons";
+        return "adminPage";
     }
 }
