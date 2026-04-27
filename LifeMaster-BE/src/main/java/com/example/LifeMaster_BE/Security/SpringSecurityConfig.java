@@ -41,8 +41,7 @@ public class SpringSecurityConfig {
 
                         .requestMatchers(
                                 "/admin/login",
-                                "/admin/coupons-page",
-                                "/admin/coupons-page/",
+                                "/admin/admin-page",
                                 "/css/**",
                                 "/js/**",
                                 "/images/**",
