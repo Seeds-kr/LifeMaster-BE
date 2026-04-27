@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>관리자 로그인</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .login-box {
+            width: 360px;
+            background: white;
+            padding: 32px;
+            border-radius: 10px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+        }
+
+        h1 {
+            margin-bottom: 24px;
+            font-size: 24px;
+            text-align: center;
+        }
+
+        input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 12px;
+            margin-bottom: 14px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #1f2937;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #374151;
+        }
+
+        .message {
+            margin-top: 14px;
+            text-align: center;
+            color: #dc2626;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-box">
+    <h1>관리자 로그인</h1>
+
+    <input type="email" id="email" placeholder="이메일">
+    <input type="password" id="password" placeholder="비밀번호">
+
+    <button onclick="login()">로그인</button>
+
+    <div id="message" class="message"></div>
+</div>
+
+<script>
+    async function login() {
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+        const message = document.getElementById("message");
+
+        message.textContent = "";
+
+        if (!email || !password) {
+            message.textContent = "이메일과 비밀번호를 입력하세요.";
+            return;
+        }
+
+        try {
+            const response = await fetch("/user/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    email: email,
+                    password: password
+                })
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                message.textContent = errorText || "로그인 실패";
+                return;
+            }
+
+            const token = await response.text();
+
+            localStorage.setItem("accessToken", token);
+
+            location.href = "/admin/coupons-page";
+
+        } catch (error) {
+            console.error(error);
+            message.textContent = "서버 연결에 실패했습니다.";
+        }
+    }
+
+    document.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") {
+            login();
+        }
+    });
+</script>
+
+</body>
+</html>

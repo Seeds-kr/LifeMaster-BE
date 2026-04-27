@@ -40,8 +40,9 @@ public class SpringSecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                         .requestMatchers(
+                                "/admin/login",
                                 "/admin/coupons-page",
-                                "/admin/coupons",
+                                "/admin/coupons-page/",
 
                                 "/user/login",
                                 "/swagger-ui/**",
@@ -81,7 +82,7 @@ public class SpringSecurityConfig {
                                 "/error"
                         ).permitAll()
 
-                        //.requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(e -> e.authenticationEntryPoint((req, res, ex) -> {
