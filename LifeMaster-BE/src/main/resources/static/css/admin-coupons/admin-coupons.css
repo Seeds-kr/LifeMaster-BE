@@ -1,65 +1,271 @@
+* {
+    box-sizing: border-box;
+}
+
 body {
     margin: 0;
     font-family: Arial, sans-serif;
-    background: #f4f6f9;
+    background: #f3f5f9;
+    color: #2f3542;
 }
 
-.layout {
+.admin-layout {
     display: flex;
     min-height: 100vh;
 }
 
 .sidebar {
-    width: 220px;
-    background: #1f2937;
+    width: 250px;
+    background: #252b36;
     color: white;
-    padding: 20px;
+    padding: 22px 14px;
 }
 
-.sidebar h2 {
-    margin-bottom: 30px;
+.logo {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 32px;
+    padding-left: 8px;
+    letter-spacing: 1px;
 }
 
-.menu {
+.nav-item {
     display: block;
-    color: white;
+    color: #c7ccd6;
     text-decoration: none;
-    padding: 12px;
-    border-radius: 6px;
+    padding: 13px 14px;
+    border-radius: 7px;
+    margin-bottom: 8px;
+    font-size: 15px;
 }
 
-.menu.active,
-.menu:hover {
-    background: #374151;
+.nav-item:hover,
+.nav-item.active {
+    background: #343b49;
+    color: white;
+}
+
+.main {
+    flex: 1;
+}
+
+.topbar {
+    height: 68px;
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 28px;
+}
+
+.menu-btn {
+    margin-right: 18px;
+    color: #8a94a6;
+}
+
+.logout-btn {
+    border: none;
+    background: #eef2ff;
+    color: #4f46e5;
+    padding: 9px 14px;
+    border-radius: 7px;
+    cursor: pointer;
 }
 
 .content {
-    flex: 1;
-    padding: 30px;
+    padding: 28px;
+}
+
+.breadcrumb {
+    color: #7b8495;
+    margin-bottom: 22px;
+}
+
+.breadcrumb span {
+    font-weight: 600;
+    color: #4b5563;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 22px;
+    margin-bottom: 24px;
+}
+
+.summary-card {
+    min-height: 130px;
+    border-radius: 8px;
+    padding: 22px;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.summary-card h3 {
+    margin: 0;
+    font-size: 34px;
+}
+
+.summary-card p {
+    margin: 10px 0 0;
+    font-weight: 600;
+}
+
+.purple {
+    background: #5a5ce2;
+}
+
+.blue {
+    background: #4c9df5;
+}
+
+.yellow {
+    background: #f4b63f;
+}
+
+.red {
+    background: #d75b59;
+}
+
+.table-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    overflow: hidden;
+}
+
+.table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.table-header h2 {
+    margin: 0;
+}
+
+.table-header p {
+    margin: 6px 0 0;
+    color: #8a94a6;
 }
 
 .filter-box {
-    margin-bottom: 20px;
+    display: flex;
+    gap: 8px;
 }
 
 select,
 button {
-    padding: 8px 12px;
+    height: 38px;
+    padding: 0 13px;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+}
+
+.filter-box button {
+    border: none;
+    background: #6366f1;
+    color: white;
+    cursor: pointer;
+}
+
+.table-wrap {
+    overflow-x: auto;
 }
 
 table {
     width: 100%;
-    background: white;
     border-collapse: collapse;
 }
 
-th,
-td {
-    padding: 12px;
-    border-bottom: 1px solid #ddd;
-    text-align: center;
+th {
+    background: #f8fafc;
+    color: #64748b;
+    font-weight: 700;
+    text-align: left;
+    padding: 14px 18px;
+    border-bottom: 1px solid #e5e7eb;
 }
 
-th {
-    background: #f1f5f9;
+td {
+    padding: 15px 18px;
+    border-bottom: 1px solid #eef0f4;
+}
+
+tr:hover {
+    background: #f9fafb;
+}
+
+.code {
+    font-weight: 700;
+    color: #4f46e5;
+}
+
+.badge {
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.gray {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.blue-badge {
+    background: #dbeafe;
+    color: #2563eb;
+}
+
+.green {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.empty {
+    text-align: center;
+    color: #9ca3af;
+    padding: 30px;
+}
+
+.pagination-box {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    padding: 18px;
+    background: white;
+}
+
+.pagination-box button {
+    border: none;
+    background: #6366f1;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.pagination-box button:disabled {
+    background: #c7c9d9;
+    cursor: not-allowed;
+}
+
+#pageInfo {
+    font-weight: 700;
+    color: #4b5563;
+}
+
+@media (max-width: 1000px) {
+    .summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .sidebar {
+        width: 210px;
+    }
 }

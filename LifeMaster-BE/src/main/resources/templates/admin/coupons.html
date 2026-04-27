@@ -7,47 +7,105 @@
 </head>
 <body>
 
-<div class="layout">
+<div class="admin-layout">
     <aside class="sidebar">
-        <h2>Admin</h2>
+        <div class="logo">LIFEMASTER</div>
 
-        <a href="/admin/coupons-page" class="menu active">
-            전체 쿠폰 조회
-        </a>
+        <nav>
+            <a href="/admin/coupons-page" class="nav-item active">📊 전체 쿠폰 조회</a>
+            <a href="#" class="nav-item">👤 회원 관리</a>
+            <a href="#" class="nav-item">💳 결제 내역</a>
+            <a href="#" class="nav-item">⚙ 설정</a>
+        </nav>
     </aside>
 
-    <main class="content">
-        <h1>전체 쿠폰 조회</h1>
+    <div class="main">
+        <header class="topbar">
+            <div>
+                <span class="menu-btn">☰</span>
+                <strong>Coupon Dashboard</strong>
+            </div>
 
-        <div class="filter-box">
-            <select id="statusSelect">
-                <option value="">전체</option>
-                <option value="UNUSE">미사용</option>
-                <option value="REGISTER">등록됨</option>
-                <option value="USE">사용완료</option>
-            </select>
+            <button class="logout-btn" onclick="logout()">로그아웃</button>
+        </header>
 
-            <button onclick="loadCoupons()">조회</button>
-        </div>
+        <section class="content">
+            <div class="breadcrumb">
+                Home / <span>전체 쿠폰 조회</span>
+            </div>
 
-        <table>
-            <thead>
-            <tr>
-                <th>ID</th>
-                <th>쿠폰 코드</th>
-                <th>할인율</th>
-                <th>쿠폰 타입</th>
-                <th>상태</th>
-                <th>사용자</th>
-            </tr>
-            </thead>
-            <tbody id="couponTableBody">
-            </tbody>
-        </table>
-    </main>
+            <div class="summary-grid">
+                <div class="summary-card purple">
+                    <h3 id="totalCount">0</h3>
+                    <p>전체 쿠폰</p>
+                </div>
+
+                <div class="summary-card blue">
+                    <h3 id="unusedCount">0</h3>
+                    <p>미사용 쿠폰</p>
+                </div>
+
+                <div class="summary-card yellow">
+                    <h3 id="registeredCount">0</h3>
+                    <p>등록 쿠폰</p>
+                </div>
+
+                <div class="summary-card red">
+                    <h3 id="usedCount">0</h3>
+                    <p>사용 완료</p>
+                </div>
+            </div>
+
+            <div class="table-card">
+                <div class="table-header">
+                    <div>
+                        <h2>전체 쿠폰 조회</h2>
+                        <p>쿠폰 코드, 할인율, 상태를 확인합니다.</p>
+                    </div>
+
+                    <div class="filter-box">
+                        <select id="statusSelect">
+                            <option value="">전체</option>
+                            <option value="UNUSE">미사용</option>
+                            <option value="REGISTER">등록됨</option>
+                            <option value="USE">사용완료</option>
+                        </select>
+
+                        <button onclick="loadCoupons()">조회</button>
+                    </div>
+                </div>
+
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>쿠폰 코드</th>
+                            <th>할인율</th>
+                            <th>쿠폰 타입</th>
+                            <th>상태</th>
+                            <th>사용자</th>
+                        </tr>
+                        </thead>
+                        <tbody id="couponTableBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="pagination-box">
+                    <button id="prevBtn" onclick="prevPage()">이전</button>
+                    <span id="pageInfo">1 / 1</span>
+                    <button id="nextBtn" onclick="nextPage()">다음</button>
+                </div>
+            </div>
+        </section>
+    </div>
 </div>
 
 <script>
+    let allCoupons = [];
+    let currentPage = 1;
+    const pageSize = 10;
+
     async function loadCoupons() {
         const status = document.getElementById("statusSelect").value;
 
@@ -60,19 +118,20 @@
 
         if (!token) {
             alert("로그인이 필요합니다.");
+            location.href = "/admin/login";
             return;
         }
 
         const response = await fetch(url, {
             method: "GET",
             headers: {
-                "Authorization": "Bearer " + token,
-                "Content-Type": "application/json"
+                "Authorization": "Bearer " + token
             }
         });
 
         if (response.status === 401) {
             alert("로그인이 필요합니다.");
+            location.href = "/admin/login";
             return;
         }
 
@@ -82,29 +141,101 @@
         }
 
         if (!response.ok) {
-            alert("쿠폰 조회 중 오류가 발생했습니다.");
+            alert("쿠폰 조회 실패");
             return;
         }
 
-        const coupons = await response.json();
+        allCoupons = await response.json();
+        currentPage = 1;
 
+        renderCoupons();
+        updateSummary(allCoupons);
+    }
+
+    function renderCoupons() {
         const tbody = document.getElementById("couponTableBody");
         tbody.innerHTML = "";
 
-        coupons.forEach(coupon => {
-            const tr = document.createElement("tr");
+        const totalPages = Math.ceil(allCoupons.length / pageSize) || 1;
+        const start = (currentPage - 1) * pageSize;
+        const end = start + pageSize;
+        const pageCoupons = allCoupons.slice(start, end);
 
-            tr.innerHTML = `
-                <td>${coupon.couponId ?? ""}</td>
-                <td>${coupon.couponCode ?? ""}</td>
-                <td>${coupon.couponPercent ?? ""}%</td>
-                <td>${coupon.couponType ?? ""}</td>
-                <td>${coupon.couponStatus ?? ""}</td>
-                <td>${coupon.email ?? coupon.nickname ?? "-"}</td>
+        if (pageCoupons.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="empty">조회된 쿠폰이 없습니다.</td>
+                </tr>
             `;
+        } else {
+            pageCoupons.forEach(coupon => {
+                const tr = document.createElement("tr");
 
-            tbody.appendChild(tr);
-        });
+                tr.innerHTML = `
+                    <td>${coupon.couponId ?? ""}</td>
+                    <td class="code">${coupon.couponCode ?? ""}</td>
+                    <td>${coupon.couponPercent ?? ""}%</td>
+                    <td>${coupon.couponType ?? ""}</td>
+                    <td>${statusBadge(coupon.couponStatus)}</td>
+                    <td>${coupon.email ?? coupon.nickname ?? "-"}</td>
+                `;
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        document.getElementById("pageInfo").textContent =
+            `${currentPage} / ${totalPages}`;
+
+        document.getElementById("prevBtn").disabled = currentPage <= 1;
+        document.getElementById("nextBtn").disabled = currentPage >= totalPages;
+    }
+
+    function prevPage() {
+        if (currentPage > 1) {
+            currentPage--;
+            renderCoupons();
+        }
+    }
+
+    function nextPage() {
+        const totalPages = Math.ceil(allCoupons.length / pageSize) || 1;
+
+        if (currentPage < totalPages) {
+            currentPage++;
+            renderCoupons();
+        }
+    }
+
+    function statusBadge(status) {
+        if (status === "UNUSE") {
+            return `<span class="badge gray">UNUSE</span>`;
+        }
+
+        if (status === "REGISTER") {
+            return `<span class="badge blue-badge">REGISTER</span>`;
+        }
+
+        if (status === "USE") {
+            return `<span class="badge green">USE</span>`;
+        }
+
+        return `<span class="badge gray">${status ?? "-"}</span>`;
+    }
+
+    function updateSummary(coupons) {
+        document.getElementById("totalCount").textContent = coupons.length;
+        document.getElementById("unusedCount").textContent =
+            coupons.filter(c => c.couponStatus === "UNUSE").length;
+        document.getElementById("registeredCount").textContent =
+            coupons.filter(c => c.couponStatus === "REGISTER").length;
+        document.getElementById("usedCount").textContent =
+            coupons.filter(c => c.couponStatus === "USE").length;
+    }
+
+    function logout() {
+        localStorage.removeItem("accessToken");
+        location.href = "/admin/login";
     }
 
     window.onload = loadCoupons;
