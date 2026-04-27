@@ -101,6 +101,25 @@
             <div id="page-payments" class="page-section" style="display:none;">
                 <div class="breadcrumb">Home / <span>결제 내역</span></div>
 
+                <div class="summary-grid">
+                    <div class="summary-card purple">
+                        <h3 id="paymentTotalCount">0</h3>
+                        <p>전체 결제</p>
+                    </div>
+                    <div class="summary-card blue">
+                        <h3 id="paymentSuccessCount">0</h3>
+                        <p>결제 성공</p>
+                    </div>
+                    <div class="summary-card yellow">
+                        <h3 id="paymentPendingCount">0</h3>
+                        <p>대기 중</p>
+                    </div>
+                    <div class="summary-card red">
+                        <h3 id="paymentFailedCount">0</h3>
+                        <p>실패/취소/환불</p>
+                    </div>
+                </div>
+
                 <div class="table-card">
                     <div class="table-header">
                         <div>
@@ -141,6 +160,25 @@
             <!-- 프리미엄 계정 조회 -->
             <div id="page-premium" class="page-section" style="display:none;">
                 <div class="breadcrumb">Home / <span>프리미엄 계정 조회</span></div>
+
+                <div class="summary-grid">
+                    <div class="summary-card purple">
+                        <h3 id="premiumTotalCount">0</h3>
+                        <p>전체 프리미엄</p>
+                    </div>
+                    <div class="summary-card blue">
+                        <h3 id="premiumActiveCount">0</h3>
+                        <p>활성 계정</p>
+                    </div>
+                    <div class="summary-card yellow">
+                        <h3 id="premiumExpiredCount">0</h3>
+                        <p>만료 계정</p>
+                    </div>
+                    <div class="summary-card red">
+                        <h3 id="premiumExpireSoonCount">0</h3>
+                        <p>7일 내 만료</p>
+                    </div>
+                </div>
 
                 <div class="table-card">
                     <div class="table-header">
@@ -243,6 +281,7 @@
             document.getElementById("pageTitle").textContent = "Payment Dashboard";
             paymentCurrentPage = 0;
             loadPayments();
+            loadPaymentSummary();
         }
 
         if (page === "premium") {
@@ -276,7 +315,7 @@
         couponCurrentPage = 1;
 
         renderCoupons();
-        updateSummary(allCoupons);
+        updateCouponSummary(allCoupons);
     }
 
     function renderCoupons() {
@@ -289,11 +328,7 @@
         const pageCoupons = allCoupons.slice(start, end);
 
         if (pageCoupons.length === 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="6" class="empty">조회된 쿠폰이 없습니다.</td>
-                </tr>
-            `;
+            tbody.innerHTML = `<tr><td colspan="6" class="empty">조회된 쿠폰이 없습니다.</td></tr>`;
         } else {
             pageCoupons.forEach(coupon => {
                 const tr = document.createElement("tr");
@@ -311,9 +346,7 @@
             });
         }
 
-        document.getElementById("couponPageInfo").textContent =
-            `${couponCurrentPage} / ${totalPages}`;
-
+        document.getElementById("couponPageInfo").textContent = `${couponCurrentPage} / ${totalPages}`;
         document.getElementById("couponPrevBtn").disabled = couponCurrentPage <= 1;
         document.getElementById("couponNextBtn").disabled = couponCurrentPage >= totalPages;
     }
@@ -334,7 +367,7 @@
         }
     }
 
-    function updateSummary(coupons) {
+    function updateCouponSummary(coupons) {
         document.getElementById("totalCount").textContent = coupons.length;
         document.getElementById("unusedCount").textContent =
             coupons.filter(c => c.couponStatus === "UNUSE").length;
@@ -368,9 +401,51 @@
         renderPayments(payments);
     }
 
+    async function loadPaymentSummary() {
+        const size = 100;
+        let page = 0;
+        let totalPages = 1;
+        let allPayments = [];
+
+        while (page < totalPages) {
+            const response = await fetch(`/admin/payments?page=${page}&size=${size}`, {
+                method: "GET",
+                headers: authHeaders()
+            });
+
+            if (await handleAuthError(response)) return;
+
+            if (!response.ok) {
+                return;
+            }
+
+            const data = await response.json();
+            allPayments = allPayments.concat(data.content ?? []);
+
+            totalPages = data.totalPages ?? 1;
+            page++;
+        }
+
+        updatePaymentSummary(allPayments);
+    }
+
+    function updatePaymentSummary(payments) {
+        const successStates = ["PURCHASED", "SUCCESS", "PAID"];
+        const failedStates = ["CANCELED", "FAILED", "REFUNDED"];
+
+        document.getElementById("paymentTotalCount").textContent = payments.length;
+        document.getElementById("paymentSuccessCount").textContent =
+            payments.filter(p => successStates.includes(p.purchaseState)).length;
+        document.getElementById("paymentPendingCount").textContent =
+            payments.filter(p => p.purchaseState === "PENDING").length;
+        document.getElementById("paymentFailedCount").textContent =
+            payments.filter(p => failedStates.includes(p.purchaseState)).length;
+    }
+
     function reloadPayments() {
         paymentCurrentPage = 0;
         loadPayments();
+        loadPaymentSummary();
     }
 
     function renderPayments(payments) {
@@ -378,11 +453,7 @@
         tbody.innerHTML = "";
 
         if (!payments || payments.length === 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="9" class="empty">조회된 결제 내역이 없습니다.</td>
-                </tr>
-            `;
+            tbody.innerHTML = `<tr><td colspan="9" class="empty">조회된 결제 내역이 없습니다.</td></tr>`;
         } else {
             payments.forEach(payment => {
                 const tr = document.createElement("tr");
@@ -439,7 +510,9 @@
         }
 
         const members = await response.json();
+
         renderPremiumMembers(members);
+        updatePremiumSummary(members);
     }
 
     function renderPremiumMembers(members) {
@@ -447,11 +520,7 @@
         tbody.innerHTML = "";
 
         if (!members || members.length === 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="5" class="empty">조회된 프리미엄 회원이 없습니다.</td>
-                </tr>
-            `;
+            tbody.innerHTML = `<tr><td colspan="5" class="empty">조회된 프리미엄 회원이 없습니다.</td></tr>`;
             return;
         }
 
@@ -470,26 +539,38 @@
         });
     }
 
+    function updatePremiumSummary(members) {
+        const now = new Date();
+        const sevenDaysLater = new Date();
+        sevenDaysLater.setDate(now.getDate() + 7);
+
+        const activeMembers = members.filter(m => m.expired !== true);
+        const expiredMembers = members.filter(m => m.expired === true);
+
+        const expireSoonMembers = members.filter(m => {
+            if (m.expired === true || !m.subscriptionExpirationDate) return false;
+
+            const expireDate = new Date(m.subscriptionExpirationDate);
+            if (isNaN(expireDate.getTime())) return false;
+
+            return expireDate >= now && expireDate <= sevenDaysLater;
+        });
+
+        document.getElementById("premiumTotalCount").textContent = members.length;
+        document.getElementById("premiumActiveCount").textContent = activeMembers.length;
+        document.getElementById("premiumExpiredCount").textContent = expiredMembers.length;
+        document.getElementById("premiumExpireSoonCount").textContent = expireSoonMembers.length;
+    }
+
     function couponStatusBadge(status) {
-        if (status === "UNUSE") {
-            return `<span class="badge gray">UNUSE</span>`;
-        }
-
-        if (status === "REGISTER") {
-            return `<span class="badge blue-badge">REGISTER</span>`;
-        }
-
-        if (status === "USE") {
-            return `<span class="badge green">USE</span>`;
-        }
-
+        if (status === "UNUSE") return `<span class="badge gray">UNUSE</span>`;
+        if (status === "REGISTER") return `<span class="badge blue-badge">REGISTER</span>`;
+        if (status === "USE") return `<span class="badge green">USE</span>`;
         return `<span class="badge gray">${status ?? "-"}</span>`;
     }
 
     function purchaseStateBadge(state) {
-        if (!state) {
-            return `<span class="badge gray">-</span>`;
-        }
+        if (!state) return `<span class="badge gray">-</span>`;
 
         if (state === "PURCHASED" || state === "SUCCESS" || state === "PAID") {
             return `<span class="badge green">${state}</span>`;
@@ -518,10 +599,7 @@
         if (!value) return "-";
 
         const date = new Date(value);
-
-        if (isNaN(date.getTime())) {
-            return value;
-        }
+        if (isNaN(date.getTime())) return value;
 
         return date.toLocaleDateString("ko-KR");
     }
@@ -530,18 +608,13 @@
         if (!value) return "-";
 
         const date = new Date(value);
-
-        if (isNaN(date.getTime())) {
-            return value;
-        }
+        if (isNaN(date.getTime())) return value;
 
         return date.toLocaleString("ko-KR");
     }
 
     function formatPrice(amount, currency) {
-        if (amount === null || amount === undefined) {
-            return "-";
-        }
+        if (amount === null || amount === undefined) return "-";
 
         const formatted = Number(amount).toLocaleString("ko-KR");
 
@@ -554,10 +627,7 @@
 
     function shortText(value) {
         if (!value) return "-";
-
-        if (value.length <= 16) {
-            return value;
-        }
+        if (value.length <= 16) return value;
 
         return value.substring(0, 16) + "...";
     }
