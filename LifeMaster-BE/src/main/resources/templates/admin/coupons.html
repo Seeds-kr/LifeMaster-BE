@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>전체 쿠폰 조회</title>
+    <link rel="stylesheet" href="/css/admin-coupons.css">
+</head>
+<body>
+
+<div class="layout">
+    <aside class="sidebar">
+        <h2>Admin</h2>
+
+        <a href="/admin/coupons-page" class="menu active">
+            전체 쿠폰 조회
+        </a>
+    </aside>
+
+    <main class="content">
+        <h1>전체 쿠폰 조회</h1>
+
+        <div class="filter-box">
+            <select id="statusSelect">
+                <option value="">전체</option>
+                <option value="UNUSE">미사용</option>
+                <option value="REGISTER">등록됨</option>
+                <option value="USE">사용완료</option>
+            </select>
+
+            <button onclick="loadCoupons()">조회</button>
+        </div>
+
+        <table>
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>쿠폰 코드</th>
+                <th>할인율</th>
+                <th>쿠폰 타입</th>
+                <th>상태</th>
+                <th>사용자</th>
+            </tr>
+            </thead>
+            <tbody id="couponTableBody">
+            </tbody>
+        </table>
+    </main>
+</div>
+
+<script>
+    async function loadCoupons() {
+        const status = document.getElementById("statusSelect").value;
+
+        let url = "/admin/coupons";
+        if (status) {
+            url += "?status=" + status;
+        }
+
+        const response = await fetch(url);
+        const coupons = await response.json();
+
+        const tbody = document.getElementById("couponTableBody");
+        tbody.innerHTML = "";
+
+        coupons.forEach(coupon => {
+            const tr = document.createElement("tr");
+
+            tr.innerHTML = `
+                <td>${coupon.couponId ?? ""}</td>
+                <td>${coupon.couponCode ?? ""}</td>
+                <td>${coupon.couponPercent ?? ""}%</td>
+                <td>${coupon.couponType ?? ""}</td>
+                <td>${coupon.couponStatus ?? ""}</td>
+                <td>${coupon.email ?? coupon.nickname ?? "-"}</td>
+            `;
+
+            tbody.appendChild(tr);
+        });
+    }
+
+    window.onload = loadCoupons;
+</script>
+
+</body>
+</html>
