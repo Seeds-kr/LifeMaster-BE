@@ -3,7 +3,6 @@ package com.example.LifeMaster_BE.Admin;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 
-//어드민용 프론트 페이지 컨트롤러
 @Controller
 public class AdminPageController {
 
@@ -12,8 +11,8 @@ public class AdminPageController {
         return "admin/login";
     }
 
-    @GetMapping("/admin/coupons-page")
+    @GetMapping("/admin/admin-page")
     public String couponPage() {
-        return "adminPage";
+        return "admin/adminPage"; // ← 이렇게 수정
     }
 }
