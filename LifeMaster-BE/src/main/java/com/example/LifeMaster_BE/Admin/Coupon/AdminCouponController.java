@@ -21,8 +21,13 @@ public class AdminCouponController {
             @RequestParam(required = false) CouponStatus status
     ) {
         if (status != null) {
-            return ResponseEntity.ok(couponService.getCouponsForAdminByStatus(status));
+            return ResponseEntity.ok(
+                    couponService.getCouponsForAdminByStatus(status)
+            );
         }
-        return ResponseEntity.ok(couponService.getAllCouponsForAdmin());
+
+        return ResponseEntity.ok(
+                couponService.getAllCouponsForAdmin()
+        );
     }
 }

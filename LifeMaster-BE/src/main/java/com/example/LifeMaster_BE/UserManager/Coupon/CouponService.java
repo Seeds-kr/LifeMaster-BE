@@ -6,6 +6,7 @@ import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import com.example.LifeMaster_BE.UserManager.Member.Subscription.MemberSubscriptionService;
 import com.example.LifeMaster_BE.UserManager.Member.Subscription.SubscriptionPlan;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.stream.Collectors;
@@ -139,18 +140,21 @@ public class CouponService {
     }
 
     // 5. 관리자 - 전체 쿠폰 상태 조회
-    @Transactional(readOnly = true)
     public List<AdminCouponStatusResponse> getAllCouponsForAdmin() {
-        return couponRepository.findAllWithUser().stream()
+        return couponRepository.findAll(Sort.by(Sort.Direction.ASC, "couponId"))
+                .stream()
                 .map(AdminCouponStatusResponse::from)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     // 6. 관리자 - 상태별 쿠폰 조회
-    @Transactional(readOnly = true)
     public List<AdminCouponStatusResponse> getCouponsForAdminByStatus(CouponStatus status) {
-        return couponRepository.findAllWithUserByStatus(status).stream()
+        return couponRepository.findByCouponStatus(
+                        status,
+                        Sort.by(Sort.Direction.ASC, "couponId")
+                )
+                .stream()
                 .map(AdminCouponStatusResponse::from)
-                .collect(Collectors.toList());
+                .toList();
     }
 }
