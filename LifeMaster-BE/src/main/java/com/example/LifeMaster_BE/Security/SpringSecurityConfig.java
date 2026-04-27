@@ -81,7 +81,7 @@ public class SpringSecurityConfig {
                                 "/error"
                         ).permitAll()
 
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        //.requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(e -> e.authenticationEntryPoint((req, res, ex) -> {
