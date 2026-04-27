@@ -43,6 +43,9 @@ public class SpringSecurityConfig {
                                 "/admin/login",
                                 "/admin/coupons-page",
                                 "/admin/coupons-page/",
+                                "/css/**",
+                                "/js/**",
+                                "/images/**",
 
                                 "/user/login",
                                 "/swagger-ui/**",
