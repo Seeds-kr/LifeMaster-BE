@@ -260,6 +260,139 @@ tr:hover {
     color: #4b5563;
 }
 
+/* 신고 관리 상세 정보 스타일 */
+.detail-row {
+    background: #f9fafb;
+}
+
+.detail-container {
+    padding: 24px;
+    background: white;
+    border-radius: 8px;
+    margin: 12px;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.detail-section {
+    background: #f8fafc;
+    padding: 18px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.detail-section h4 {
+    margin: 0 0 14px 0;
+    color: #4b5563;
+    font-size: 16px;
+    border-bottom: 2px solid #6366f1;
+    padding-bottom: 8px;
+}
+
+.detail-section p {
+    margin: 8px 0;
+    color: #374151;
+    line-height: 1.6;
+}
+
+.post-content {
+    background: white;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+    margin-top: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.action-section {
+    background: #fffbeb;
+    padding: 18px;
+    border-radius: 8px;
+    border: 2px solid #fbbf24;
+}
+
+.action-section h4 {
+    margin: 0 0 12px 0;
+    color: #92400e;
+}
+
+.action-group {
+    margin-bottom: 18px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid #fde68a;
+}
+
+.action-group:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.status-select,
+.action-select {
+    width: 200px;
+    margin-right: 8px;
+}
+
+.admin-note-input {
+    width: 300px;
+    height: 38px;
+    padding: 0 13px;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+    margin-right: 8px;
+}
+
+.btn-detail {
+    background: #6366f1;
+    color: white;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.btn-detail:hover {
+    background: #4f46e5;
+}
+
+.btn-action {
+    background: #10b981;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.btn-action:hover {
+    background: #059669;
+}
+
+.btn-danger {
+    background: #ef4444;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+}
+
+.loading {
+    text-align: center;
+    padding: 20px;
+    color: #9ca3af;
+}
+
 @media (max-width: 1000px) {
     .summary-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -267,5 +400,13 @@ tr:hover {
 
     .sidebar {
         width: 210px;
+    }
+
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-note-input {
+        width: 200px;
     }
 }
