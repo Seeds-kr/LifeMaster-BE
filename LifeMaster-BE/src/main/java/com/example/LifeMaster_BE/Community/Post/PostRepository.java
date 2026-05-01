@@ -45,4 +45,6 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
     // 통계용 메서드
     @Query("SELECT COUNT(p) FROM PostEntity p WHERE p.createdAt >= :startDate")
     long countNewPostsSince(@Param("startDate") LocalDateTime startDate);
+
+    long countByMemberId(Long memberId);
 }
