@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>관리자 페이지</title>
+    <link rel="stylesheet" href="/css/admin-coupons.css">
+</head>
+<body>
+
+<div class="admin-layout">
+    <aside class="sidebar">
+        <div class="logo">LIFEMASTER</div>
+
+        <nav>
+            <a href="#" class="nav-item active" onclick="showPage('coupons', this)">📊 전체 쿠폰 조회</a>
+            <a href="#" class="nav-item" onclick="showPage('payments', this)">💳 결제 내역</a>
+            <a href="#" class="nav-item" onclick="showPage('premium', this)">⭐ 프리미엄 계정</a>
+            <a href="#" class="nav-item" onclick="showPage('reports', this)">📋 신고 관리</a>
+            <a href="#" class="nav-item">👤 회원 관리</a>
+            <a href="#" class="nav-item">⚙ 설정</a>
+        </nav>
+    </aside>
+
+    <div class="main">
+        <header class="topbar">
+            <div>
+                <span class="menu-btn">☰</span>
+                <strong id="pageTitle">Coupon Dashboard</strong>
+            </div>
+
+            <button class="logout-btn" onclick="logout()">로그아웃</button>
+        </header>
+
+        <section class="content">
+
+            <!-- 쿠폰 조회 -->
+            <div id="page-coupons" class="page-section">
+                <div class="breadcrumb">Home / <span>전체 쿠폰 조회</span></div>
+
+                <div class="summary-grid">
+                    <div class="summary-card purple">
+                        <h3 id="totalCount">0</h3>
+                        <p>전체 쿠폰</p>
+                    </div>
+                    <div class="summary-card blue">
+                        <h3 id="unusedCount">0</h3>
+                        <p>미사용 쿠폰</p>
+                    </div>
+                    <div class="summary-card yellow">
+                        <h3 id="registeredCount">0</h3>
+                        <p>등록 쿠폰</p>
+                    </div>
+                    <div class="summary-card red">
+                        <h3 id="usedCount">0</h3>
+                        <p>사용 완료</p>
+                    </div>
+                </div>
+
+                <div class="table-card">
+                    <div class="table-header">
+                        <div>
+                            <h2>전체 쿠폰 조회</h2>
+                            <p>쿠폰 코드, 할인율, 상태를 확인합니다.</p>
+                        </div>
+
+                        <div class="filter-box">
+                            <select id="statusSelect">
+                                <option value="">전체</option>
+                                <option value="UNUSE">미사용</option>
+                                <option value="REGISTER">등록됨</option>
+                                <option value="USE">사용완료</option>
+                            </select>
+                            <button onclick="loadCoupons()">조회</button>
+                        </div>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>쿠폰 코드</th>
+                                <th>할인율</th>
+                                <th>쿠폰 타입</th>
+                                <th>상태</th>
+                                <th>사용자</th>
+                            </tr>
+                            </thead>
+                            <tbody id="couponTableBody"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="pagination-box">
+                        <button id="couponPrevBtn" onclick="prevCouponPage()">이전</button>
+                        <span id="couponPageInfo">1 / 1</span>
+                        <button id="couponNextBtn" onclick="nextCouponPage()">다음</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 결제 내역 -->
+            <div id="page-payments" class="page-section" style="display:none;">
+                <div class="breadcrumb">Home / <span>결제 내역</span></div>
+
+                <div class="summary-grid">
+                    <div class="summary-card purple">
+                        <h3 id="paymentTotalCount">0</h3>
+                        <p>전체 결제</p>
+                    </div>
+                    <div class="summary-card blue">
+                        <h3 id="paymentSuccessCount">0</h3>
+                        <p>결제 성공</p>
+                    </div>
+                    <div class="summary-card yellow">
+                        <h3 id="paymentPendingCount">0</h3>
+                        <p>대기 중</p>
+                    </div>
+                    <div class="summary-card red">
+                        <h3 id="paymentFailedCount">0</h3>
+                        <p>실패/취소/환불</p>
+                    </div>
+                </div>
+
+                <div class="table-card">
+                    <div class="table-header">
+                        <div>
+                            <h2>결제 내역 조회</h2>
+                            <p>상품명, 금액, 결제 상태를 확인합니다.</p>
+                        </div>
+
+                        <button onclick="reloadPayments()">새로고침</button>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                            <tr>
+                                <th>토큰</th>
+                                <th>회원 ID</th>
+                                <th>이메일</th>
+                                <th>닉네임</th>
+                                <th>상품명</th>
+                                <th>금액</th>
+                                <th>구매 타입</th>
+                                <th>상태</th>
+                                <th>결제 시간</th>
+                            </tr>
+                            </thead>
+                            <tbody id="paymentTableBody"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="pagination-box">
+                        <button id="paymentPrevBtn" onclick="prevPaymentPage()">이전</button>
+                        <span id="paymentPageInfo">1 / 1</span>
+                        <button id="paymentNextBtn" onclick="nextPaymentPage()">다음</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 프리미엄 계정 -->
+            <div id="page-premium" class="page-section" style="display:none;">
+                <div class="breadcrumb">Home / <span>프리미엄 계정 조회</span></div>
+
+                <div class="summary-grid">
+                    <div class="summary-card purple">
+                        <h3 id="premiumTotalCount">0</h3>
+                        <p>전체 프리미엄</p>
+                    </div>
+
+                    <div class="summary-card blue">
+                        <h3 id="premiumActiveCount">0</h3>
+                        <p>활성 계정</p>
+                    </div>
+
+                    <div class="summary-card yellow">
+                        <h3 id="premiumExpireSoonCount">0</h3>
+                        <p>7일 내 만료</p>
+                    </div>
+
+                    <div class="summary-card red">
+                        <h3 id="premiumExpiredCount">0</h3>
+                        <p>만료 계정</p>
+                    </div>
+                </div>
+
+                <div class="table-card">
+                    <div class="table-header">
+                        <div>
+                            <h2>프리미엄 계정 조회</h2>
+                            <p>프리미엄 회원의 만료일과 상태를 확인합니다.</p>
+                        </div>
+
+                        <button onclick="loadPremiumMembers()">새로고침</button>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                            <tr>
+                                <th>회원 ID</th>
+                                <th>이메일</th>
+                                <th>이름</th>
+                                <th>구독 만료일</th>
+                                <th>상태</th>
+                            </tr>
+                            </thead>
+                            <tbody id="premiumTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 신고 관리 -->
+            <div id="page-reports" class="page-section" style="display:none;">
+                <div class="breadcrumb">Home / <span>신고 관리</span></div>
+
+                <div class="summary-grid">
+                    <div class="summary-card purple">
+                        <h3 id="reportTotalCount">0</h3>
+                        <p>전체 신고</p>
+                    </div>
+
+                    <div class="summary-card yellow">
+                        <h3 id="reportPendingCount">0</h3>
+                        <p>대기 중</p>
+                    </div>
+
+                    <div class="summary-card blue">
+                        <h3 id="reportReviewingCount">0</h3>
+                        <p>검토 중</p>
+                    </div>
+
+                    <div class="summary-card green">
+                        <h3 id="reportResolvedCount">0</h3>
+                        <p>처리 완료</p>
+                    </div>
+                </div>
+
+                <div class="table-card">
+                    <div class="table-header">
+                        <div>
+                            <h2>신고 목록 조회</h2>
+                            <p>접수된 신고를 확인하고 처리합니다.</p>
+                        </div>
+
+                        <div class="filter-box">
+                            <select id="statusFilterSelect">
+                                <option value="">전체</option>
+                                <option value="PENDING">대기 중</option>
+                                <option value="REVIEWING">검토 중</option>
+                                <option value="RESOLVED">처리 완료</option>
+                                <option value="REJECTED">반려됨</option>
+                            </select>
+                            <button onclick="filterByStatus()">조회</button>
+                            <button onclick="reloadReports()">새로고침</button>
+                        </div>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>신고 사유</th>
+                                <th>상태</th>
+                                <th>신고자</th>
+                                <th>게시글 ID</th>
+                                <th>게시글 제목</th>
+                                <th>신고 일시</th>
+                                <th>작업</th>
+                            </tr>
+                            </thead>
+                            <tbody id="reportTableBody"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="pagination-box">
+                        <button id="reportPrevBtn" onclick="prevReportPage()">이전</button>
+                        <span id="reportPageInfo">1 / 1</span>
+                        <button id="reportNextBtn" onclick="nextReportPage()">다음</button>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+    </div>
+</div>
+
+<script src="/js/admin/admin-common.js"></script>
+<script src="/js/admin/admin-coupons.js"></script>
+<script src="/js/admin/admin-payments.js"></script>
+<script src="/js/admin/admin-premium.js"></script>
+<script src="/js/admin/admin-reports.js"></script>
+
+</body>
+</html>

@@ -40,6 +40,12 @@ public class SpringSecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                         .requestMatchers(
+                                "/admin/login",
+                                "/admin/admin-page",
+                                "/css/**",
+                                "/js/**",
+                                "/images/**",
+
                                 "/user/login",
                                 "/swagger-ui/**",
                                 "swagger-ui.html",

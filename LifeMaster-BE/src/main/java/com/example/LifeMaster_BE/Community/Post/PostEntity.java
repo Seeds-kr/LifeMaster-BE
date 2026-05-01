@@ -30,7 +30,7 @@ public class PostEntity {
 
     @Id
     @Setter // 테스트 용
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String title;
     private String content;
