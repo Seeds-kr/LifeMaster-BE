@@ -7,9 +7,13 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Getter
-@AllArgsConstructor
 public class DailyCountDto {
+
     private String date;
     private Long count;
 
+    public DailyCountDto(Object date, Long count) {
+        this.date = String.valueOf(date);
+        this.count = count;
+    }
 }
