@@ -52,14 +52,14 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
     long countByMemberId(Long memberId);
 
     @Query("""
-        SELECT new com.example.LifeMaster_BE.Admin.Dto.DailyCountDto(
-            FUNCTION('DATE', p.createdAt),
-            COUNT(p)
-        )
-        FROM PostEntity p
-        GROUP BY FUNCTION('DATE', p.createdAt)
-        ORDER BY FUNCTION('DATE', p.createdAt)
-    """)
+SELECT new com.example.LifeMaster_BE.Admin.Dto.DailyCountDto(
+    FUNCTION('DATE_FORMAT', p.createdAt, '%Y-%m-%d'),
+    COUNT(p)
+)
+FROM PostEntity p
+GROUP BY FUNCTION('DATE_FORMAT', p.createdAt, '%Y-%m-%d')
+ORDER BY FUNCTION('DATE_FORMAT', p.createdAt, '%Y-%m-%d')
+""")
     List<DailyCountDto> countDailyPosts();
 
     @Query("""

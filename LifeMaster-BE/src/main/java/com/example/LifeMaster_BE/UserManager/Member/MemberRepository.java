@@ -44,12 +44,12 @@ public interface MemberRepository extends JpaRepository<MemberEntity, Long> {
 
     @Query("""
 SELECT new com.example.LifeMaster_BE.Admin.Dto.DailyCountDto(
-    FUNCTION('DATE_FORMAT', p.createdAt, '%Y-%m-%d'),
-    COUNT(p)
+    FUNCTION('DATE_FORMAT', m.createdAt, '%Y-%m-%d'),
+    COUNT(m)
 )
-FROM PostEntity p
-GROUP BY FUNCTION('DATE_FORMAT', p.createdAt, '%Y-%m-%d')
-ORDER BY FUNCTION('DATE_FORMAT', p.createdAt, '%Y-%m-%d')
+FROM MemberEntity m
+GROUP BY FUNCTION('DATE_FORMAT', m.createdAt, '%Y-%m-%d')
+ORDER BY FUNCTION('DATE_FORMAT', m.createdAt, '%Y-%m-%d')
 """)
     List<DailyCountDto> countDailyUsers();
 
