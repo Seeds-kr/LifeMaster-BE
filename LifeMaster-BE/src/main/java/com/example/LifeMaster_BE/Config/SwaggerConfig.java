@@ -46,6 +46,14 @@ public class SwaggerConfig implements WebMvcConfigurer {
     }
 
     @Bean
+    public GroupedOpenApi AdminStaitcApi() {
+        return GroupedOpenApi.builder()
+                .group("Admin-Static-api")
+                .pathsToMatch("/admin/stats/**")
+                .build();
+    }
+
+    @Bean
     public GroupedOpenApi detoxTimeApi() {
         return GroupedOpenApi.builder()
                 .group("detox-time")
