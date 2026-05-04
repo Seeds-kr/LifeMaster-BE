@@ -135,4 +135,6 @@ public class AdminStaticController {
         validateAdmin(user);
         return adminStaticService.getChallengeCompletion();
     }
+
+
 }
