@@ -8,4 +8,9 @@ import lombok.Getter;
 public class MonthlyCountDto {
     private String month;
     private Long count;
+
+    public MonthlyCountDto(Integer year, Integer month, Long count) {
+        this.month = year + "-" + String.format("%02d", month);
+        this.count = count;
+    }
 }
