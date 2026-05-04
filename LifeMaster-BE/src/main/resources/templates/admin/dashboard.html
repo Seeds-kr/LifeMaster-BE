@@ -17,6 +17,7 @@
             <a href="#" class="nav-item" onclick="showPage('premium', this)">⭐ 프리미엄 계정</a>
             <a href="#" class="nav-item" onclick="showPage('reports', this)">📋 신고 관리</a>
             <a href="#" class="nav-item">👤 회원 관리</a>
+            <a href="#" class="nav-item" onclick="showPage('stats', this)">📈 통계 대시보드</a>
             <a href="#" class="nav-item">⚙ 설정</a>
         </nav>
     </aside>
@@ -283,6 +284,77 @@
                 </div>
             </div>
 
+
+            <!-- 통계 페이지 -->
+            <div id="page-stats" class="page-section" style="display:none;">
+                <div class="breadcrumb">Home / <span>통계 대시보드</span></div>
+
+                <div class="summary-grid">
+                    <div class="summary-card purple">
+                        <h3 id="activeUsers">0</h3>
+                        <p>활성 사용자</p>
+                    </div>
+
+                    <div class="summary-card blue">
+                        <h3 id="todayUsers">0</h3>
+                        <p>오늘 가입자</p>
+                    </div>
+
+                    <div class="summary-card yellow">
+                        <h3 id="todayPosts">0</h3>
+                        <p>오늘 게시글</p>
+                    </div>
+
+                    <div class="summary-card red">
+                        <h3 id="todayComments">0</h3>
+                        <p>오늘 댓글</p>
+                    </div>
+                </div>
+
+                <div class="table-card">
+                    <h2>🔥 인기 게시글 TOP 10</h2>
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>제목</th>
+                            <th>조회수</th>
+                            <th>댓글</th>
+                            <th>좋아요</th>
+                            <th>점수</th>
+                        </tr>
+                        </thead>
+                        <tbody id="popularPostTable"></tbody>
+                    </table>
+                </div>
+
+                <div class="table-card">
+                    <h2>로그인 타입 통계</h2>
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>타입</th>
+                            <th>사용자 수</th>
+                        </tr>
+                        </thead>
+                        <tbody id="loginTypeTable"></tbody>
+                    </table>
+                </div>
+
+                <div class="table-card">
+                    <h2>게시글 타입 통계</h2>
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>타입</th>
+                            <th>개수</th>
+                        </tr>
+                        </thead>
+                        <tbody id="postTypeTable"></tbody>
+                    </table>
+                </div>
+            </div>
+
         </section>
     </div>
 </div>
@@ -292,6 +364,7 @@
 <script src="/js/admin/admin-payments.js"></script>
 <script src="/js/admin/admin-premium.js"></script>
 <script src="/js/admin/admin-reports.js"></script>
+<script src="/js/admin/admin-stats.js"></script>
 
 </body>
 </html>

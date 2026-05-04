@@ -74,6 +74,12 @@ function showPage(page, element) {
         loadReports();
         loadReportSummary();
     }
+
+    if (page === "stats") {
+        document.getElementById("page-stats").style.display = "block";
+        document.getElementById("pageTitle").textContent = "Statistics Dashboard";
+        loadStats();
+    }
 }
 
 function logout() {
