@@ -1,5 +1,8 @@
 package com.example.LifeMaster_BE.UserManager.Member;
 
+import com.example.LifeMaster_BE.Admin.Dto.DailyCountDto;
+import com.example.LifeMaster_BE.Admin.Dto.LoginTypeCountDto;
+import com.example.LifeMaster_BE.Admin.Dto.MonthlyCountDto;
 import com.example.LifeMaster_BE.UserManager.Member.Subscription.SubscriptionPlan;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -38,6 +41,50 @@ public interface MemberRepository extends JpaRepository<MemberEntity, Long> {
     List<MemberEntity> findAllBySubscriptionPlan(SubscriptionPlan subscriptionPlan);
 
     List<MemberEntity> findAll();
+
+    // 🔥 일별 가입자 수
+    @Query("""
+        SELECT new com.example.LifeMaster_BE.Admin.Dto.DailyCountDto(
+            FUNCTION('DATE', m.createdAt),
+            COUNT(m)
+        )
+        FROM MemberEntity m
+        GROUP BY FUNCTION('DATE', m.createdAt)
+        ORDER BY FUNCTION('DATE', m.createdAt)
+    """)
+    List<DailyCountDto> countDailyUsers();
+
+
+    // 🔥 월별 가입자 수
+    @Query("""
+        SELECT new com.example.LifeMaster_BE.Admin.Dto.MonthlyCountDto(
+            FUNCTION('DATE_FORMAT', m.createdAt, '%Y-%m'),
+            COUNT(m)
+        )
+        FROM MemberEntity m
+        GROUP BY FUNCTION('DATE_FORMAT', m.createdAt, '%Y-%m')
+        ORDER BY FUNCTION('DATE_FORMAT', m.createdAt, '%Y-%m')
+    """)
+    List<MonthlyCountDto> countMonthlyUsers();
+
+
+    // 🔥 활성 유저 (최근 7일 로그인 기준 예시)
+    @Query("""
+        SELECT COUNT(m)
+        FROM MemberEntity m
+        WHERE m.loginStatus = true
+    """)
+    Long countActiveUsers();
+
+    @Query("""
+    SELECT new com.example.LifeMaster_BE.Admin.Dto.LoginTypeCountDto(
+        m.loginType,
+        COUNT(m)
+    )
+    FROM MemberEntity m
+    GROUP BY m.loginType
+""")
+    List<LoginTypeCountDto> countByLoginType();
 }
 
 
