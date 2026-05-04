@@ -12,8 +12,4 @@ public class DailyCountDto {
     private LocalDate date;
     private Long count;
 
-    public DailyCountDto(LocalDateTime dateTime, Long count) {
-        this.date = dateTime.toLocalDate();
-        this.count = count;
-    }
 }
