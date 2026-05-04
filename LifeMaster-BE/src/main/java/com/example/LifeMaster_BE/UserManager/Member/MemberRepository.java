@@ -42,29 +42,27 @@ public interface MemberRepository extends JpaRepository<MemberEntity, Long> {
 
     List<MemberEntity> findAll();
 
-    // 🔥 일별 가입자 수
     @Query("""
-        SELECT new com.example.LifeMaster_BE.Admin.Dto.DailyCountDto(
-            FUNCTION('DATE', m.createdAt),
-            COUNT(m)
-        )
-        FROM MemberEntity m
-        GROUP BY FUNCTION('DATE', m.createdAt)
-        ORDER BY FUNCTION('DATE', m.createdAt)
-    """)
+    SELECT new com.example.LifeMaster_BE.Admin.Dto.DailyCountDto(
+        DATE(m.createdAt),
+        COUNT(m)
+    )
+    FROM MemberEntity m
+    GROUP BY DATE(m.createdAt)
+    ORDER BY DATE(m.createdAt)
+""")
     List<DailyCountDto> countDailyUsers();
 
 
-    // 🔥 월별 가입자 수
     @Query("""
-        SELECT new com.example.LifeMaster_BE.Admin.Dto.MonthlyCountDto(
-            FUNCTION('DATE_FORMAT', m.createdAt, '%Y-%m'),
-            COUNT(m)
-        )
-        FROM MemberEntity m
-        GROUP BY FUNCTION('DATE_FORMAT', m.createdAt, '%Y-%m')
-        ORDER BY FUNCTION('DATE_FORMAT', m.createdAt, '%Y-%m')
-    """)
+    SELECT new com.example.LifeMaster_BE.Admin.Dto.MonthlyCountDto(
+        FUNCTION('DATE_FORMAT', m.createdAt, '%Y-%m'),
+        COUNT(m)
+    )
+    FROM MemberEntity m
+    GROUP BY FUNCTION('DATE_FORMAT', m.createdAt, '%Y-%m')
+    ORDER BY FUNCTION('DATE_FORMAT', m.createdAt, '%Y-%m')
+""")
     List<MonthlyCountDto> countMonthlyUsers();
 
 
