@@ -161,4 +161,8 @@ public class TodoService {
     public List<TodoEntity> getTodosByMember(Long memberId) {
         return todoRepository.findByMemberId(memberId);
     }
+
+    public List<TodoEntity> getTodosByMemberAndDate(Long memberId, String date) {
+        return todoRepository.findByMemberIdAndDate(memberId, date);
+    }
 }
