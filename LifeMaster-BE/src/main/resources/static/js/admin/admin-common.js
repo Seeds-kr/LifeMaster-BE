@@ -66,6 +66,20 @@ function showPage(page, element) {
         document.getElementById("pageTitle").textContent = "Premium Member Dashboard";
         loadPremiumMembers();
     }
+
+    if (page === "reports") {
+        document.getElementById("page-reports").style.display = "block";
+        document.getElementById("pageTitle").textContent = "Report Management Dashboard";
+        reportCurrentPage = 0;
+        loadReports();
+        loadReportSummary();
+    }
+
+    if (page === "stats") {
+        document.getElementById("page-stats").style.display = "block";
+        document.getElementById("pageTitle").textContent = "Statistics Dashboard";
+        loadStats();
+    }
 }
 
 function logout() {

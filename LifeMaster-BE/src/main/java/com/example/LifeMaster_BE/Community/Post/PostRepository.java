@@ -1,5 +1,8 @@
 package com.example.LifeMaster_BE.Community.Post;
 
+import com.example.LifeMaster_BE.Admin.Dto.DailyCountDto;
+import com.example.LifeMaster_BE.Admin.Dto.PopularPostDto;
+import com.example.LifeMaster_BE.Admin.Dto.PostTypeCountDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -45,4 +48,41 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
     // 통계용 메서드
     @Query("SELECT COUNT(p) FROM PostEntity p WHERE p.createdAt >= :startDate")
     long countNewPostsSince(@Param("startDate") LocalDateTime startDate);
+
+    long countByMemberId(Long memberId);
+
+    @Query("""
+SELECT new com.example.LifeMaster_BE.Admin.Dto.DailyCountDto(
+    FUNCTION('DATE_FORMAT', p.createdAt, '%Y-%m-%d'),
+    COUNT(p)
+)
+FROM PostEntity p
+GROUP BY FUNCTION('DATE_FORMAT', p.createdAt, '%Y-%m-%d')
+ORDER BY FUNCTION('DATE_FORMAT', p.createdAt, '%Y-%m-%d')
+""")
+    List<DailyCountDto> countDailyPosts();
+
+    @Query("""
+    SELECT new com.example.LifeMaster_BE.Admin.Dto.PostTypeCountDto(
+        p.type,
+        COUNT(p)
+    )
+    FROM PostEntity p
+    GROUP BY p.type
+""")
+    List<PostTypeCountDto> countByPostType();
+
+    @Query("""
+    SELECT new com.example.LifeMaster_BE.Admin.Dto.PopularPostDto(
+        p.id,
+        p.title,
+        p.viewCount,
+        p.commentCount,
+        SIZE(p.likes),
+        (p.viewCount + p.commentCount + SIZE(p.likes) * 2)
+    )
+    FROM PostEntity p
+    ORDER BY (p.viewCount + p.commentCount + SIZE(p.likes) * 2) DESC
+""")
+    List<PopularPostDto> findPopularPosts(org.springframework.data.domain.Pageable pageable);
 }

@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 public class ReportEntity {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Setter

@@ -1,5 +1,6 @@
 package com.example.LifeMaster_BE.Community.Comment;
 
+import com.example.LifeMaster_BE.Admin.Dto.DailyCountDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -35,4 +36,17 @@ public interface CommentRepository extends JpaRepository<CommentEntity, Long> {
     // 통계용 메서드
     @Query("SELECT COUNT(c) FROM CommentEntity c WHERE c.createdAt >= :startDate")
     long countNewCommentsSince(@Param("startDate") LocalDateTime startDate);
+
+    long countByMemberId(Long memberId);
+
+    @Query("""
+        SELECT new com.example.LifeMaster_BE.Admin.Dto.DailyCountDto(
+            FUNCTION('DATE', c.createdAt),
+            COUNT(c)
+        )
+        FROM CommentEntity c
+        GROUP BY FUNCTION('DATE', c.createdAt)
+        ORDER BY FUNCTION('DATE', c.createdAt)
+    """)
+    List<DailyCountDto> countDailyComments();
 }
