@@ -10,6 +10,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -137,5 +138,14 @@ public class ChallengeController {
         }
 
         return result;
+    }
+
+    @PostMapping("/complete")
+    @Operation(summary = "챌린지 완료", description = "오늘 챌린지를 완료 처리하고 완료 시간을 기록합니다.")
+    public ChallengeDto.CompleteResponse completeChallenge(
+            @RequestBody ChallengeDto.CompleteRequest request,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        return challengeService.completeChallenge(request.getChallId(), user);
     }
 }
