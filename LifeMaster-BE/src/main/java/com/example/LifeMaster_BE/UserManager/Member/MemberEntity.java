@@ -204,4 +204,20 @@ public class MemberEntity {
     public void revokeAdminRole() {
         this.loginRole = LoginRole.USER;
     }
+
+    public MemberEntity updateOAuthInfo(String picture, String nickname, LoginType loginType) {
+        if (picture != null) {
+            this.imageUrl = picture;
+        }
+
+        if (nickname != null && !nickname.isBlank()) {
+            this.nickname = nickname;
+        }
+
+        if (loginType != null) {
+            this.loginType = loginType;
+        }
+
+        return this;
+    }
 }

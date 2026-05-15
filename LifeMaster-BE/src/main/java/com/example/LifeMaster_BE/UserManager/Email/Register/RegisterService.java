@@ -15,6 +15,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import com.example.LifeMaster_BE.UserManager.Member.LoginType;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -57,6 +58,7 @@ public class RegisterService {
         String email = cachedData.getEmail();
         String encodedPassword = cachedData.getEncodedPassword();
         MemberEntity newMember = new MemberEntity(email, encodedPassword, nickname);
+        newMember.setLoginType(LoginType.EMAIL);
 
         // 프로필 사진 설정
         if(image != null){

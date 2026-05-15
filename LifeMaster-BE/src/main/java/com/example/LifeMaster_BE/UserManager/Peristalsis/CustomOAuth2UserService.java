@@ -27,6 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
+import com.example.LifeMaster_BE.UserManager.Member.LoginType;
 
 import java.time.Instant;
 import java.util.*;
@@ -170,6 +171,7 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 
         OAuthUsersEntity user = saveOrUpdate(oAuth2User);
         MemberEntity member = new MemberEntity(user.getEmail(), user.getIdentifier());
+        member.setLoginType(LoginType.GOOGLE);
 
         Optional<MemberEntity> existing = memberRepository.findByEmail(user.getEmail());
 
@@ -233,6 +235,7 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 
             OAuthUsersEntity user = saveOrUpdate(oAuth2User);
             MemberEntity member = new MemberEntity(user.getEmail(),user.getIdentifier());
+            member.setLoginType(LoginType.NAVER);
 
             Optional<MemberEntity> existing = memberRepository.findByEmail(user.getEmail());
 
@@ -452,9 +455,10 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 
     private MemberEntity saveOrUpdateMember(MemberEntity usersEntity) {
         MemberEntity user = memberRepository.findByEmail(usersEntity.getEmail())
-                .map(entity -> entity.update(
+                .map(entity -> entity.updateOAuthInfo(
                         usersEntity.getPicture(),
-                        usersEntity.getNickname()
+                        usersEntity.getNickname(),
+                        usersEntity.getLoginType()
                 ))
                 .orElse(usersEntity);
 
