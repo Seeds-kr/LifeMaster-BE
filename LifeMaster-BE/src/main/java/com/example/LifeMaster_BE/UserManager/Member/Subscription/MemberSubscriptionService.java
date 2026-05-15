@@ -9,6 +9,12 @@ import com.example.LifeMaster_BE.UserManager.Member.Payment.PaymentRepository;
 import com.example.LifeMaster_BE.UserManager.Member.Payment.PaymentStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.example.LifeMaster_BE.Admin.Premium.AdminPremiumGrantRequest;
+import com.example.LifeMaster_BE.Admin.Premium.NonPremiumMemberAdminDto;
+import com.example.LifeMaster_BE.Admin.Premium.PremiumGrantType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -164,5 +170,50 @@ public class MemberSubscriptionService {
                 .stream()
                 .map(PremiumMemberAdminDto::from)
                 .toList();
+    }
+
+    /**
+     * 어드민용 - 일반 회원 조회
+     */
+    @Transactional(readOnly = true)
+    public Page<NonPremiumMemberAdminDto> getNonPremiumMembersForAdmin(
+            int page,
+            int size
+    ) {
+        Pageable pageable = PageRequest.of(page, size);
+
+        return memberRepository
+                .findAllBySubscriptionPlan(SubscriptionPlan.FREE, pageable)
+                .map(NonPremiumMemberAdminDto::from);
+    }
+
+    /**
+     * 어드민용 - 프리미엄 권한 부여
+     */
+    @Transactional
+    public void grantPremiumForAdmin(Long memberId, PremiumGrantType grantType) {
+        switch (grantType) {
+            case ONE_MONTH ->
+                    updateSubscription(memberId, SubscriptionPlan.PREMIUM);
+
+            case THIRTEEN_MONTHS ->
+                    updateSubscription13Month(memberId, SubscriptionPlan.PREMIUM);
+
+            case PERMANENT ->
+                    updateSubscriptionPermanent(memberId, SubscriptionPlan.PREMIUM);
+        }
+    }
+
+    /**
+     * 어드민용 - 프리미엄 권한 회수
+     */
+    @Transactional
+    public void revokePremiumForAdmin(Long memberId) {
+        MemberEntity member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 ID의 멤버를 찾을 수 없습니다."));
+
+        member.revokePremium();
+
+        memberRepository.save(member);
     }
 }

@@ -64,7 +64,9 @@ function showPage(page, element) {
     if (page === "premium") {
         document.getElementById("page-premium").style.display = "block";
         document.getElementById("pageTitle").textContent = "Premium Member Dashboard";
+
         loadPremiumMembers();
+        loadNonPremiumMembers(0);
     }
 
     if (page === "reports") {
@@ -73,6 +75,15 @@ function showPage(page, element) {
         reportCurrentPage = 0;
         loadReports();
         loadReportSummary();
+    }
+
+    if (page === "members") {
+        document.getElementById("page-members").style.display = "block";
+        document.getElementById("pageTitle").textContent = "Member Management Dashboard";
+
+        memberCurrentPage = 0;
+        loadMembers();
+        loadMemberSummary();
     }
 
     if (page === "stats") {

@@ -16,7 +16,7 @@
             <a href="#" class="nav-item" onclick="showPage('payments', this)">💳 결제 내역</a>
             <a href="#" class="nav-item" onclick="showPage('premium', this)">⭐ 프리미엄 계정</a>
             <a href="#" class="nav-item" onclick="showPage('reports', this)">📋 신고 관리</a>
-            <a href="#" class="nav-item">👤 회원 관리</a>
+            <a href="#" class="nav-item" onclick="showPage('members', this)">👤 회원 관리</a>
             <a href="#" class="nav-item" onclick="showPage('stats', this)">📈 통계 대시보드</a>
             <a href="#" class="nav-item">⚙ 설정</a>
         </nav>
@@ -57,6 +57,38 @@
                     </div>
                 </div>
 
+                <div class="coupon-create-card">
+                    <div class="coupon-create-header">
+                        <div>
+                            <h2>쿠폰 생성</h2>
+                            <p>관리자가 새로운 할인 쿠폰을 생성합니다.</p>
+                        </div>
+                    </div>
+
+                    <div class="coupon-create-form">
+                        <div class="form-group">
+                            <label for="couponTypeSelect">쿠폰 타입</label>
+                            <select id="couponTypeSelect">
+                                <option value="LIMIT">LIMIT</option>
+                                <option value="UNLIMIT">UNLIMIT</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="couponPercentInput">할인율 (%)</label>
+                            <input
+                                    type="number"
+                                    id="couponPercentInput"
+                                    min="1"
+                                    max="100"
+                                    placeholder="예: 10"
+                            >
+                        </div>
+
+                        <button class="create-coupon-btn" onclick="createCoupon()">쿠폰 생성</button>
+                    </div>
+                </div>
+
                 <div class="table-card">
                     <div class="table-header">
                         <div>
@@ -85,6 +117,7 @@
                                 <th>쿠폰 타입</th>
                                 <th>상태</th>
                                 <th>사용자</th>
+                                <th>작업</th>
                             </tr>
                             </thead>
                             <tbody id="couponTableBody"></tbody>
@@ -204,11 +237,44 @@
                                 <th>이름</th>
                                 <th>구독 만료일</th>
                                 <th>상태</th>
+                                <th>작업</th>
                             </tr>
                             </thead>
                             <tbody id="premiumTableBody"></tbody>
                         </table>
                     </div>
+                </div>
+            </div>
+
+            <div class="table-card premium-manage-card">
+                <div class="table-header">
+                    <div>
+                        <h2>일반 회원 프리미엄 부여</h2>
+                        <p>프리미엄 권한이 없는 회원에게 이용권을 부여합니다.</p>
+                    </div>
+
+                    <button onclick="loadNonPremiumMembers(0)">새로고침</button>
+                </div>
+
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>회원 ID</th>
+                            <th>이메일</th>
+                            <th>이름</th>
+                            <th>부여 기간</th>
+                            <th>작업</th>
+                        </tr>
+                        </thead>
+                        <tbody id="nonPremiumTableBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="pagination-box">
+                    <button id="nonPremiumPrevBtn" onclick="prevNonPremiumPage()">이전</button>
+                    <span id="nonPremiumPageInfo">1 / 1</span>
+                    <button id="nonPremiumNextBtn" onclick="nextNonPremiumPage()">다음</button>
                 </div>
             </div>
 
@@ -280,6 +346,72 @@
                         <button id="reportPrevBtn" onclick="prevReportPage()">이전</button>
                         <span id="reportPageInfo">1 / 1</span>
                         <button id="reportNextBtn" onclick="nextReportPage()">다음</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 회원 관리 -->
+            <div id="page-members" class="page-section" style="display:none;">
+                <div class="breadcrumb">Home / <span>회원 관리</span></div>
+
+                <div class="summary-grid">
+                    <div class="summary-card purple">
+                        <h3 id="memberTotalCount">0</h3>
+                        <p>전체 회원</p>
+                    </div>
+
+                    <div class="summary-card blue">
+                        <h3 id="memberActiveCount">0</h3>
+                        <p>활성 회원</p>
+                    </div>
+
+                    <div class="summary-card yellow">
+                        <h3 id="memberPremiumCount">0</h3>
+                        <p>프리미엄 회원</p>
+                    </div>
+
+                    <div class="summary-card red">
+                        <h3 id="memberAdminCount">0</h3>
+                        <p>관리자 계정</p>
+                    </div>
+                </div>
+
+                <div class="table-card">
+                    <div class="table-header">
+                        <div>
+                            <h2>전체 회원 조회</h2>
+                            <p>가입한 모든 회원의 계정 상태와 요금제 정보를 확인합니다.</p>
+                        </div>
+
+                        <button onclick="reloadMembers()">새로고침</button>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                            <tr>
+                                <th>회원 ID</th>
+                                <th>이메일</th>
+                                <th>닉네임</th>
+                                <th>로그인 타입</th>
+                                <th>로그인 상태</th>
+                                <th>권한</th>
+                                <th>회원 상태</th>
+                                <th>경고</th>
+                                <th>요금제</th>
+                                <th>결제 상태</th>
+                                <th>만료일</th>
+                                <th>가입일</th>
+                            </tr>
+                            </thead>
+                            <tbody id="memberTableBody"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="pagination-box">
+                        <button id="memberPrevBtn" onclick="prevMemberPage()">이전</button>
+                        <span id="memberPageInfo">1 / 1</span>
+                        <button id="memberNextBtn" onclick="nextMemberPage()">다음</button>
                     </div>
                 </div>
             </div>
@@ -364,6 +496,7 @@
 <script src="/js/admin/admin-payments.js"></script>
 <script src="/js/admin/admin-premium.js"></script>
 <script src="/js/admin/admin-reports.js"></script>
+<script src="/js/admin/admin-members.js"></script>
 <script src="/js/admin/admin-stats.js"></script>
 
 </body>

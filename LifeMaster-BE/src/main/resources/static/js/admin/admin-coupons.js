@@ -40,7 +40,7 @@ function renderCoupons() {
     const pageCoupons = allCoupons.slice(start, end);
 
     if (pageCoupons.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="empty">조회된 쿠폰이 없습니다.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="empty">조회된 쿠폰이 없습니다.</td></tr>`;
     } else {
         pageCoupons.forEach(coupon => {
             const tr = document.createElement("tr");
@@ -52,15 +52,87 @@ function renderCoupons() {
                 <td>${coupon.couponType ?? ""}</td>
                 <td>${couponStatusBadge(coupon.couponStatus)}</td>
                 <td>${coupon.email ?? coupon.nickname ?? "-"}</td>
+                <td>
+                    <button 
+                        class="delete-btn"
+                        onclick="deleteCoupon(${coupon.couponId})"
+                    >
+                        삭제
+                    </button>
+                </td>
             `;
 
             tbody.appendChild(tr);
         });
     }
 
-    document.getElementById("couponPageInfo").textContent = `${couponCurrentPage} / ${totalPages}`;
-    document.getElementById("couponPrevBtn").disabled = couponCurrentPage <= 1;
-    document.getElementById("couponNextBtn").disabled = couponCurrentPage >= totalPages;
+    document.getElementById("couponPageInfo").textContent =
+        `${couponCurrentPage} / ${totalPages}`;
+
+    document.getElementById("couponPrevBtn").disabled =
+        couponCurrentPage <= 1;
+
+    document.getElementById("couponNextBtn").disabled =
+        couponCurrentPage >= totalPages;
+}
+
+async function createCoupon() {
+    const couponType = document.getElementById("couponTypeSelect").value;
+    const couponPercentInput = document.getElementById("couponPercentInput");
+    const couponPercent = Number(couponPercentInput.value);
+
+    if (!couponPercent || couponPercent < 1 || couponPercent > 100) {
+        alert("할인율은 1 이상 100 이하로 입력해주세요.");
+        return;
+    }
+
+    const response = await fetch("/coupon/admin", {
+        method: "POST",
+        headers: {
+            ...authHeaders(),
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            couponType: couponType,
+            couponPercent: couponPercent
+        })
+    });
+
+    if (await handleAuthError(response)) return;
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        alert("쿠폰 생성 실패\n" + errorText);
+        return;
+    }
+
+    alert("쿠폰이 생성되었습니다.");
+
+    couponPercentInput.value = "";
+
+    await loadCoupons();
+}
+
+async function deleteCoupon(couponId) {
+    const confirmed = confirm("이 쿠폰을 삭제하시겠습니까?");
+    if (!confirmed) return;
+
+    const response = await fetch(`/coupon/admin/${couponId}`, {
+        method: "DELETE",
+        headers: authHeaders()
+    });
+
+    if (await handleAuthError(response)) return;
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        alert("쿠폰 삭제 실패\n" + errorText);
+        return;
+    }
+
+    alert("쿠폰이 삭제되었습니다.");
+
+    await loadCoupons();
 }
 
 function prevCouponPage() {

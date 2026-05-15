@@ -40,6 +40,11 @@ public interface MemberRepository extends JpaRepository<MemberEntity, Long> {
 
     List<MemberEntity> findAllBySubscriptionPlan(SubscriptionPlan subscriptionPlan);
 
+    Page<MemberEntity> findAllBySubscriptionPlan(
+            SubscriptionPlan subscriptionPlan,
+            Pageable pageable
+    );
+
     List<MemberEntity> findAll();
 
     @Query("""
@@ -84,6 +89,12 @@ ORDER BY YEAR(m.createdAt), MONTH(m.createdAt)
     GROUP BY m.loginType
 """)
     List<LoginTypeCountDto> countByLoginType();
+
+    Page<MemberEntity> findAll(Pageable pageable);
+
+    long countBySubscriptionPlan(SubscriptionPlan subscriptionPlan);
+
+    long countByLoginRole(LoginRole loginRole);
 }
 
 

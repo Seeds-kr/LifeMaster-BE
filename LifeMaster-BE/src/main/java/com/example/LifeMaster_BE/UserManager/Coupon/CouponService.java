@@ -157,4 +157,16 @@ public class CouponService {
                 .map(AdminCouponStatusResponse::from)
                 .toList();
     }
+
+    @Transactional
+    public void deleteCoupon(Long couponId) {
+        Coupon coupon = couponRepository.findById(couponId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 쿠폰입니다."));
+
+        if (coupon.getCouponStatus() != CouponStatus.UNUSE) {
+            throw new IllegalStateException("등록되었거나 사용된 쿠폰은 삭제할 수 없습니다.");
+        }
+
+        couponRepository.delete(coupon);
+    }
 }
