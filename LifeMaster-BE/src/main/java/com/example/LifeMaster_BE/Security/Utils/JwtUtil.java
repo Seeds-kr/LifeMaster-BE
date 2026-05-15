@@ -17,7 +17,7 @@ public class JwtUtil {
     private final long EXPIRATION_TIME;
 
     public JwtUtil() {
-        this(1000 * 60 * 60); // 기본 1시간
+        this(1000 * 60 * 60 * 24); // 기본 24시간
     }
 
     // 테스트 편의를 위한 생성자
