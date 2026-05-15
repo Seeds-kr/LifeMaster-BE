@@ -169,4 +169,23 @@ public class TodoController {
 
         return ResponseEntity.ok(todoService.getTodosByMember(user.getId()));
     }
+
+    @Operation(
+            summary = "현재 유저의 날짜별 To-Do 조회",
+            description = "로그인한 유저의 특정 날짜 To-Do 항목을 조회합니다. 날짜 형식은 YYYYMMDD 입니다."
+    )
+    @GetMapping("/date/{date}")
+    public ResponseEntity<?> getTodosByDate(
+            @PathVariable("date") String date,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        ResponseEntity<?> loginCheck = login.checkLogin(user);
+        if (loginCheck != null) return loginCheck;
+
+        Long memberId = user.getId();
+
+        return ResponseEntity.ok(
+                todoService.getTodosByMemberAndDate(memberId, date)
+        );
+    }
 }

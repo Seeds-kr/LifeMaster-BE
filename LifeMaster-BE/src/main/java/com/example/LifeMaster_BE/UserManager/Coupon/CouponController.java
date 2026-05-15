@@ -68,4 +68,11 @@ public class CouponController {
             case UNLIMIT -> couponService.createUnlimitCoupon(dto.getCouponPercent());
         };
     }
+
+    /** 5. 관리자 쿠폰 삭제 */
+    @DeleteMapping("/admin/{couponId}")
+    @Operation(summary = "쿠폰 삭제 (관리자)", description = "관리자가 쿠폰을 삭제합니다.")
+    public void deleteCoupon(@PathVariable Long couponId) {
+        couponService.deleteCoupon(couponId);
+    }
 }

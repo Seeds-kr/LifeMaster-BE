@@ -188,4 +188,12 @@ public class MemberEntity {
     public LocalDate getSubscriptionExpirationDate() {
         return expirationDate;
     }
+
+    // 프리미엄 권한 회수
+    public void revokePremium() {
+        this.subscriptionPlan = SubscriptionPlan.FREE;
+        this.lastPaymentDate = null;
+        this.expirationDate = null;
+        this.paymentStatus = PaymentStatus.UNPAID;
+    }
 }

@@ -14,6 +14,14 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import com.example.LifeMaster_BE.Admin.Dto.UserStatisticsResponse;
+import com.example.LifeMaster_BE.Challenge.ChallengeUserRepository;
+import com.example.LifeMaster_BE.FunctionManager.ToDoList.TodoRepository;
+import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -23,6 +31,8 @@ public class AdminService {
     private final PostRepository postRepository;
     private final CommentRepository commentRepository;
     private final ReportRepository reportRepository;
+    private final ChallengeUserRepository challengeUserRepository;
+    private final TodoRepository todoRepository;
 
     public DashboardSummaryDto getDashboardSummary() {
         LocalDateTime todayStart = LocalDate.now().atStartOfDay();
@@ -46,5 +56,89 @@ public class AdminService {
                 .reviewingReports(reportRepository.countByStatus(ReportStatus.REVIEWING))
                 .resolvedReports(reportRepository.countByStatus(ReportStatus.RESOLVED))
                 .build();
+    }
+
+    public List<UserStatisticsResponse> getUserStatistics() {
+
+        List<MemberEntity> members = memberRepository.findAll();
+
+        return members.stream()
+                .map(member -> {
+
+                    Long challengeCount =
+                            challengeUserRepository.countByUserId(member.getId());
+
+                    Long groupCount =
+                            (long) member.getGroups().size();
+
+                    Long postCount =
+                            postRepository.countByMemberId(member.getId());
+
+                    Long commentCount =
+                            commentRepository.countByMemberId(member.getId());
+
+                    Long todoCount =
+                            todoRepository.countByMemberId(member.getId());
+
+                    Long score =
+                            challengeCount +
+                                    groupCount +
+                                    postCount +
+                                    commentCount +
+                                    todoCount;
+
+                    return new UserStatisticsResponse(
+                            member.getId(),
+                            member.getNickname(),
+                            member.getEmail(),
+                            challengeCount,
+                            groupCount,
+                            postCount,
+                            commentCount,
+                            todoCount,
+                            score
+                    );
+                })
+                .collect(Collectors.toList());
+    }
+
+    public UserStatisticsResponse getUserStatisticsDetail(Long userId) {
+
+        MemberEntity member = memberRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("회원이 존재하지 않습니다."));
+
+        Long challengeCount =
+                challengeUserRepository.countByUserId(member.getId());
+
+        Long groupCount =
+                (long) member.getGroups().size();
+
+        Long postCount =
+                postRepository.countByMemberId(member.getId());
+
+        Long commentCount =
+                commentRepository.countByMemberId(member.getId());
+
+        Long todoCount =
+                todoRepository.countByMemberId(member.getId());
+
+        Long score =
+                challengeCount +
+                        groupCount +
+                        postCount +
+                        commentCount +
+                        todoCount;
+
+        return new UserStatisticsResponse(
+                member.getId(),
+                member.getNickname(),
+                member.getEmail(),
+                challengeCount,
+                groupCount,
+                postCount,
+                commentCount,
+                todoCount,
+                score
+        );
     }
 }

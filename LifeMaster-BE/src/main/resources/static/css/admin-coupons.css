@@ -410,3 +410,137 @@ tr:hover {
         width: 200px;
     }
 }
+
+.coupon-create-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+}
+
+.coupon-create-header h2 {
+    margin: 0 0 6px;
+    font-size: 22px;
+}
+
+.coupon-create-header p {
+    margin: 0 0 20px;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.coupon-create-form {
+    display: flex;
+    align-items: end;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.coupon-create-form .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.coupon-create-form label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.coupon-create-form select,
+.coupon-create-form input {
+    width: 180px;
+    height: 42px;
+    padding: 0 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.create-coupon-btn {
+    height: 42px;
+    padding: 0 18px;
+    border: none;
+    border-radius: 8px;
+    background: #4f46e5;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.create-coupon-btn:hover {
+    background: #4338ca;
+}
+
+.delete-btn {
+    border: none;
+    border-radius: 6px;
+    padding: 7px 12px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.delete-btn:hover {
+    background: #dc2626;
+}
+
+.premium-manage-card {
+    margin-top: 24px;
+}
+
+.premium-grant-select {
+    min-width: 120px;
+    height: 38px;
+    padding: 0 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: white;
+}
+
+.primary-btn {
+    border: none;
+    border-radius: 8px;
+    padding: 9px 14px;
+    background: #4f46e5;
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.primary-btn:hover {
+    background: #4338ca;
+}
+
+.danger-btn {
+    border: none;
+    border-radius: 8px;
+    padding: 9px 14px;
+    background: #ef4444;
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.danger-btn:hover {
+    background: #dc2626;
+}
+
+#page-members .table-wrap {
+    overflow-x: auto;
+}
+
+#page-members table {
+    min-width: 1350px;
+}
+
+#page-members th,
+#page-members td {
+    white-space: nowrap;
+}

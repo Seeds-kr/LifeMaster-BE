@@ -1,5 +1,8 @@
 package com.example.LifeMaster_BE.UserManager.Member;
 
+import com.example.LifeMaster_BE.Admin.Dto.DailyCountDto;
+import com.example.LifeMaster_BE.Admin.Dto.LoginTypeCountDto;
+import com.example.LifeMaster_BE.Admin.Dto.MonthlyCountDto;
 import com.example.LifeMaster_BE.UserManager.Member.Subscription.SubscriptionPlan;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -36,6 +39,62 @@ public interface MemberRepository extends JpaRepository<MemberEntity, Long> {
     long countNewMembersSince(@Param("startDate") LocalDateTime startDate);
 
     List<MemberEntity> findAllBySubscriptionPlan(SubscriptionPlan subscriptionPlan);
+
+    Page<MemberEntity> findAllBySubscriptionPlan(
+            SubscriptionPlan subscriptionPlan,
+            Pageable pageable
+    );
+
+    List<MemberEntity> findAll();
+
+    @Query("""
+SELECT new com.example.LifeMaster_BE.Admin.Dto.DailyCountDto(
+    FUNCTION('DATE_FORMAT', m.createdAt, '%Y-%m-%d'),
+    COUNT(m)
+)
+FROM MemberEntity m
+GROUP BY FUNCTION('DATE_FORMAT', m.createdAt, '%Y-%m-%d')
+ORDER BY FUNCTION('DATE_FORMAT', m.createdAt, '%Y-%m-%d')
+""")
+    List<DailyCountDto> countDailyUsers();
+
+
+    @Query("""
+SELECT new com.example.LifeMaster_BE.Admin.Dto.MonthlyCountDto(
+    YEAR(m.createdAt),
+    MONTH(m.createdAt),
+    COUNT(m)
+)
+FROM MemberEntity m
+GROUP BY YEAR(m.createdAt), MONTH(m.createdAt)
+ORDER BY YEAR(m.createdAt), MONTH(m.createdAt)
+""")
+    List<MonthlyCountDto> countMonthlyUsers();
+
+
+    // 🔥 활성 유저 (최근 7일 로그인 기준 예시)
+    @Query("""
+        SELECT COUNT(m)
+        FROM MemberEntity m
+        WHERE m.loginStatus = true
+    """)
+    Long countActiveUsers();
+
+    @Query("""
+    SELECT new com.example.LifeMaster_BE.Admin.Dto.LoginTypeCountDto(
+        m.loginType,
+        COUNT(m)
+    )
+    FROM MemberEntity m
+    GROUP BY m.loginType
+""")
+    List<LoginTypeCountDto> countByLoginType();
+
+    Page<MemberEntity> findAll(Pageable pageable);
+
+    long countBySubscriptionPlan(SubscriptionPlan subscriptionPlan);
+
+    long countByLoginRole(LoginRole loginRole);
 }
 
 
