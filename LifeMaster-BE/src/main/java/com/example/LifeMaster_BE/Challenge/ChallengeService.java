@@ -19,6 +19,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +34,7 @@ public class ChallengeService {
     private final ChallengeUserRepository challengeUserRepository;
     private final MemberRepository memberRepository;
     private final SubscriptionAccessService subscriptionAccessService;
+    private final ChallengeCompletionRepository challengeCompletionRepository;
 
     private final Map<Long, SseEmitter> emitters = new ConcurrentHashMap<>();
 
@@ -272,5 +274,37 @@ public class ChallengeService {
     private MemberEntity getMemberOrThrow(Long userId) {
         return memberRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
+    }
+
+    @Transactional
+    public LocalDateTime completeChallenge(Long challId, CustomUserDetails user) {
+
+        Long memberId = user.getId();
+
+        MemberEntity member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new RuntimeException("유저 없음"));
+
+        Challenge challenge = challengeRepository.findById(challId)
+                .orElseThrow(() -> new RuntimeException("챌린지 없음"));
+
+        String today = LocalDate.now(ZoneId.of("Asia/Seoul"))
+                .format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+        // 이미 오늘 완료했으면 방지
+        if (challengeCompletionRepository
+                .existsByUserIdAndChallenge_ChallIdAndDateKey(memberId, challId, today)) {
+            throw new RuntimeException("이미 오늘 완료한 챌린지입니다.");
+        }
+
+        ChallengeCompletion completion = ChallengeCompletion.builder()
+                .user(member)
+                .challenge(challenge)
+                .completedAt(LocalDateTime.now(ZoneId.of("Asia/Seoul")))
+                .dateKey(today)
+                .build();
+
+        challengeCompletionRepository.save(completion);
+
+        return completion.getCompletedAt();
     }
 }
