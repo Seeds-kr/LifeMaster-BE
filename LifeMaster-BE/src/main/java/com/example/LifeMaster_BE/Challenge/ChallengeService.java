@@ -276,8 +276,7 @@ public class ChallengeService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
     }
 
-    @Transactional
-    public LocalDateTime completeChallenge(Long challId, CustomUserDetails user) {
+    public ChallengeDto.CompleteResponse completeChallenge(Long challId, CustomUserDetails user) {
 
         Long memberId = user.getId();
 
@@ -290,21 +289,25 @@ public class ChallengeService {
         String today = LocalDate.now(ZoneId.of("Asia/Seoul"))
                 .format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
-        // 이미 오늘 완료했으면 방지
         if (challengeCompletionRepository
                 .existsByUserIdAndChallenge_ChallIdAndDateKey(memberId, challId, today)) {
             throw new RuntimeException("이미 오늘 완료한 챌린지입니다.");
         }
 
+        LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
+
         ChallengeCompletion completion = ChallengeCompletion.builder()
                 .user(member)
                 .challenge(challenge)
-                .completedAt(LocalDateTime.now(ZoneId.of("Asia/Seoul")))
+                .completedAt(now)
                 .dateKey(today)
                 .build();
 
         challengeCompletionRepository.save(completion);
 
-        return completion.getCompletedAt();
+        return ChallengeDto.CompleteResponse.builder()
+                .challId(challId)
+                .completedAt(now.format(DateTimeFormatter.ofPattern("HH:mm:ss")))
+                .build();
     }
 }

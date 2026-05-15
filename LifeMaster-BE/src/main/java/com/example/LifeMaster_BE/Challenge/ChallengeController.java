@@ -140,15 +140,12 @@ public class ChallengeController {
         return result;
     }
 
-    @PostMapping("/{challId}/complete")
+    @PostMapping("/complete")
     @Operation(summary = "챌린지 완료", description = "오늘 챌린지를 완료 처리하고 완료 시간을 기록합니다.")
-    public String completeChallenge(
-            @PathVariable Long challId,
+    public ChallengeDto.CompleteResponse completeChallenge(
+            @RequestBody ChallengeDto.CompleteRequest request,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
-
-        LocalDateTime completedAt = challengeService.completeChallenge(challId, user);
-
-        return completedAt.format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+        return challengeService.completeChallenge(request.getChallId(), user);
     }
 }
