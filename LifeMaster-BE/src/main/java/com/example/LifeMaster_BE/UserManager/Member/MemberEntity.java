@@ -196,4 +196,12 @@ public class MemberEntity {
         this.expirationDate = null;
         this.paymentStatus = PaymentStatus.UNPAID;
     }
+
+    public void grantAdminRole() {
+        this.loginRole = LoginRole.ADMIN;
+    }
+
+    public void revokeAdminRole() {
+        this.loginRole = LoginRole.USER;
+    }
 }

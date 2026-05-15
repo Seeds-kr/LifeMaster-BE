@@ -48,7 +48,6 @@ function renderCoupons() {
             tr.innerHTML = `
                 <td>${coupon.couponId ?? ""}</td>
                 <td class="code">${coupon.couponCode ?? ""}</td>
-                <td>${coupon.couponPercent ?? ""}%</td>
                 <td>${coupon.couponType ?? ""}</td>
                 <td>${couponStatusBadge(coupon.couponStatus)}</td>
                 <td>${coupon.email ?? coupon.nickname ?? "-"}</td>
@@ -78,13 +77,6 @@ function renderCoupons() {
 
 async function createCoupon() {
     const couponType = document.getElementById("couponTypeSelect").value;
-    const couponPercentInput = document.getElementById("couponPercentInput");
-    const couponPercent = Number(couponPercentInput.value);
-
-    if (!couponPercent || couponPercent < 1 || couponPercent > 100) {
-        alert("할인율은 1 이상 100 이하로 입력해주세요.");
-        return;
-    }
 
     const response = await fetch("/coupon/admin", {
         method: "POST",
@@ -94,7 +86,7 @@ async function createCoupon() {
         },
         body: JSON.stringify({
             couponType: couponType,
-            couponPercent: couponPercent
+            couponPercent: 0
         })
     });
 
@@ -107,8 +99,6 @@ async function createCoupon() {
     }
 
     alert("쿠폰이 생성되었습니다.");
-
-    couponPercentInput.value = "";
 
     await loadCoupons();
 }
