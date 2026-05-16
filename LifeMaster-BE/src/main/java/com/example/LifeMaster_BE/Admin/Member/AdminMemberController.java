@@ -35,4 +35,26 @@ public class AdminMemberController {
                 adminMemberService.getMemberSummary()
         );
     }
+
+    /**
+     * 관리자 권한 부여
+     */
+    @PatchMapping("/{memberId}/admin-role/grant")
+    public ResponseEntity<Void> grantAdminRole(
+            @PathVariable Long memberId
+    ) {
+        adminMemberService.grantAdminRole(memberId);
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * 관리자 권한 회수
+     */
+    @PatchMapping("/{memberId}/admin-role/revoke")
+    public ResponseEntity<Void> revokeAdminRole(
+            @PathVariable Long memberId
+    ) {
+        adminMemberService.revokeAdminRole(memberId);
+        return ResponseEntity.ok().build();
+    }
 }

@@ -41,4 +41,19 @@ public class ChallengeDto {
         private Boolean challMe;
         private Integer challCnt;
     }
+
+    @Builder
+    @Getter
+    @Schema(name = "ChallengeCompleteRequest")
+    public static class CompleteRequest {
+        private Long challId;
+    }
+
+    @Builder
+    @Getter
+    @Schema(name = "ChallengeCompleteResponse")
+    public static class CompleteResponse {
+        private Long challId;
+        private String completedAt;
+    }
 }

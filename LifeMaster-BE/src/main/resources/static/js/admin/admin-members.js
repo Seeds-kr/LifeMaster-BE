@@ -38,7 +38,7 @@ function renderMembers(members) {
 
     if (!members || members.length === 0) {
         tbody.innerHTML =
-            `<tr><td colspan="12" class="empty">조회된 회원이 없습니다.</td></tr>`;
+            `<tr><td colspan="13" class="empty">조회된 회원이 없습니다.</td></tr>`;
         return;
     }
 
@@ -58,10 +58,79 @@ function renderMembers(members) {
             <td>${paymentStatusBadge(member.paymentStatus)}</td>
             <td>${formatDate(member.expirationDate)}</td>
             <td>${formatDateTime(member.createdAt)}</td>
+            <td>${adminRoleActionButton(member)}</td>
         `;
 
         tbody.appendChild(tr);
     });
+}
+
+function adminRoleActionButton(member) {
+    if (member.loginRole === "ADMIN") {
+        return `
+            <button 
+                class="danger-btn"
+                onclick="revokeAdminRole(${member.memberId})"
+            >
+                권한 회수
+            </button>
+        `;
+    }
+
+    return `
+        <button 
+            class="primary-btn"
+            onclick="grantAdminRole(${member.memberId})"
+        >
+            어드민 부여
+        </button>
+    `;
+}
+
+async function grantAdminRole(memberId) {
+    const confirmed = confirm("이 회원에게 관리자 권한을 부여하시겠습니까?");
+    if (!confirmed) return;
+
+    const response = await fetch(`/admin/members/${memberId}/admin-role/grant`, {
+        method: "PATCH",
+        headers: authHeaders()
+    });
+
+    if (await handleAuthError(response)) return;
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        alert("관리자 권한 부여 실패\n" + errorText);
+        return;
+    }
+
+    alert("관리자 권한이 부여되었습니다.");
+
+    await loadMembers();
+    await loadMemberSummary();
+}
+
+async function revokeAdminRole(memberId) {
+    const confirmed = confirm("이 회원의 관리자 권한을 회수하시겠습니까?");
+    if (!confirmed) return;
+
+    const response = await fetch(`/admin/members/${memberId}/admin-role/revoke`, {
+        method: "PATCH",
+        headers: authHeaders()
+    });
+
+    if (await handleAuthError(response)) return;
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        alert("관리자 권한 회수 실패\n" + errorText);
+        return;
+    }
+
+    alert("관리자 권한이 회수되었습니다.");
+
+    await loadMembers();
+    await loadMemberSummary();
 }
 
 /* =========================

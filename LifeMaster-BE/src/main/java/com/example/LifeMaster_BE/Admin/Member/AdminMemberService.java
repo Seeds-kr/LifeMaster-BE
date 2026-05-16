@@ -1,6 +1,7 @@
 package com.example.LifeMaster_BE.Admin.Member;
 
 import com.example.LifeMaster_BE.UserManager.Member.LoginRole;
+import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import com.example.LifeMaster_BE.UserManager.Member.MemberStatus;
 import com.example.LifeMaster_BE.UserManager.Member.Subscription.SubscriptionPlan;
@@ -50,5 +51,21 @@ public class AdminMemberService {
                 premiumMemberCount,
                 adminMemberCount
         );
+    }
+
+    @Transactional
+    public void grantAdminRole(Long memberId) {
+        MemberEntity member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 ID의 멤버를 찾을 수 없습니다."));
+
+        member.grantAdminRole();
+    }
+
+    @Transactional
+    public void revokeAdminRole(Long memberId) {
+        MemberEntity member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 ID의 멤버를 찾을 수 없습니다."));
+
+        member.revokeAdminRole();
     }
 }

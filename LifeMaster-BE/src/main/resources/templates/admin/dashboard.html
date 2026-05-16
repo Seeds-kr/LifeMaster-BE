@@ -74,17 +74,6 @@
                             </select>
                         </div>
 
-                        <div class="form-group">
-                            <label for="couponPercentInput">할인율 (%)</label>
-                            <input
-                                    type="number"
-                                    id="couponPercentInput"
-                                    min="1"
-                                    max="100"
-                                    placeholder="예: 10"
-                            >
-                        </div>
-
                         <button class="create-coupon-btn" onclick="createCoupon()">쿠폰 생성</button>
                     </div>
                 </div>
@@ -113,7 +102,6 @@
                             <tr>
                                 <th>ID</th>
                                 <th>쿠폰 코드</th>
-                                <th>할인율</th>
                                 <th>쿠폰 타입</th>
                                 <th>상태</th>
                                 <th>사용자</th>
@@ -218,6 +206,7 @@
                     </div>
                 </div>
 
+                <!-- 프리미엄 계정 조회 -->
                 <div class="table-card">
                     <div class="table-header">
                         <div>
@@ -245,6 +234,7 @@
                     </div>
                 </div>
 
+                <!-- 일반 회원 프리미엄 부여 -->
                 <div class="table-card premium-manage-card">
                     <div class="table-header">
                         <div>
@@ -402,6 +392,7 @@
                                 <th>결제 상태</th>
                                 <th>만료일</th>
                                 <th>가입일</th>
+                                <th>작업</th>
                             </tr>
                             </thead>
                             <tbody id="memberTableBody"></tbody>
