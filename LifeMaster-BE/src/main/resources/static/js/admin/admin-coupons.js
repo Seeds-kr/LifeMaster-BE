@@ -40,7 +40,7 @@ function renderCoupons() {
     const pageCoupons = allCoupons.slice(start, end);
 
     if (pageCoupons.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="empty">조회된 쿠폰이 없습니다.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="empty">조회된 쿠폰이 없습니다.</td></tr>`;
     } else {
         pageCoupons.forEach(coupon => {
             const tr = document.createElement("tr");
@@ -50,11 +50,12 @@ function renderCoupons() {
                 <td class="code">${coupon.couponCode ?? ""}</td>
                 <td>${coupon.couponType ?? ""}</td>
                 <td>${couponStatusBadge(coupon.couponStatus)}</td>
-                <td>${coupon.email ?? coupon.nickname ?? "-"}</td>
+                <td>${couponMemberText(coupon)}</td>
                 <td>
                     <button 
                         class="delete-btn"
                         onclick="deleteCoupon(${coupon.couponId})"
+                        ${coupon.couponStatus !== "UNUSE" ? "disabled" : ""}
                     >
                         삭제
                     </button>
@@ -73,6 +74,21 @@ function renderCoupons() {
 
     document.getElementById("couponNextBtn").disabled =
         couponCurrentPage >= totalPages;
+}
+
+function couponMemberText(coupon) {
+    if (coupon.couponStatus === "UNUSE" || !coupon.memberId) {
+        return "미등록";
+    }
+
+    const email = coupon.memberEmail ?? "";
+    const nickname = coupon.memberNickname ?? "";
+
+    if (email && nickname) {
+        return `${email} (${nickname})`;
+    }
+
+    return email || nickname || "-";
 }
 
 async function createCoupon() {
