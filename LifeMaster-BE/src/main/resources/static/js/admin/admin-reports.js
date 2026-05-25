@@ -171,13 +171,15 @@ function renderReportDetail(report) {
 
             <div class="detail-section">
                 <h4>처리 정보</h4>
-                ${report.resolvedByNickname ? `
-                    <p><strong>처리자:</strong> ${report.resolvedByNickname} (ID: ${report.resolvedById})</p>
+                ${(report.status === "RESOLVED" || report.status === "REJECTED") && report.resolvedById ? `
+                    <p><strong>처리자:</strong> ${report.resolvedByNickname || '관리자'} (ID: ${report.resolvedById})</p>
                     <p><strong>조치:</strong> ${reportActionBadge(report.actionType)}</p>
                     <p><strong>관리자 메모:</strong> ${report.adminNote ?? "-"}</p>
                     <p><strong>처리 일시:</strong> ${formatDateTime(report.resolvedAt)}</p>
+                ` : report.status === "REVIEWING" ? `
+                    <p style="color: #007bff; font-weight: bold;">검토 중</p>
                 ` : `
-                    <p style="color: #999;">아직 처리되지 않았습니다.</p>
+                    <p style="color: #999; font-weight: bold;">대기 중</p>
                 `}
             </div>
         </div>
@@ -189,7 +191,6 @@ function renderReportDetail(report) {
                     <select id="status-select-${report.id}" class="status-select">
                         <option value="PENDING" ${report.status === "PENDING" ? "selected" : ""}>대기 중</option>
                         <option value="REVIEWING" ${report.status === "REVIEWING" ? "selected" : ""}>검토 중</option>
-                        <option value="REJECTED" ${report.status === "REJECTED" ? "selected" : ""}>반려됨</option>
                     </select>
                     <button class="btn-action" onclick="updateReportStatus(${report.id})">상태 변경</button>
                 </div>
@@ -197,6 +198,7 @@ function renderReportDetail(report) {
                 <div class="action-group">
                     <h4>조치 실행</h4>
                     <select id="action-select-${report.id}" class="action-select">
+                        <option value="REJECT">반려</option>
                         <option value="WARNING">경고</option>
                         <option value="POST_DELETE">게시글 삭제</option>
                         <option value="SUSPEND_1D">1일 정지</option>
@@ -338,6 +340,8 @@ function reportActionBadge(actionType) {
     if (!actionType) return "-";
 
     switch (actionType) {
+        case "REJECT":
+            return `<span class="badge gray">반려</span>`;
         case "WARNING":
             return `<span class="badge yellow">경고</span>`;
         case "POST_DELETE":
@@ -367,6 +371,7 @@ function getStatusText(status) {
 // 조치 텍스트
 function getActionText(actionType) {
     switch (actionType) {
+        case "REJECT": return "반려";
         case "WARNING": return "경고";
         case "POST_DELETE": return "게시글 삭제";
         case "SUSPEND_1D": return "1일 정지";

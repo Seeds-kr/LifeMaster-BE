@@ -52,14 +52,14 @@ public class AdminReportDetailDto {
                 .reporterId(report.getMember() != null ? report.getMember().getId() : null)
                 .reporterNickname(report.getMember() != null ? report.getMember().getNickname() : null)
                 .reporterEmail(report.getMember() != null ? report.getMember().getEmail() : null)
-                // 게시글 정보
-                .postId(report.getPost() != null ? report.getPost().getId() : null)
-                .postTitle(report.getPost() != null ? report.getPost().getTitle() : null)
-                .postContent(report.getPost() != null ? report.getPost().getContent() : null)
+                // 게시글 정보 (post가 있으면 엔티티에서, 없으면 스냅샷에서)
+                .postId(report.getPost() != null ? report.getPost().getId() : report.getPostIdSnapshot())
+                .postTitle(report.getPost() != null ? report.getPost().getTitle() : report.getPostTitle())
+                .postContent(report.getPost() != null ? report.getPost().getContent() : report.getPostContent())
                 .postAuthorId(report.getPost() != null && report.getPost().getMember() != null
-                        ? report.getPost().getMember().getId() : null)
+                        ? report.getPost().getMember().getId() : report.getPostAuthorId())
                 .postAuthorNickname(report.getPost() != null && report.getPost().getMember() != null
-                        ? report.getPost().getMember().getNickname() : null)
+                        ? report.getPost().getMember().getNickname() : report.getPostAuthorNickname())
                 // 처리 정보
                 .resolvedById(report.getResolvedBy() != null ? report.getResolvedBy().getId() : null)
                 .resolvedByNickname(report.getResolvedBy() != null ? report.getResolvedBy().getNickname() : null)

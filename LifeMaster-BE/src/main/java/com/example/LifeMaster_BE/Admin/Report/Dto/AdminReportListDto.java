@@ -31,8 +31,8 @@ public class AdminReportListDto {
                 .status(report.getStatus())
                 .reporterId(report.getMember() != null ? report.getMember().getId() : null)
                 .reporterNickname(report.getMember() != null ? report.getMember().getNickname() : null)
-                .postId(report.getPost() != null ? report.getPost().getId() : null)
-                .postTitle(report.getPost() != null ? report.getPost().getTitle() : null)
+                .postId(report.getPost() != null ? report.getPost().getId() : report.getPostIdSnapshot())
+                .postTitle(report.getPost() != null ? report.getPost().getTitle() : report.getPostTitle())
                 .createdAt(report.getCreatedAt())
                 .build();
     }

@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @NoArgsConstructor
-@Table(
+@Table(name = "report_entity",
         indexes = {
                 @Index(name = "idx_report_member_post", columnList = "member_id, post_id")
         }
@@ -39,6 +39,23 @@ public class ReportEntity {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    // 게시글 정보 스냅샷 (게시글 삭제 시에도 정보 보존)
+    @Column(name = "post_id_snapshot")
+    private Long postIdSnapshot;
+
+    @Column(name = "post_title")
+    private String postTitle;
+
+    @Lob
+    @Column(name = "post_content")
+    private String postContent;
+
+    @Column(name = "post_author_id")
+    private Long postAuthorId;
+
+    @Column(name = "post_author_nickname")
+    private String postAuthorNickname;
+
     // 관리자 기능용 필드
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
@@ -62,6 +79,17 @@ public class ReportEntity {
         this.member = member;
         this.post = post;
         this.reason = reason;
+
+        // 게시글 정보 스냅샷 저장 (삭제 시에도 정보 보존)
+        if (post != null) {
+            this.postIdSnapshot = post.getId();
+            this.postTitle = post.getTitle();
+            this.postContent = post.getContent();
+            if (post.getMember() != null) {
+                this.postAuthorId = post.getMember().getId();
+                this.postAuthorNickname = post.getMember().getNickname();
+            }
+        }
     }
 
     public void resolve(MemberEntity admin, ReportStatus status, ReportActionType actionType, String adminNote) {
@@ -74,5 +102,17 @@ public class ReportEntity {
 
     public void updateStatus(ReportStatus status) {
         this.status = status;
+    }
+
+    public void savePostSnapshot(PostEntity post) {
+        if (post != null) {
+            this.postIdSnapshot = post.getId();
+            this.postTitle = post.getTitle();
+            this.postContent = post.getContent();
+            if (post.getMember() != null) {
+                this.postAuthorId = post.getMember().getId();
+                this.postAuthorNickname = post.getMember().getNickname();
+            }
+        }
     }
 }
