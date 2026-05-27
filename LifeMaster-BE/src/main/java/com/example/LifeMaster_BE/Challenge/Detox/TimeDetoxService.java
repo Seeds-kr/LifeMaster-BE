@@ -10,6 +10,7 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -159,6 +160,7 @@ public class TimeDetoxService {
         return repository.save(schedule);
     }
 
+    @Transactional
     public void deleteSchedule(Long memberId, Long id) {
 
         MemberEntity member = getMemberOrThrow(memberId);
@@ -170,6 +172,10 @@ public class TimeDetoxService {
                         new EntityNotFoundException("해당 스케줄이 없거나 삭제 권한이 없습니다.")
                 );
 
+        // 1. 오늘만 비활성화 기록 먼저 삭제
+        dailyDisableRepository.deleteAllByMember_IdAndTimeDetox_Id(memberId, id);
+
+        // 2. 그 다음 시간 디톡스 삭제
         repository.delete(schedule);
     }
 

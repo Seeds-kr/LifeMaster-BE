@@ -19,4 +19,6 @@ public interface TimeDetoxDailyDisableRepository extends JpaRepository<TimeDetox
             LocalDate disabledDate,
             Collection<Long> timeDetoxIds
     );
+
+    void deleteAllByMember_IdAndTimeDetox_Id(Long memberId, Long timeDetoxId);
 }
