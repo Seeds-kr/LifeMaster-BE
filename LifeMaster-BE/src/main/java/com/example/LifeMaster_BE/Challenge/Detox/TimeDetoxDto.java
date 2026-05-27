@@ -22,5 +22,8 @@ public class TimeDetoxDto {
     )
     private String lockedApps;
 
+    @Setter
+    private boolean disabledToday;
+
     // ❌ active 제거 (요구사항)
 }

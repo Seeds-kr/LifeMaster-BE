@@ -35,6 +35,8 @@ public class TimeDetoxService {
 
     private final SubscriptionAccessService subscriptionAccessService;
 
+    private final TimeDetoxDailyDisableRepository dailyDisableRepository;
+
     @Getter
     private String currentRandomPhrase;
     //@Autowired
@@ -98,18 +100,26 @@ public class TimeDetoxService {
         dto.setCycle(entity.getCycle());
         dto.setDay(entity.getDay());
 
-        // HH:mm 로만 내려주기
         dto.setStartTime(entity.getStartTime() != null ? entity.getStartTime().format(HH_MM) : null);
         dto.setEndTime(entity.getEndTime() != null ? entity.getEndTime().format(HH_MM) : null);
 
-        // List<String> -> String(JSON)
         try {
             dto.setLockedApps(objectMapper.writeValueAsString(entity.getLockedApps()));
         } catch (Exception e) {
             dto.setLockedApps("[]");
         }
 
+        dto.setDisabledToday(false);
+
         return dto;
+    }
+
+    private boolean isDisabledToday(Long memberId, Long timeDetoxId, LocalDate today) {
+        return dailyDisableRepository.existsByMember_IdAndTimeDetox_IdAndDisabledDate(
+                memberId,
+                timeDetoxId,
+                today
+        );
     }
 
     public List<TimeDetoxEntity> getAllSchedules(Long userId, String email) {
@@ -233,10 +243,8 @@ public class TimeDetoxService {
     public boolean verifyPhraseAndEndDetox(Long memberId, String inputPhrase) {
 
         MemberEntity member = getMemberOrThrow(memberId);
-        // 프리미엄 기능 접근 검사
         subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
 
-        // 1) 토큰 조회
         DetoxVerificationEntity token = detoxVerificationRepository
                 .findByMember_IdAndUsedFalse(memberId)
                 .orElse(null);
@@ -245,28 +253,52 @@ public class TimeDetoxService {
             return false;
         }
 
-        // 2) (선택) 만료 시간 체크
         if (token.getExpiresAt() != null &&
                 token.getExpiresAt().isBefore(LocalDateTime.now())) {
-            // 만료된 토큰이면 실패 처리
             token.setUsed(true);
             detoxVerificationRepository.save(token);
             return false;
         }
 
-        // 3) 문구 비교
         if (!token.getPhrase().equals(inputPhrase)) {
             return false;
         }
 
-        // 4) 문구 OK → 이 유저의 활성 디톡스 스케줄 종료
-        List<TimeDetoxEntity> activeSchedules =
-                timeDetoxRepository.findByMember_IdAndIsActiveTrue(memberId);
+        LocalDate today = LocalDate.now();
+        LocalTime nowTime = LocalTime.now();
+        String todayDay = today.getDayOfWeek().name();
 
-        activeSchedules.forEach(s -> s.setActive(false));
-        timeDetoxRepository.saveAll(activeSchedules);
+        /*
+         * 비상탈출은 디톡스 스케줄 자체를 끄는 것이 아니라,
+         * 현재 실행 중인 "오늘의 시간잠금"만 비활성화 처리한다.
+         */
+        List<TimeDetoxEntity> runningSchedules = repository.findAllByMember_Id(memberId)
+                .stream()
+                .filter(TimeDetoxEntity::isActive)
+                .filter(schedule -> schedule.getDay() != null &&
+                        schedule.getDay().equalsIgnoreCase(todayDay))
+                .filter(schedule -> {
+                    if ("BIWEEKLY".equalsIgnoreCase(schedule.getCycle())) {
+                        return isCurrentWeekBiweekly(schedule.getCreatedDate());
+                    }
+                    return true;
+                })
+                .filter(schedule ->
+                        !nowTime.isBefore(schedule.getStartTime()) &&
+                                !nowTime.isAfter(schedule.getEndTime())
+                )
+                .filter(schedule ->
+                        !isDisabledToday(memberId, schedule.getId(), today)
+                )
+                .toList();
 
-        // 5) 토큰 사용 처리 (또는 delete)
+        for (TimeDetoxEntity schedule : runningSchedules) {
+            TimeDetoxDailyDisableEntity disableLog =
+                    TimeDetoxDailyDisableEntity.create(member, schedule, today);
+
+            dailyDisableRepository.save(disableLog);
+        }
+
         token.setUsed(true);
         detoxVerificationRepository.save(token);
 
@@ -277,22 +309,33 @@ public class TimeDetoxService {
     public LockedAppDetails isAppLockedWithDetails(Long userId, String day, LocalTime currentTime) {
 
         MemberEntity member = getMemberOrThrow(userId);
-        // 프리미엄 기능 접근 검사
         subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
 
-        List<TimeDetoxEntity> activeSchedules = repository.findByIsActiveTrue();
+        LocalDate today = LocalDate.now();
+
+        List<TimeDetoxEntity> activeSchedules = repository.findAllByMember_Id(userId)
+                .stream()
+                .filter(TimeDetoxEntity::isActive)
+                .toList();
+
         List<String> lockedApps = new ArrayList<>();
 
         boolean isLocked = activeSchedules.stream().anyMatch(schedule -> {
-            // 격주 여부 확인
-            if (schedule.getCycle().equalsIgnoreCase("BIWEEKLY")) {
+
+            if (isDisabledToday(userId, schedule.getId(), today)) {
+                return false;
+            }
+
+            if ("BIWEEKLY".equalsIgnoreCase(schedule.getCycle())) {
                 if (!isCurrentWeekBiweekly(schedule.getCreatedDate())) {
-                    return false; // 이번 주가 해당 스케줄의 격주 주기가 아니면 스킵
+                    return false;
                 }
             }
 
-            // 시간 범위 확인
-            boolean inTimeRange = !currentTime.isBefore(schedule.getStartTime()) && !currentTime.isAfter(schedule.getEndTime());
+            boolean inTimeRange =
+                    !currentTime.isBefore(schedule.getStartTime()) &&
+                            !currentTime.isAfter(schedule.getEndTime());
+
             if (schedule.getDay().equalsIgnoreCase(day) && inTimeRange) {
                 lockedApps.addAll(schedule.getLockedApps());
                 return true;
@@ -347,12 +390,24 @@ public class TimeDetoxService {
     public List<TimeDetoxDto> getAllTimeDetoxSchedulesByMember(Long memberId) {
 
         MemberEntity member = getMemberOrThrow(memberId);
-        // 프리미엄 기능 접근 검사
         subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
+
+        LocalDate today = LocalDate.now();
 
         return repository.findAllByMember_Id(memberId)
                 .stream()
-                .map(this::convertToDTO)
+                .map(entity -> {
+                    TimeDetoxDto dto = convertToDTO(entity);
+
+                    boolean disabledToday = isDisabledToday(
+                            memberId,
+                            entity.getId(),
+                            today
+                    );
+
+                    dto.setDisabledToday(disabledToday);
+                    return dto;
+                })
                 .toList();
     }
 

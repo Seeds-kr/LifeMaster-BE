@@ -296,8 +296,10 @@ public class TimeDetoxController {
         return ResponseEntity.ok(phrase);
     }
 
-    @Operation(summary = "비상 탈출 문장 검증",
-            description = "비상 탈출 문장을 검증하고, 실행 중인 디톡스를 종료합니다.")
+    @Operation(
+            summary = "비상 탈출 문장 검증",
+            description = "비상 탈출 문장을 검증하고, 현재 실행 중인 오늘의 시간잠금만 비활성화합니다."
+    )
     @PostMapping("/verify-phrase")
     public ResponseEntity<String> verifyPhraseAndEndDetox(
             @RequestBody String inputPhrase,
@@ -320,7 +322,7 @@ public class TimeDetoxController {
             // 4) 디톡스 종료 이벤트 기록 (성공 시에만) - memberId 포함
             scheduleCalendarService.addOrUpdateEvent(memberId, today, "Detox");
 
-            return ResponseEntity.ok("Detox has been successfully ended.");
+            return ResponseEntity.ok("Today's time detox has been disabled successfully.");
         }
 
         return ResponseEntity.badRequest().body("Incorrect phrase. Detox remains active.");
