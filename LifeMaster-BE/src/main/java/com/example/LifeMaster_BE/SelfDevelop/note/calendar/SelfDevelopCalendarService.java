@@ -20,10 +20,10 @@ public class SelfDevelopCalendarService {
     private final DiaryRepository diaryRepository;
     private final ThankRepository thankRepository;
 
-    public CalendarDailyContentDto getEventsByDate(LocalDate date){
+    public CalendarDailyContentDto getEventsByDate(LocalDate date, Long memberId){
 
-        Optional<DiaryEntity> diary = diaryRepository.findByDiaryDate(date);
-        Optional<ThankEntity> thank = thankRepository.findByThankDate(date);
+        Optional<DiaryEntity> diary = diaryRepository.findByDiaryDateAndMember_Id(date, memberId);
+        Optional<ThankEntity> thank = thankRepository.findByThankDateAndMember_Id(date, memberId);
 
         if (diary.isEmpty() && thank.isEmpty()) {
             throw new EntityNotFoundException("해당 날짜에 작성된 일기 또는 감사 기록이 없습니다.");

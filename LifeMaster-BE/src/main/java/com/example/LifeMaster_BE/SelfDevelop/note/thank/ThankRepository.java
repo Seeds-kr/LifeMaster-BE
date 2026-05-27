@@ -9,6 +9,8 @@ public interface ThankRepository extends JpaRepository<ThankEntity, Long> {
 
     Optional<ThankEntity> findByThankDate(LocalDate date);
 
+    Optional<ThankEntity> findByThankDateAndMember_Id(LocalDate date, Long memberId);
+
     Optional<ThankEntity> findByIdAndMember_Id(Long thankId, Long memberId);
 
     long countByMember_IdAndThankDate(Long memberId, LocalDate thankDate);

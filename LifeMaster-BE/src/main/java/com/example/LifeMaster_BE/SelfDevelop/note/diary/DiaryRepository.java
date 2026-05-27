@@ -9,6 +9,8 @@ public interface DiaryRepository extends JpaRepository<DiaryEntity, Long> {
 
     Optional<DiaryEntity> findByDiaryDate(LocalDate date);
 
+    Optional<DiaryEntity> findByDiaryDateAndMember_Id(LocalDate date, Long memberId);
+
     Optional<DiaryEntity> findByIdAndMember_Id(Long diaryId, Long memberId);
 
     Optional<DiaryEntity> findByIdAndMemberId(Long diaryId, Long memberId);
