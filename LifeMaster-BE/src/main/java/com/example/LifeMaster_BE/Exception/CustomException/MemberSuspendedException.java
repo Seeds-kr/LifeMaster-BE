@@ -1,4 +1,4 @@
-package com.example.LifeMaster_BE.Exception;
+package com.example.LifeMaster_BE.Exception.CustomException;
 
 import java.time.LocalDateTime;
 
