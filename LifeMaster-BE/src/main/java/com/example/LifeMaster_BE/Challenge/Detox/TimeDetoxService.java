@@ -10,7 +10,9 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -25,24 +27,19 @@ import java.util.List;
 public class TimeDetoxService {
 
     private final TimeDetoxRepository repository;
-
     private final RandomPhraseProvider randomPhraseProvider;
-
     private final MemberRepository memberRepository;
-
     private final DetoxVerificationRepository detoxVerificationRepository;
-    private final TimeDetoxRepository timeDetoxRepository;
-
     private final SubscriptionAccessService subscriptionAccessService;
+    private final TimeDetoxDailyDisableRepository dailyDisableRepository;
+
+    private static final ZoneId KST = ZoneId.of("Asia/Seoul");
+    private static final DateTimeFormatter HH_MM = DateTimeFormatter.ofPattern("HH:mm");
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Getter
     private String currentRandomPhrase;
-    //@Autowired
-    //private TimeDetoxRepository timeDetoxRepository;
-
-    private final ObjectMapper objectMapper = new ObjectMapper();
-    private static final DateTimeFormatter HH_MM = DateTimeFormatter.ofPattern("HH:mm");
-
 
     public void updateRandomPhrase() {
         this.currentRandomPhrase = randomPhraseProvider.getRandomPhrase();
@@ -51,101 +48,130 @@ public class TimeDetoxService {
     public TimeDetoxDto createSchedule(TimeDetoxDto dto, Long memberId) {
 
         MemberEntity member = getMemberOrThrow(memberId);
-        // 프리미엄 기능 접근 검사
         subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
 
         TimeDetoxEntity entity = new TimeDetoxEntity();
         entity.setCycle(dto.getCycle());
-        entity.setDay(dto.getDay());
+        entity.setDay(validateAndNormalizeDay(dto.getDay()));
 
-        // "10:30" / "18:30"만
         entity.setStartTime(LocalTime.parse(dto.getStartTime(), HH_MM));
         entity.setEndTime(LocalTime.parse(dto.getEndTime(), HH_MM));
 
-        // lockedApps: String -> List<String>
         entity.setLockedApps(parseLockedApps(dto.getLockedApps()));
 
-        // (선택) 내부적으로 기본 활성화 값이 필요하면 여기서만 세팅
         entity.setActive(true);
-
         entity.setMemberId(memberId);
 
         TimeDetoxEntity savedEntity = repository.save(entity);
+
         return convertToDTO(savedEntity);
     }
 
     private List<String> parseLockedApps(String lockedAppsRaw) {
 
-        if (lockedAppsRaw == null || lockedAppsRaw.isBlank()) return Collections.emptyList();
+        if (lockedAppsRaw == null || lockedAppsRaw.isBlank()) {
+            return Collections.emptyList();
+        }
 
         String s = lockedAppsRaw.trim();
+
         try {
-            // JSON 배열 문자열이면: ["YouTube","Instagram"]
             if (s.startsWith("[")) {
-                return new ObjectMapper().readValue(s, new TypeReference<List<String>>() {});
+                return objectMapper.readValue(s, new TypeReference<List<String>>() {});
             }
 
-            // 아니면 콤마 구분: YouTube,Instagram
             return List.of(s.split("\\s*,\\s*"));
+
         } catch (Exception e) {
-            throw new IllegalArgumentException("lockedApps 형식이 올바르지 않습니다. JSON 배열 문자열 또는 콤마 구분 문자열을 사용하세요.", e);
+            throw new IllegalArgumentException(
+                    "lockedApps 형식이 올바르지 않습니다. JSON 배열 문자열 또는 콤마 구분 문자열을 사용하세요.",
+                    e
+            );
         }
     }
 
+    private String validateAndNormalizeDay(String day) {
+
+        if (day == null || day.isBlank()) {
+            throw new IllegalArgumentException("요일은 필수입니다.");
+        }
+
+        String normalizedDay = day.trim().toUpperCase();
+
+        try {
+            java.time.DayOfWeek.valueOf(normalizedDay);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(
+                    "요일 형식이 올바르지 않습니다. MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY 중 하나를 입력하세요."
+            );
+        }
+
+        return normalizedDay;
+    }
+
     private TimeDetoxDto convertToDTO(TimeDetoxEntity entity) {
+
         TimeDetoxDto dto = new TimeDetoxDto();
+
         dto.setId(entity.getId());
         dto.setCycle(entity.getCycle());
         dto.setDay(entity.getDay());
 
-        // HH:mm 로만 내려주기
-        dto.setStartTime(entity.getStartTime() != null ? entity.getStartTime().format(HH_MM) : null);
-        dto.setEndTime(entity.getEndTime() != null ? entity.getEndTime().format(HH_MM) : null);
+        dto.setStartTime(
+                entity.getStartTime() != null
+                        ? entity.getStartTime().format(HH_MM)
+                        : null
+        );
 
-        // List<String> -> String(JSON)
+        dto.setEndTime(
+                entity.getEndTime() != null
+                        ? entity.getEndTime().format(HH_MM)
+                        : null
+        );
+
         try {
             dto.setLockedApps(objectMapper.writeValueAsString(entity.getLockedApps()));
         } catch (Exception e) {
             dto.setLockedApps("[]");
         }
 
+        dto.setDisabledToday(false);
+
         return dto;
     }
 
-    public List<TimeDetoxEntity> getAllSchedules(Long userId, String email) {
-
-        MemberEntity member = getMemberOrThrow(userId);
-        // 프리미엄 기능 접근 검사
-        subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
-
-        MemberEntity user = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다."));
-
-        return repository.findAllByMember(user);
+    private boolean isDisabledToday(Long memberId, Long timeDetoxId, LocalDate today) {
+        return dailyDisableRepository.existsByMember_IdAndTimeDetox_IdAndDisabledDate(
+                memberId,
+                timeDetoxId,
+                today
+        );
     }
 
-    public TimeDetoxEntity getScheduleById(Long id) {
+    public TimeDetoxEntity getScheduleById(Long memberId, Long id) {
 
-        MemberEntity member = getMemberOrThrow(id);
-        // 프리미엄 기능 접근 검사
+        MemberEntity member = getMemberOrThrow(memberId);
         subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
 
-        return repository.findById(id).orElseThrow(() -> new RuntimeException("Schedule not found"));
+        return repository.findByIdAndMember_Id(id, memberId)
+                .orElseThrow(() ->
+                        new EntityNotFoundException("Schedule not found or no permission")
+                );
     }
 
     public TimeDetoxEntity updateSchedule(Long memberId, Long id, TimeDetoxEntity updatedSchedule) {
 
         MemberEntity member = getMemberOrThrow(memberId);
-        // 프리미엄 기능 접근 검사
         subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
 
-        // 내 스케줄만 조회 (소유권 체크)
         TimeDetoxEntity schedule = repository
                 .findByIdAndMember_Id(id, memberId)
-                .orElseThrow(() -> new EntityNotFoundException("Schedule not found or no permission"));
+                .orElseThrow(() ->
+                        new EntityNotFoundException("Schedule not found or no permission")
+                );
 
         schedule.setCycle(updatedSchedule.getCycle());
-        schedule.setDay(updatedSchedule.getDay());
+        schedule.setDay(validateAndNormalizeDay(updatedSchedule.getDay()));
         schedule.setStartTime(updatedSchedule.getStartTime());
         schedule.setEndTime(updatedSchedule.getEndTime());
         schedule.setLockedApps(updatedSchedule.getLockedApps());
@@ -153,11 +179,10 @@ public class TimeDetoxService {
         return repository.save(schedule);
     }
 
-
+    @Transactional
     public void deleteSchedule(Long memberId, Long id) {
 
         MemberEntity member = getMemberOrThrow(memberId);
-        // 프리미엄 기능 접근 검사
         subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
 
         TimeDetoxEntity schedule = repository
@@ -166,62 +191,70 @@ public class TimeDetoxService {
                         new EntityNotFoundException("해당 스케줄이 없거나 삭제 권한이 없습니다.")
                 );
 
+        // 1. 오늘만 비활성화 기록 먼저 삭제
+        dailyDisableRepository.deleteAllByMember_IdAndTimeDetox_Id(memberId, id);
+
+        // 2. 그 다음 시간 디톡스 삭제
         repository.delete(schedule);
     }
 
-    // 특정 디톡스 활성화/비활성화 로직 수정
-    public TimeDetoxEntity toggleActivation(Long memberId, Long id, String currentDay, LocalTime currentTime) {
-
+    public TimeDetoxEntity toggleActivation(
+            Long memberId,
+            Long id,
+            String currentDay,
+            LocalTime currentTime
+    ) {
         MemberEntity member = getMemberOrThrow(memberId);
-        // 프리미엄 기능 접근 검사
         subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
 
-        // 내 스케줄만 조회 (소유권 체크)
         TimeDetoxEntity schedule = repository.findByIdAndMember_Id(id, memberId)
-                .orElseThrow(() -> new EntityNotFoundException("Schedule not found or no permission"));
+                .orElseThrow(() ->
+                        new EntityNotFoundException("Schedule not found or no permission")
+                );
 
         if (!schedule.isActive()) {
-            // 비활성화 상태일 경우 활성화
             schedule.setActive(true);
         } else {
-            // 활성화 상태일 경우
             boolean inTimeRange =
                     !currentTime.isBefore(schedule.getStartTime()) &&
                             !currentTime.isAfter(schedule.getEndTime());
 
-            boolean isMatchingDay = schedule.getDay() != null &&
-                    schedule.getDay().equalsIgnoreCase(currentDay);
+            boolean isMatchingDay =
+                    schedule.getDay() != null &&
+                            schedule.getDay().equalsIgnoreCase(currentDay);
 
-            // 요일이 같고, 시간이 범위 안이면 "비활성화 불가"
             if (isMatchingDay && inTimeRange) {
-                throw new IllegalStateException("현재 시간이 디톡스 활성화 시간 범위에 포함되어 있어 비활성화할 수 없습니다.");
+                throw new IllegalStateException(
+                        "현재 시간이 디톡스 활성화 시간 범위에 포함되어 있어 비활성화할 수 없습니다."
+                );
             }
 
-            // 현재 시간이 범위 밖이면 비활성화
             schedule.setActive(false);
         }
 
         return repository.save(schedule);
     }
 
-    // 유저별 랜덤 문구 생성
     public String generateRandomPhrase(Long memberId) {
 
         MemberEntity member = getMemberOrThrow(memberId);
-
-        // 프리미엄 기능 접근 검사
         subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
 
         String phrase = randomPhraseProvider.getRandomPhrase();
 
+        /*
+         * member_id가 UNIQUE인 구조이므로,
+         * 새 row를 계속 만들면 안 되고 기존 row를 재사용해야 한다.
+         */
         DetoxVerificationEntity token = detoxVerificationRepository
-                .findByMember_IdAndUsedFalse(memberId)
+                .findByMember_Id(memberId)
                 .orElseGet(() ->
-                        DetoxVerificationEntity.create(member, phrase, null) // ✅ 기존 member 사용
+                        DetoxVerificationEntity.create(member, phrase, null)
                 );
 
         token.setPhrase(phrase);
         token.setCreatedAt(LocalDateTime.now());
+        token.setExpiresAt(null);
         token.setUsed(false);
 
         detoxVerificationRepository.save(token);
@@ -229,14 +262,11 @@ public class TimeDetoxService {
         return phrase;
     }
 
-    // 디톡스 종료
     public boolean verifyPhraseAndEndDetox(Long memberId, String inputPhrase) {
 
         MemberEntity member = getMemberOrThrow(memberId);
-        // 프리미엄 기능 접근 검사
         subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
 
-        // 1) 토큰 조회
         DetoxVerificationEntity token = detoxVerificationRepository
                 .findByMember_IdAndUsedFalse(memberId)
                 .orElse(null);
@@ -245,54 +275,90 @@ public class TimeDetoxService {
             return false;
         }
 
-        // 2) (선택) 만료 시간 체크
         if (token.getExpiresAt() != null &&
                 token.getExpiresAt().isBefore(LocalDateTime.now())) {
-            // 만료된 토큰이면 실패 처리
             token.setUsed(true);
             detoxVerificationRepository.save(token);
             return false;
         }
 
-        // 3) 문구 비교
         if (!token.getPhrase().equals(inputPhrase)) {
             return false;
         }
 
-        // 4) 문구 OK → 이 유저의 활성 디톡스 스케줄 종료
-        List<TimeDetoxEntity> activeSchedules =
-                timeDetoxRepository.findByMember_IdAndIsActiveTrue(memberId);
+        LocalDate today = LocalDate.now(KST);
+        LocalTime nowTime = LocalTime.now(KST);
+        String todayDay = today.getDayOfWeek().name();
 
-        activeSchedules.forEach(s -> s.setActive(false));
-        timeDetoxRepository.saveAll(activeSchedules);
+        List<TimeDetoxEntity> runningSchedules = repository.findAllByMember_Id(memberId)
+                .stream()
+                .filter(TimeDetoxEntity::isActive)
+                .filter(schedule ->
+                        schedule.getDay() != null &&
+                                schedule.getDay().equalsIgnoreCase(todayDay)
+                )
+                .filter(schedule -> {
+                    if ("BIWEEKLY".equalsIgnoreCase(schedule.getCycle())) {
+                        return isCurrentWeekBiweekly(schedule.getCreatedDate());
+                    }
 
-        // 5) 토큰 사용 처리 (또는 delete)
+                    return true;
+                })
+                .filter(schedule ->
+                        !nowTime.isBefore(schedule.getStartTime()) &&
+                                !nowTime.isAfter(schedule.getEndTime())
+                )
+                .filter(schedule ->
+                        !isDisabledToday(memberId, schedule.getId(), today)
+                )
+                .toList();
+
+        for (TimeDetoxEntity schedule : runningSchedules) {
+            TimeDetoxDailyDisableEntity disableLog =
+                    TimeDetoxDailyDisableEntity.create(member, schedule, today);
+
+            dailyDisableRepository.save(disableLog);
+        }
+
         token.setUsed(true);
         detoxVerificationRepository.save(token);
 
         return true;
     }
 
-    // 앱 잠금 여부 확인 및 잠긴 앱 목록 반환
-    public LockedAppDetails isAppLockedWithDetails(Long userId, String day, LocalTime currentTime) {
-
+    public LockedAppDetails isAppLockedWithDetails(
+            Long userId,
+            String day,
+            LocalTime currentTime
+    ) {
         MemberEntity member = getMemberOrThrow(userId);
-        // 프리미엄 기능 접근 검사
         subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
 
-        List<TimeDetoxEntity> activeSchedules = repository.findByIsActiveTrue();
+        LocalDate today = LocalDate.now(KST);
+
+        List<TimeDetoxEntity> activeSchedules = repository.findAllByMember_Id(userId)
+                .stream()
+                .filter(TimeDetoxEntity::isActive)
+                .toList();
+
         List<String> lockedApps = new ArrayList<>();
 
         boolean isLocked = activeSchedules.stream().anyMatch(schedule -> {
-            // 격주 여부 확인
-            if (schedule.getCycle().equalsIgnoreCase("BIWEEKLY")) {
+
+            if (isDisabledToday(userId, schedule.getId(), today)) {
+                return false;
+            }
+
+            if ("BIWEEKLY".equalsIgnoreCase(schedule.getCycle())) {
                 if (!isCurrentWeekBiweekly(schedule.getCreatedDate())) {
-                    return false; // 이번 주가 해당 스케줄의 격주 주기가 아니면 스킵
+                    return false;
                 }
             }
 
-            // 시간 범위 확인
-            boolean inTimeRange = !currentTime.isBefore(schedule.getStartTime()) && !currentTime.isAfter(schedule.getEndTime());
+            boolean inTimeRange =
+                    !currentTime.isBefore(schedule.getStartTime()) &&
+                            !currentTime.isAfter(schedule.getEndTime());
+
             if (schedule.getDay().equalsIgnoreCase(day) && inTimeRange) {
                 lockedApps.addAll(schedule.getLockedApps());
                 return true;
@@ -304,30 +370,47 @@ public class TimeDetoxService {
         return new LockedAppDetails(isLocked, lockedApps);
     }
 
-    // 격주 계산 로직
     private boolean isCurrentWeekBiweekly(LocalDate createdDate) {
-        LocalDate today = LocalDate.now();
+
+        if (createdDate == null) {
+            return true;
+        }
+
+        LocalDate today = LocalDate.now(KST);
         long weeksDifference = ChronoUnit.WEEKS.between(createdDate, today);
 
-        // 격주인지 여부를 계산 (주 차이가 짝수이면 격주 주기에 포함됨)
         return weeksDifference % 2 == 0;
     }
-    /*
-    @Transactional
-    public void addAllowedApps(TimeDetoxDto.App request) {
-        TimeDetoxEntity detox = timeDetoxRepository.findById(request.getDetoxId())
-                .orElseThrow(() -> new RuntimeException("Detox not found"));
 
-        List<String> currentApps = detox.getLockedApps();
-        currentApps.addAll(request.getAllowedApps());
-        detox.setLockedApps(currentApps);
+    public List<TimeDetoxDto> getAllTimeDetoxSchedulesByMember(Long memberId) {
 
-        timeDetoxRepository.save(detox);
-    }*/
+        MemberEntity member = getMemberOrThrow(memberId);
+        subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
 
-    // 내부 클래스: 잠긴 상태와 앱 목록 반환 구조체
+        LocalDate today = LocalDate.now(KST);
+
+        return repository.findAllByMember_Id(memberId)
+                .stream()
+                .map(entity -> {
+                    TimeDetoxDto dto = convertToDTO(entity);
+
+                    boolean disabledToday = isDisabledToday(
+                            memberId,
+                            entity.getId(),
+                            today
+                    );
+
+                    dto.setDisabledToday(disabledToday);
+
+                    return dto;
+                })
+                .toList();
+    }
+
     public static class LockedAppDetails {
+
         private boolean isLocked;
+        @Getter
         private List<String> lockedApps;
 
         public LockedAppDetails(boolean isLocked, List<String> lockedApps) {
@@ -339,25 +422,12 @@ public class TimeDetoxService {
             return isLocked;
         }
 
-        public List<String> getLockedApps() {
-            return lockedApps;
-        }
-    }
-
-    public List<TimeDetoxDto> getAllTimeDetoxSchedulesByMember(Long memberId) {
-
-        MemberEntity member = getMemberOrThrow(memberId);
-        // 프리미엄 기능 접근 검사
-        subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
-
-        return repository.findAllByMember_Id(memberId)
-                .stream()
-                .map(this::convertToDTO)
-                .toList();
     }
 
     private MemberEntity getMemberOrThrow(Long userId) {
         return memberRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
+                .orElseThrow(() ->
+                        new IllegalArgumentException("User not found with ID: " + userId)
+                );
     }
 }
