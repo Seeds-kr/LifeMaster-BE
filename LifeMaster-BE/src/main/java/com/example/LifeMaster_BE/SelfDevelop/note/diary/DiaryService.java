@@ -32,9 +32,9 @@ public class DiaryService {
         return diaryRepository.save(newDiary);
     }
 
-    public DiaryResponse getDiary(Long diaryId){
-        DiaryEntity diary = diaryRepository.findById(diaryId)
-                .orElseThrow(() -> new EntityNotFoundException("Diary not found"));
+    public DiaryResponse getDiary(Long diaryId, Long memberId){
+        DiaryEntity diary = diaryRepository.findByIdAndMember_Id(diaryId, memberId)
+                .orElseThrow(() -> new EntityNotFoundException("Diary not found or no permission"));
 
         return DiaryResponse.builder()
                 .diaryContent(diary.getDiaryContent())

@@ -33,9 +33,9 @@ public class ThankService {
         return thankRepository.save(newThank);
     }
 
-    public ThankResponse getThank(Long thankId){
-        ThankEntity thank = thankRepository.findById(thankId)
-                .orElseThrow(() -> new EntityNotFoundException("Thank not found"));
+    public ThankResponse getThank(Long thankId, Long memberId){
+        ThankEntity thank = thankRepository.findByIdAndMember_Id(thankId, memberId)
+                .orElseThrow(() -> new EntityNotFoundException("Thank not found or no permission"));
 
         return ThankResponse.builder()
                 .thankOne(thank.getThankOne())
@@ -46,9 +46,9 @@ public class ThankService {
                 .thankDate(thank.getThankDate())
                 .build();
     }
-    public ThankEntity updateThank(Long thankId, UpdateThankDto thankDto){
-        ThankEntity thank = thankRepository.findById(thankId)
-                .orElseThrow(() -> new EntityNotFoundException("Thank not found"));
+    public ThankEntity updateThank(Long thankId, UpdateThankDto thankDto, Long memberId){
+        ThankEntity thank = thankRepository.findByIdAndMember_Id(thankId, memberId)
+                .orElseThrow(() -> new EntityNotFoundException("Thank not found or no permission"));
         return updateThankData(thank, thankDto);
     }
 
