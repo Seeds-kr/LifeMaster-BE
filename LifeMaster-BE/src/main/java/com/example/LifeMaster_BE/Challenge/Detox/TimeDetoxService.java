@@ -122,16 +122,13 @@ public class TimeDetoxService {
         );
     }
 
-    public List<TimeDetoxEntity> getAllSchedules(Long userId, String email) {
+    public List<TimeDetoxEntity> getAllSchedules(Long userId) {
 
         MemberEntity member = getMemberOrThrow(userId);
-        // 프리미엄 기능 접근 검사
+
         subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
 
-        MemberEntity user = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다."));
-
-        return repository.findAllByMember(user);
+        return repository.findAllByMember_Id(userId);
     }
 
     public TimeDetoxEntity getScheduleById(Long id) {

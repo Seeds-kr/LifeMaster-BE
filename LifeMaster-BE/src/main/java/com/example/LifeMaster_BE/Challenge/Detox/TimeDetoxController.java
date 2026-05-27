@@ -148,19 +148,6 @@ public class TimeDetoxController {
     }
 
     @Operation(
-            summary = "모든 디톡스 일정 조회",
-            description = "데이터베이스에서 모든 디톡스 일정을 가져옵니다.",
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "일정 목록 조회 성공",
-                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = TimeDetoxEntity.class)))
-            })
-    @GetMapping
-    public ResponseEntity<List<TimeDetoxEntity>> getAllSchedules(@AuthenticationPrincipal CustomUserDetails user) {
-        String email = user.getUsername();
-        return ResponseEntity.ok(service.getAllSchedules(user.getId(), email));
-    }
-
-    @Operation(
             summary = "특정 디톡스 일정 조회",
             description = "ID를 기준으로 특정 디톡스 일정을 조회합니다.",
             responses = {
@@ -176,7 +163,7 @@ public class TimeDetoxController {
         return ResponseEntity.ok(service.getScheduleById(User.getId()));
     }
 
-    @Operation(summary = "내 시간 잠금 설정 아이템 전체 조회", description = "로그인한 사용자의 시간 잠금 설정 아이템을 전체 조회니다.")
+    @Operation(summary = "내 시간 잠금 디톡스 전체 조회", description = "로그인한 사용자의 시간 잠금 디톡스를 전체 조회합니다.")
     @GetMapping("/me")
     public ResponseEntity<?> getMyTimeDetoxSchedules(@AuthenticationPrincipal CustomUserDetails user) {
 
