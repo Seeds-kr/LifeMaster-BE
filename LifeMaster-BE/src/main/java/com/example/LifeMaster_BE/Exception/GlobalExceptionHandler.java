@@ -89,6 +89,16 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
     }
 
+    @ExceptionHandler(MemberSuspendedException.class)
+    public ResponseEntity<ErrorResponse> handleMemberSuspended(MemberSuspendedException ex) {
+        ErrorResponse body = new ErrorResponse(
+                HttpStatus.FORBIDDEN.value(),
+                ex.getMessage(),
+                System.currentTimeMillis()
+        );
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
+    }
+
     @ExceptionHandler(Exception.class) // 최후의 보루
     public ResponseEntity<ErrorResponse> handleAll(Exception ex) {
         // ✅ RSE는 상단 핸들러로 가도록 그대로 던짐 (500으로 덮어쓰지 않음)

@@ -117,9 +117,13 @@ public class AdminReportService {
                 postRepository.delete(postToDelete);
                 break;
             case SUSPEND_1D:
+                postAuthor.suspend(1);
+                break;
             case SUSPEND_7D:
+                postAuthor.suspend(7);
+                break;
             case SUSPEND_30D:
-                postAuthor.setMemberStatus(MemberStatus.SUSPENDED);
+                postAuthor.suspend(30);
                 break;
         }
     }
