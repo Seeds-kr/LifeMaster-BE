@@ -43,8 +43,10 @@ public class ThankController {
 
     @GetMapping("/{thank-id}")
     public ResponseEntity<ThankResponse> getThank(
-            @PathVariable("thank-id") Long thankId){
-        ThankResponse thank = thankService.getThank(thankId);
+            @PathVariable("thank-id") Long thankId,
+            @AuthenticationPrincipal CustomUserDetails user){
+        Long memberId = user.getId();
+        ThankResponse thank = thankService.getThank(thankId, memberId);
         return ResponseEntity.ok(thank);
     }
 
@@ -55,7 +57,7 @@ public class ThankController {
             @AuthenticationPrincipal CustomUserDetails user) {
         Long memberId = user.getId();
 
-        ThankEntity updatedThank = thankService.updateThank(thankId, thankDto);
+        ThankEntity updatedThank = thankService.updateThank(thankId, thankDto, memberId);
 
         // Thank의 실제 날짜 기준 (String yyyyMMdd)
         String dateKey = updatedThank.getThankDate()
