@@ -217,14 +217,19 @@ public class TimeDetoxService {
 
         String phrase = randomPhraseProvider.getRandomPhrase();
 
+        /*
+         * member_id가 UNIQUE인 구조이므로,
+         * 새 row를 계속 만들면 안 되고 기존 row를 재사용해야 한다.
+         */
         DetoxVerificationEntity token = detoxVerificationRepository
-                .findByMember_IdAndUsedFalse(memberId)
+                .findByMember_Id(memberId)
                 .orElseGet(() ->
                         DetoxVerificationEntity.create(member, phrase, null)
                 );
 
         token.setPhrase(phrase);
         token.setCreatedAt(LocalDateTime.now());
+        token.setExpiresAt(null);
         token.setUsed(false);
 
         detoxVerificationRepository.save(token);
