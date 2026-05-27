@@ -43,8 +43,10 @@ public class DiaryController {
 
     @GetMapping("/{diary-id}")
     public ResponseEntity<DiaryResponse> getDiary(
-            @PathVariable("diary-id") Long diaryId){
-        DiaryResponse diary = diaryService.getDiary(diaryId);
+            @PathVariable("diary-id") Long diaryId,
+            @AuthenticationPrincipal CustomUserDetails user){
+        Long memberId = user.getId();
+        DiaryResponse diary = diaryService.getDiary(diaryId, memberId);
         return ResponseEntity.ok(diary);
     }
 

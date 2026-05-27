@@ -76,6 +76,9 @@ public class MemberEntity {
     @Column(name = "warning_count")
     private int warningCount = 0;
 
+    @Column(name = "suspended_until")
+    private LocalDateTime suspendedUntil;
+
     @Column(name = "created_at", updatable = false)
     @CreatedDate
     private LocalDateTime createdAt;
@@ -219,5 +222,27 @@ public class MemberEntity {
         }
 
         return this;
+    }
+
+    // 정지 관련 메서드
+    public void suspend(int days) {
+        this.memberStatus = MemberStatus.SUSPENDED;
+        this.suspendedUntil = LocalDateTime.now().plusDays(days);
+    }
+
+    public void releaseSuspension() {
+        this.memberStatus = MemberStatus.ACTIVE;
+        this.suspendedUntil = null;
+    }
+
+    public boolean isSuspended() {
+        if (this.memberStatus == MemberStatus.SUSPENDED && this.suspendedUntil != null) {
+            if (LocalDateTime.now().isAfter(this.suspendedUntil)) {
+                releaseSuspension();
+                return false;
+            }
+            return true;
+        }
+        return false;
     }
 }
