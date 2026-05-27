@@ -176,7 +176,7 @@ public class TimeDetoxController {
         ResponseEntity<?> loginCheck = login.checkLogin(user);
         if (loginCheck != null) return loginCheck;
 
-        return ResponseEntity.ok(service.getScheduleById(id));
+        return ResponseEntity.ok(service.getScheduleById(user.getId(), id));
     }
 
     @Operation(
