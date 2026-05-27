@@ -149,13 +149,18 @@ public class TimeDetoxController {
         ResponseEntity<?> loginCheck = login.checkLogin(user);
         if (loginCheck != null) return loginCheck;
 
-        Long memberId = user.getId();
+        try {
+            Long memberId = user.getId();
 
-        TimeDetoxDto createdSchedule = service.createSchedule(scheduleDto, memberId);
+            TimeDetoxDto createdSchedule = service.createSchedule(scheduleDto, memberId);
 
-        scheduleCalendarService.addOrUpdateEvent(memberId, todayKey(), "Detox");
+            scheduleCalendarService.addOrUpdateEvent(memberId, todayKey(), "Detox");
 
-        return ResponseEntity.ok(createdSchedule);
+            return ResponseEntity.ok(createdSchedule);
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @Operation(
@@ -181,7 +186,7 @@ public class TimeDetoxController {
 
     @Operation(
             summary = "내 시간 잠금 디톡스 전체 조회",
-            description = "로그인한 사용자의 시간 잠금 디톡스를 전체 조회합니다. 비상탈출로 오늘만 비활성화된 일정은 disabledToday=true로 반환됩니다.",
+            description = "로그인한 사용자의 시간 잠금 디톡스를 전체 조회합니다. 비상탈출로 오늘만 비활성화된 일정은 disabledToday = true로 반환됩니다.",
             responses = {
                     @ApiResponse(responseCode = "200", description = "내 시간 잠금 디톡스 목록 조회 성공",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = TimeDetoxDto.class))),
@@ -242,17 +247,22 @@ public class TimeDetoxController {
         ResponseEntity<?> loginCheck = login.checkLogin(user);
         if (loginCheck != null) return loginCheck;
 
-        Long memberId = user.getId();
+        try {
+            Long memberId = user.getId();
 
-        String dateKey = todayKey();
+            String dateKey = todayKey();
 
-        if (updatedSchedule.getDate() != null && !updatedSchedule.getDate().isBlank()) {
-            dateKey = updatedSchedule.getDate();
+            if (updatedSchedule.getDate() != null && !updatedSchedule.getDate().isBlank()) {
+                dateKey = updatedSchedule.getDate();
+            }
+
+            scheduleCalendarService.addOrUpdateEvent(memberId, dateKey, "Detox");
+
+            return ResponseEntity.ok(service.updateSchedule(memberId, id, updatedSchedule));
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
-
-        scheduleCalendarService.addOrUpdateEvent(memberId, dateKey, "Detox");
-
-        return ResponseEntity.ok(service.updateSchedule(memberId, id, updatedSchedule));
     }
 
     @Operation(

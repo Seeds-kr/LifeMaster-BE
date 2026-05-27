@@ -52,7 +52,7 @@ public class TimeDetoxService {
 
         TimeDetoxEntity entity = new TimeDetoxEntity();
         entity.setCycle(dto.getCycle());
-        entity.setDay(dto.getDay());
+        entity.setDay(validateAndNormalizeDay(dto.getDay()));
 
         entity.setStartTime(LocalTime.parse(dto.getStartTime(), HH_MM));
         entity.setEndTime(LocalTime.parse(dto.getEndTime(), HH_MM));
@@ -88,6 +88,25 @@ public class TimeDetoxService {
                     e
             );
         }
+    }
+
+    private String validateAndNormalizeDay(String day) {
+
+        if (day == null || day.isBlank()) {
+            throw new IllegalArgumentException("요일은 필수입니다.");
+        }
+
+        String normalizedDay = day.trim().toUpperCase();
+
+        try {
+            java.time.DayOfWeek.valueOf(normalizedDay);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(
+                    "요일 형식이 올바르지 않습니다. MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY 중 하나를 입력하세요."
+            );
+        }
+
+        return normalizedDay;
     }
 
     private TimeDetoxDto convertToDTO(TimeDetoxEntity entity) {
@@ -152,7 +171,7 @@ public class TimeDetoxService {
                 );
 
         schedule.setCycle(updatedSchedule.getCycle());
-        schedule.setDay(updatedSchedule.getDay());
+        schedule.setDay(validateAndNormalizeDay(updatedSchedule.getDay()));
         schedule.setStartTime(updatedSchedule.getStartTime());
         schedule.setEndTime(updatedSchedule.getEndTime());
         schedule.setLockedApps(updatedSchedule.getLockedApps());
