@@ -56,4 +56,18 @@ public class ChallengeDto {
         private Long challId;
         private String completedAt;
     }
+
+    @Builder
+    @Getter
+    @Schema(name = "ChallengeCompleteStatusResponse")
+    public static class CompleteStatusResponse {
+
+        private Long challId;
+
+        // 오늘 완료 여부
+        private Boolean completed;
+
+        // 완료 시간 (HH:mm)
+        private String completedAt;
+    }
 }
