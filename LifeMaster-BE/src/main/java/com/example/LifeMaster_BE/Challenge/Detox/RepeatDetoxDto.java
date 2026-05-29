@@ -28,6 +28,9 @@ public class RepeatDetoxDto {
         private Integer sessionUsageLimit;
         private Integer lockDuration;
         private Integer dailyMaxUsageLimit;
+
+        // 추가
+        private Integer todayUsedMinutes;
     }
 
     @Getter

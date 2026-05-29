@@ -310,4 +310,36 @@ public class ChallengeService {
                 .completedAt(now.format(DateTimeFormatter.ofPattern("HH:mm:ss")))
                 .build();
     }
+
+    public List<ChallengeDto.CompleteStatusResponse> getTodayCompletedChallenges(
+            CustomUserDetails user
+    ) {
+
+        Long memberId = user.getId();
+
+        String today = LocalDate.now(ZoneId.of("Asia/Seoul"))
+                .format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+        // 오늘 완료한 기록
+        List<ChallengeCompletion> completions =
+                challengeCompletionRepository.findByUser_IdAndDateKey(
+                        memberId,
+                        today
+                );
+
+        return completions.stream()
+                .map(completion -> {
+
+                    String completedTime =
+                            completion.getCompletedAt()
+                                    .format(DateTimeFormatter.ofPattern("HH:mm"));
+
+                    return ChallengeDto.CompleteStatusResponse.builder()
+                            .challId(completion.getChallenge().getChallId())
+                            .completed(true)
+                            .completedAt(completedTime)
+                            .build();
+                })
+                .toList();
+    }
 }

@@ -148,4 +148,15 @@ public class ChallengeController {
     ) {
         return challengeService.completeChallenge(request.getChallId(), user);
     }
+
+    @GetMapping("/complete")
+    @Operation(
+            summary = "오늘 챌린지 완료 상태 조회",
+            description = "오늘 완료한 챌린지 여부와 완료 시간을 조회합니다."
+    )
+    public List<ChallengeDto.CompleteStatusResponse> getTodayCompletedChallenges(
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        return challengeService.getTodayCompletedChallenges(user);
+    }
 }
