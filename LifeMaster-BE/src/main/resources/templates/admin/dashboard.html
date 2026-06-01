@@ -17,6 +17,7 @@
             <a href="#" class="nav-item" onclick="showPage('premium', this)">⭐ 프리미엄 계정</a>
             <a href="#" class="nav-item" onclick="showPage('reports', this)">📋 신고 관리</a>
             <a href="#" class="nav-item" onclick="showPage('members', this)">👤 회원 관리</a>
+            <a href="#" class="nav-item" onclick="showPage('groups', this)">👥 그룹 관리</a>
             <a href="#" class="nav-item" onclick="showPage('stats', this)">📈 통계 대시보드</a>
             <a href="#" class="nav-item">⚙ 설정</a>
         </nav>
@@ -206,7 +207,6 @@
                     </div>
                 </div>
 
-                <!-- 프리미엄 계정 조회 -->
                 <div class="table-card">
                     <div class="table-header">
                         <div>
@@ -234,7 +234,6 @@
                     </div>
                 </div>
 
-                <!-- 일반 회원 프리미엄 부여 -->
                 <div class="table-card premium-manage-card">
                     <div class="table-header">
                         <div>
@@ -407,6 +406,107 @@
                 </div>
             </div>
 
+            <!-- 그룹 관리 -->
+            <div id="page-groups" class="page-section" style="display:none;">
+                <div class="breadcrumb">Home / <span>그룹 관리</span></div>
+
+                <div class="summary-grid">
+                    <div class="summary-card purple">
+                        <h3 id="groupTotalCount">0</h3>
+                        <p>전체 그룹</p>
+                    </div>
+
+                    <div class="summary-card blue">
+                        <h3 id="groupNormalCount">0</h3>
+                        <p>정상 그룹</p>
+                    </div>
+
+                    <div class="summary-card yellow">
+                        <h3 id="groupPrivateCount">0</h3>
+                        <p>비공개 그룹</p>
+                    </div>
+
+                    <div class="summary-card red">
+                        <h3 id="groupAbnormalCount">0</h3>
+                        <p>비정상 그룹</p>
+                    </div>
+                </div>
+
+                <div class="table-card">
+                    <div class="table-header">
+                        <div>
+                            <h2>전체 그룹 조회</h2>
+                            <p>그룹 인원, 목표 수, 비정상 여부를 확인하고 관리합니다.</p>
+                        </div>
+
+                        <button onclick="loadGroups()">새로고침</button>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                            <tr>
+                                <th>그룹 ID</th>
+                                <th>그룹명</th>
+                                <th>접근 타입</th>
+                                <th>OWNER</th>
+                                <th>인원</th>
+                                <th>목표 수</th>
+                                <th>상태</th>
+                                <th>사유</th>
+                                <th>작업</th>
+                            </tr>
+                            </thead>
+                            <tbody id="groupTableBody"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="pagination-box">
+                        <button id="groupPrevBtn" onclick="prevGroupPage()">이전</button>
+                        <span id="groupPageInfo">1 / 1</span>
+                        <button id="groupNextBtn" onclick="nextGroupPage()">다음</button>
+                    </div>
+                </div>
+
+                <div class="table-card">
+                    <div class="table-header">
+                        <div>
+                            <h2>그룹 인원</h2>
+                            <p>선택한 그룹에 속한 회원 목록입니다.</p>
+                        </div>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                            <tr>
+                                <th>회원 ID</th>
+                                <th>이메일</th>
+                                <th>닉네임</th>
+                            </tr>
+                            </thead>
+                            <tbody id="groupMemberTableBody">
+                            <tr>
+                                <td colspan="3">그룹을 선택하세요.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="table-card">
+                    <div class="table-header">
+                        <div>
+                            <h2>그룹 활동 정보</h2>
+                            <p>선택한 그룹의 목표, 통계 설정, 비정상 여부를 확인합니다.</p>
+                        </div>
+                    </div>
+
+                    <div id="groupActivityBox" class="activity-box">
+                        그룹을 선택하세요.
+                    </div>
+                </div>
+            </div>
 
             <!-- 통계 페이지 -->
             <div id="page-stats" class="page-section" style="display:none;">
@@ -488,6 +588,7 @@
 <script src="/js/admin/admin-premium.js"></script>
 <script src="/js/admin/admin-reports.js"></script>
 <script src="/js/admin/admin-members.js"></script>
+<script src="/js/admin/admin-groups.js"></script>
 <script src="/js/admin/admin-stats.js"></script>
 
 </body>

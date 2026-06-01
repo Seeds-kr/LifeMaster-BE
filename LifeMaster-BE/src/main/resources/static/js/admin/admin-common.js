@@ -86,6 +86,10 @@ function showPage(page, element) {
         loadMemberSummary();
     }
 
+    if (pageName === "groups") {
+        loadGroups();
+    }
+
     if (page === "stats") {
         document.getElementById("page-stats").style.display = "block";
         document.getElementById("pageTitle").textContent = "Statistics Dashboard";

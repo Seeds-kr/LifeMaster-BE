@@ -574,3 +574,45 @@ tr:hover {
 .danger-btn:hover {
     background: #dc2626;
 }
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.status-badge.green {
+    background: #e7f8ef;
+    color: #16864a;
+}
+
+.status-badge.red {
+    background: #fdeaea;
+    color: #d93025;
+}
+
+.danger-btn {
+    background: #ef4444;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.danger-btn:hover {
+    background: #dc2626;
+}
+
+.activity-box {
+    padding: 16px;
+    background: #f9fafb;
+    border-radius: 12px;
+    line-height: 1.8;
+}
+
+.activity-row {
+    margin-bottom: 6px;
+}
