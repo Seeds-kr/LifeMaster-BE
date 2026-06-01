@@ -71,4 +71,12 @@ public class RepeatDetoxDto {
 
         private String phrase;
     }
+
+    @Getter
+    @Setter
+    @Schema(name = "RepeatDetoxUsageSyncRequest")
+    public static class UsageSyncRequest {
+
+        private Integer todayUsedMinutes;
+    }
 }

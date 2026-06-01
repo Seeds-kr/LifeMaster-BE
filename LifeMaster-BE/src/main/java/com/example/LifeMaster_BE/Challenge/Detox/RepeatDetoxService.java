@@ -213,4 +213,22 @@ public class RepeatDetoxService {
                                 "User not found"
                         ));
     }
+
+    public void syncUsage(Long userId, Long detoxId, Integer todayUsedMinutes) {
+
+        RepeatDetox detox = repeatDetoxRepository.findById(detoxId)
+                .orElseThrow(() -> new IllegalArgumentException("RepeatDetox not found"));
+
+        if (detox.getMember() == null ||
+                !detox.getMember().getId().equals(userId)) {
+            throw new IllegalArgumentException("Not owner");
+        }
+
+        if (todayUsedMinutes == null || todayUsedMinutes < 0) {
+            todayUsedMinutes = 0;
+        }
+
+        // 서버 메모리에 저장 (임시)
+        todayUsageMap.put(detoxId, todayUsedMinutes);
+    }
 }
