@@ -1,6 +1,6 @@
 package com.example.LifeMaster_BE.Admin.Group;
 
-import com.example.LifeMaster_BE.Group.Goal.GoalAchievementRepository;
+import com.example.LifeMaster_BE.Group.GoalAchievement.GoalAchievementRepository;
 import com.example.LifeMaster_BE.Group.Goal.GoalRepository;
 import com.example.LifeMaster_BE.Group.GoalProgress.GoalProgressService;
 import com.example.LifeMaster_BE.Group.GroupEntity;
