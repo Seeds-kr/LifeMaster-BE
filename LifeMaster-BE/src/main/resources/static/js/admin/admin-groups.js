@@ -1,5 +1,7 @@
 let allGroups = [];
 let groupCurrentPage = 1;
+let selectedGroupId = null;
+
 const groupPageSize = 10;
 
 async function loadGroups() {
@@ -59,11 +61,13 @@ function renderGroups() {
             : `<span class="status-badge green">정상</span>`;
 
         const deleteButton = group.abnormal
-            ? `<button class="danger-btn" onclick="deleteAbnormalGroup(${group.groupId})">비정상 삭제</button>`
-            : `<button class="danger-btn" onclick="forceDeleteGroup(${group.groupId})">강제 삭제</button>`;
+            ? `<button class="danger-btn" onclick="event.stopPropagation(); deleteAbnormalGroup(${group.groupId})">비정상 삭제</button>`
+            : `<button class="danger-btn" onclick="event.stopPropagation(); forceDeleteGroup(${group.groupId})">강제 삭제</button>`;
+
+        const selectedClass = selectedGroupId === group.groupId ? "selected-group-row" : "";
 
         const row = `
-            <tr>
+            <tr class="group-row ${selectedClass}" onclick="selectGroup(${group.groupId})">
                 <td>${group.groupId}</td>
                 <td>${escapeHtml(group.name || "-")}</td>
                 <td>${group.accessType || "-"}</td>
@@ -72,11 +76,7 @@ function renderGroups() {
                 <td>${group.goalCount}</td>
                 <td>${statusText}</td>
                 <td>${group.abnormalReason || "-"}</td>
-                <td>
-                    <button onclick="loadGroupMembers(${group.groupId})">인원</button>
-                    <button onclick="loadGroupActivity(${group.groupId})">활동</button>
-                    ${deleteButton}
-                </td>
+                <td>${deleteButton}</td>
             </tr>
         `;
 
@@ -84,6 +84,17 @@ function renderGroups() {
     });
 
     updateGroupPagination();
+}
+
+async function selectGroup(groupId) {
+    selectedGroupId = groupId;
+
+    renderGroups();
+
+    await Promise.all([
+        loadGroupMembers(groupId),
+        loadGroupActivity(groupId)
+    ]);
 }
 
 function updateGroupPagination() {
@@ -162,7 +173,6 @@ async function loadGroupActivity(groupId) {
     }
 
     const activity = await response.json();
-
     const box = document.getElementById("groupActivityBox");
 
     box.innerHTML = `
@@ -195,8 +205,10 @@ async function deleteAbnormalGroup(groupId) {
     }
 
     alert("비정상 그룹이 삭제되었습니다.");
-    await loadGroups();
+
+    selectedGroupId = null;
     clearGroupDetailPanels();
+    await loadGroups();
 }
 
 async function forceDeleteGroup(groupId) {
@@ -218,8 +230,10 @@ async function forceDeleteGroup(groupId) {
     }
 
     alert("그룹이 삭제되었습니다.");
-    await loadGroups();
+
+    selectedGroupId = null;
     clearGroupDetailPanels();
+    await loadGroups();
 }
 
 function clearGroupDetailPanels() {

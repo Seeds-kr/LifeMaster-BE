@@ -565,6 +565,23 @@ tr:hover {
     white-space: nowrap;
 }
 
+.group-row {
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.group-row:hover {
+    background: #f1f5f9;
+}
+
+.selected-group-row {
+    background: #eef2ff !important;
+}
+
+.selected-group-row td {
+    font-weight: 600;
+}
+
 .status-badge {
     display: inline-block;
     padding: 4px 8px;
