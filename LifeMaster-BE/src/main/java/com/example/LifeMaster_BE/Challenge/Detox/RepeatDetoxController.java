@@ -55,7 +55,7 @@ public class RepeatDetoxController {
         );
     }
 
-    // 상세 상태 (잠금화면)
+    // 상세 상태
     @GetMapping("/{id}")
     public ResponseEntity<RepeatDetoxDto.DetailResponse> getDetail(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -83,5 +83,27 @@ public class RepeatDetoxController {
         return ResponseEntity.ok(
                 repeatDetoxService.verifyPhrase(id, phrase)
         );
+    }
+
+    // ================================
+    // ✅ 핵심 추가 API
+    // ================================
+
+    /**
+     * 프론트 UsageStats → 서버 동기화
+     */
+    @PatchMapping("/{id}/usage")
+    public ResponseEntity<Void> syncUsage(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long id,
+            @RequestBody RepeatDetoxDto.UsageSyncRequest request
+    ) {
+        repeatDetoxService.syncUsage(
+                userDetails.getId(),
+                id,
+                request.getTodayUsedMinutes()
+        );
+
+        return ResponseEntity.ok().build();
     }
 }
