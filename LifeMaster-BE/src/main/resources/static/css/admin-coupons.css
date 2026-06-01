@@ -47,6 +47,7 @@ body {
 
 .main {
     flex: 1;
+    min-width: 0;
 }
 
 .topbar {
@@ -71,6 +72,10 @@ body {
     padding: 9px 14px;
     border-radius: 7px;
     cursor: pointer;
+}
+
+.logout-btn:hover {
+    background: #e0e7ff;
 }
 
 .content {
@@ -99,7 +104,7 @@ body {
     border-radius: 8px;
     padding: 22px;
     color: white;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .summary-card h3 {
@@ -128,17 +133,24 @@ body {
     background: #d75b59;
 }
 
+.green {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
 .table-card {
     background: white;
     border-radius: 8px;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
     overflow: hidden;
+    margin-bottom: 24px;
 }
 
 .table-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 16px;
     padding: 24px;
     border-bottom: 1px solid #e5e7eb;
 }
@@ -155,21 +167,30 @@ body {
 .filter-box {
     display: flex;
     gap: 8px;
+    flex-wrap: wrap;
 }
 
 select,
-button {
+button,
+input {
     height: 38px;
     padding: 0 13px;
     border-radius: 6px;
     border: 1px solid #d1d5db;
 }
 
+button {
+    cursor: pointer;
+}
+
 .filter-box button {
     border: none;
     background: #6366f1;
     color: white;
-    cursor: pointer;
+}
+
+.filter-box button:hover {
+    background: #4f46e5;
 }
 
 .table-wrap {
@@ -205,6 +226,7 @@ tr:hover {
 }
 
 .badge {
+    display: inline-block;
     padding: 6px 10px;
     border-radius: 999px;
     font-size: 12px;
@@ -221,15 +243,16 @@ tr:hover {
     color: #2563eb;
 }
 
-.green {
-    background: #dcfce7;
-    color: #16a34a;
-}
-
 .empty {
     text-align: center;
     color: #9ca3af;
     padding: 30px;
+}
+
+.loading {
+    text-align: center;
+    padding: 20px;
+    color: #9ca3af;
 }
 
 .pagination-box {
@@ -250,6 +273,10 @@ tr:hover {
     cursor: pointer;
 }
 
+.pagination-box button:hover:not(:disabled) {
+    background: #4f46e5;
+}
+
 .pagination-box button:disabled {
     background: #c7c9d9;
     cursor: not-allowed;
@@ -260,7 +287,130 @@ tr:hover {
     color: #4b5563;
 }
 
-/* 신고 관리 상세 정보 스타일 */
+/* 공통 버튼 */
+.primary-btn {
+    border: none;
+    border-radius: 8px;
+    padding: 9px 14px;
+    background: #4f46e5;
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.primary-btn:hover {
+    background: #4338ca;
+}
+
+.danger-btn {
+    border: none;
+    border-radius: 8px;
+    padding: 9px 14px;
+    background: #ef4444;
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.danger-btn:hover {
+    background: #dc2626;
+}
+
+.delete-btn {
+    border: none;
+    border-radius: 6px;
+    padding: 7px 12px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.delete-btn:hover {
+    background: #dc2626;
+}
+
+/* 쿠폰 생성 */
+.coupon-create-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+}
+
+.coupon-create-header h2 {
+    margin: 0 0 6px;
+    font-size: 22px;
+}
+
+.coupon-create-header p {
+    margin: 0 0 20px;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.coupon-create-form {
+    display: flex;
+    align-items: end;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.coupon-create-form .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.coupon-create-form label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.coupon-create-form select,
+.coupon-create-form input {
+    width: 180px;
+    height: 42px;
+    padding: 0 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.create-coupon-btn {
+    height: 42px;
+    padding: 0 18px;
+    border: none;
+    border-radius: 8px;
+    background: #4f46e5;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.create-coupon-btn:hover {
+    background: #4338ca;
+}
+
+/* 프리미엄 관리 */
+.premium-manage-card {
+    margin-top: 24px;
+}
+
+.premium-grant-select {
+    min-width: 120px;
+    height: 38px;
+    padding: 0 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: white;
+}
+
+/* 신고 관리 상세 정보 */
 .detail-row {
     background: #f9fafb;
 }
@@ -387,151 +537,7 @@ tr:hover {
     background: #dc2626;
 }
 
-.loading {
-    text-align: center;
-    padding: 20px;
-    color: #9ca3af;
-}
-
-@media (max-width: 1000px) {
-    .summary-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .sidebar {
-        width: 210px;
-    }
-
-    .detail-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .admin-note-input {
-        width: 200px;
-    }
-}
-
-.coupon-create-card {
-    background: #fff;
-    border-radius: 14px;
-    padding: 24px;
-    margin-bottom: 24px;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
-}
-
-.coupon-create-header h2 {
-    margin: 0 0 6px;
-    font-size: 22px;
-}
-
-.coupon-create-header p {
-    margin: 0 0 20px;
-    color: #6b7280;
-    font-size: 14px;
-}
-
-.coupon-create-form {
-    display: flex;
-    align-items: end;
-    gap: 16px;
-    flex-wrap: wrap;
-}
-
-.coupon-create-form .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.coupon-create-form label {
-    font-size: 14px;
-    font-weight: 600;
-    color: #374151;
-}
-
-.coupon-create-form select,
-.coupon-create-form input {
-    width: 180px;
-    height: 42px;
-    padding: 0 12px;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    font-size: 14px;
-    box-sizing: border-box;
-}
-
-.create-coupon-btn {
-    height: 42px;
-    padding: 0 18px;
-    border: none;
-    border-radius: 8px;
-    background: #4f46e5;
-    color: white;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-.create-coupon-btn:hover {
-    background: #4338ca;
-}
-
-.delete-btn {
-    border: none;
-    border-radius: 6px;
-    padding: 7px 12px;
-    background: #ef4444;
-    color: #fff;
-    font-size: 13px;
-    cursor: pointer;
-}
-
-.delete-btn:hover {
-    background: #dc2626;
-}
-
-.premium-manage-card {
-    margin-top: 24px;
-}
-
-.premium-grant-select {
-    min-width: 120px;
-    height: 38px;
-    padding: 0 10px;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    background: white;
-}
-
-.primary-btn {
-    border: none;
-    border-radius: 8px;
-    padding: 9px 14px;
-    background: #4f46e5;
-    color: white;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-.primary-btn:hover {
-    background: #4338ca;
-}
-
-.danger-btn {
-    border: none;
-    border-radius: 8px;
-    padding: 9px 14px;
-    background: #ef4444;
-    color: white;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-.danger-btn:hover {
-    background: #dc2626;
-}
-
+/* 회원 관리 테이블 */
 #page-members .table-wrap {
     overflow-x: auto;
 }
@@ -545,34 +551,18 @@ tr:hover {
     white-space: nowrap;
 }
 
-.primary-btn {
-    border: none;
-    border-radius: 8px;
-    padding: 9px 14px;
-    background: #4f46e5;
-    color: white;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
+/* 그룹 관리 */
+#page-groups .table-wrap {
+    overflow-x: auto;
 }
 
-.primary-btn:hover {
-    background: #4338ca;
+#page-groups table {
+    min-width: 1150px;
 }
 
-.danger-btn {
-    border: none;
-    border-radius: 8px;
-    padding: 9px 14px;
-    background: #ef4444;
-    color: white;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-.danger-btn:hover {
-    background: #dc2626;
+#page-groups th,
+#page-groups td {
+    white-space: nowrap;
 }
 
 .status-badge {
@@ -593,26 +583,57 @@ tr:hover {
     color: #d93025;
 }
 
-.danger-btn {
-    background: #ef4444;
-    color: white;
-    border: none;
-    padding: 6px 10px;
-    border-radius: 8px;
-    cursor: pointer;
-}
-
-.danger-btn:hover {
-    background: #dc2626;
-}
-
 .activity-box {
     padding: 16px;
     background: #f9fafb;
     border-radius: 12px;
     line-height: 1.8;
+    color: #374151;
+    border: 1px solid #e5e7eb;
 }
 
 .activity-row {
     margin-bottom: 6px;
+}
+
+/* 반응형 */
+@media (max-width: 1000px) {
+    .summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .sidebar {
+        width: 210px;
+    }
+
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-note-input {
+        width: 200px;
+    }
+
+    .table-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 700px) {
+    .admin-layout {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+    }
+
+    .summary-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .content {
+        padding: 18px;
+    }
 }
