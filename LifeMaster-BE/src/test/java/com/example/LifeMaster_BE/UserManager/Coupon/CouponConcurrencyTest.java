@@ -38,7 +38,7 @@ class CouponConcurrencyTest {
     private static final Logger log = LoggerFactory.getLogger(CouponConcurrencyTest.class);
 
     @Autowired
-    private CouponService couponService;
+    private CouponFacade couponFacade;
 
     @Autowired
     private CouponRepository couponRepository;
@@ -107,7 +107,7 @@ class CouponConcurrencyTest {
                     readyLatch.countDown();
                     startLatch.await();
 
-                    couponService.registerCoupon(testUsers.get(index).getId(), "TEST-COUPON-001");
+                    couponFacade.registerCoupon(testUsers.get(index).getId(), "TEST-COUPON-001");
                     successCount.incrementAndGet();
                     successUsers.add("testuser" + index);
                 } catch (Exception e) {
@@ -174,7 +174,7 @@ class CouponConcurrencyTest {
                     readyLatch.countDown();
                     startLatch.await();
 
-                    couponService.registerCoupon(testUsers.get(index).getId(), "TEST-COUPON-001");
+                    couponFacade.registerCoupon(testUsers.get(index).getId(), "TEST-COUPON-001");
                     successCount.incrementAndGet();
                     successUsers.add("testuser" + index);
                 } catch (Exception e) {
@@ -252,7 +252,7 @@ class CouponConcurrencyTest {
                     readyLatch.countDown();
                     startLatch.await();
 
-                    couponService.registerCoupon(testUsers.get(index).getId(), "TEST-COUPON-001");
+                    couponFacade.registerCoupon(testUsers.get(index).getId(), "TEST-COUPON-001");
                     successCount.incrementAndGet();
                     successUsers.add("testuser" + index);
                 } catch (Exception e) {

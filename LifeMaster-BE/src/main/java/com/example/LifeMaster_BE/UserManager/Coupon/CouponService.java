@@ -5,14 +5,11 @@ import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import com.example.LifeMaster_BE.UserManager.Member.Subscription.MemberSubscriptionService;
 import com.example.LifeMaster_BE.UserManager.Member.Subscription.SubscriptionPlan;
 import lombok.RequiredArgsConstructor;
-import org.redisson.api.RLock;
-import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -20,34 +17,12 @@ public class CouponService {
     private final CouponRepository couponRepository;
     private final MemberRepository memberRepository;
     private final MemberSubscriptionService memberSubscriptionService;
-    private final RedissonClient redissonClient;
     private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private static final int CODE_LENGTH = 16;
 
-    // 1. 사용자 쿠폰 등록 (Redisson 분산 락)
-    public Coupon registerCoupon(Long userId, String couponCode) {
-        String lockKey = "lock:coupon:register:" + couponCode;
-        RLock lock = redissonClient.getLock(lockKey);
-
-        try {
-            boolean acquired = lock.tryLock(10, -1, TimeUnit.SECONDS);
-            if (!acquired) {
-                throw new IllegalStateException("락 획득 실패: 다른 요청 처리 중");
-            }
-
-            return doRegisterCoupon(userId, couponCode);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IllegalStateException("락 획득 중 인터럽트 발생", e);
-        } finally {
-            if (lock.isHeldByCurrentThread()) {
-                lock.unlock();
-            }
-        }
-    }
-
+    // 1. 사용자 쿠폰 등록
     @Transactional
-    public Coupon doRegisterCoupon(Long userId, String couponCode) {
+    public Coupon registerCoupon(Long userId, String couponCode) {
         MemberEntity user = memberRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("유저 없음"));
 

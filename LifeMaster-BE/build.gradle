@@ -37,6 +37,9 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-websocket'
 	// implementation 'org.springframework.boot:spring-boot-starter-messaging'
 
+	// AOP (분산 락)
+	implementation 'org.springframework.boot:spring-boot-starter-aop'
+
 	// Redis + Cache
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 	implementation 'org.springframework.boot:spring-boot-starter-cache'

@@ -13,7 +13,7 @@ import java.util.List;
 @RequestMapping("/coupon")
 public class CouponController {
 
-    private final CouponService couponService;
+    private final CouponFacade couponFacade;
 
     /** 1. 사용자 쿠폰 등록 */
     @PostMapping("/register")
@@ -26,7 +26,7 @@ public class CouponController {
         Long memberId = user.getId();
         String email = user.getUsername(); // 기존 로직 유지
 
-        return couponService.registerCoupon(memberId, dto.getCouponCode());
+        return couponFacade.registerCoupon(memberId, dto.getCouponCode());
     }
 
     /** 2. 사용자 쿠폰 사용 */
@@ -40,7 +40,7 @@ public class CouponController {
         Long memberId = user.getId();
         String email = user.getUsername(); // 기존 로직 유지
 
-        return couponService.useCoupon(memberId, dto.getCouponId());
+        return couponFacade.useCoupon(memberId, dto.getCouponId());
     }
 
     /** 3. 사용자 쿠폰 조회 */
@@ -52,7 +52,7 @@ public class CouponController {
         Long memberId = user.getId();
         String email = user.getUsername(); // 기존 로직 유지
 
-        return couponService.getUserCoupons(memberId);
+        return couponFacade.getUserCoupons(memberId);
     }
 
     /** 4. 관리자 쿠폰 생성 */
@@ -61,6 +61,6 @@ public class CouponController {
     public Coupon createCoupon(
             @RequestBody CouponDto.Create dto
     ) {
-        return couponService.createCoupon(dto.getCouponPercent());
+        return couponFacade.createCoupon(dto.getCouponPercent());
     }
 }
