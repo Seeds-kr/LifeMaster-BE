@@ -30,6 +30,7 @@ public interface PomodoroTimerRepository extends JpaRepository<PomodoroTimerEnti
     // ID + 회원 기준 조회
     Optional<PomodoroTimerEntity> findByIdAndMember_Id(Long id, Long memberId);
 
+
     // Todo ID 기준 전체 삭제
     @Transactional
     void deleteAllByTodoId(Long todoId);

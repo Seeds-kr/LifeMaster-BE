@@ -6,20 +6,14 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class PomodoroTimerDTO {
+public class PomodoroTimerUpdateRequestDto {
 
     @Schema(description = "작업명", example = "오늘 첫번째 할일")
     private String taskName;
 
     @Schema(description = "1회 집중 시간, 분 단위", example = "25")
-    private int focusTime;
+    private Integer focusTime;
 
     @Schema(description = "1회 휴식 시간, 분 단위", example = "5")
-    private int breakTime;
-
-    @Schema(description = "포모도로 날짜, yyyy-MM-dd 형식", example = "2026-06-14")
-    private String date;
-
-    @Schema(description = "연결할 Todo ID", example = "48")
-    private Long todoId;
+    private Integer breakTime;
 }

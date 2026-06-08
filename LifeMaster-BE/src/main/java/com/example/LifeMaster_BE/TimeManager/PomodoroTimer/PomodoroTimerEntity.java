@@ -18,16 +18,13 @@ public class PomodoroTimerEntity {
 
     private String taskName;
 
-    // 현재 타이머 값
-    private int currentTimer;
+    private int CurrentTimer;
 
-    // 1회 집중 시간, 분 단위
     private int focusTime;
 
-    // 1회 휴식 시간, 분 단위
     private int breakTime;
 
-    // 날짜 저장 형식: yyyyMMdd
+    // yyyyMMdd
     private String date;
 
     // 완료한 포모도로 반복 횟수

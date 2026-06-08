@@ -99,8 +99,24 @@ public class PomodoroTimerService {
              */
         }
 
-        LocalDate today = LocalDate.now(KOREA_ZONE_ID);
-        String formattedDate = today.format(TIMER_DATE_FORMATTER);
+        if (timerDto.getTaskName() == null || timerDto.getTaskName().isBlank()) {
+            throw new IllegalArgumentException("taskName is required.");
+        }
+
+        if (timerDto.getFocusTime() <= 0) {
+            throw new IllegalArgumentException("focusTime must be greater than 0.");
+        }
+
+        if (timerDto.getBreakTime() < 0) {
+            throw new IllegalArgumentException("breakTime must be 0 or greater.");
+        }
+
+        if (timerDto.getDate() == null || timerDto.getDate().isBlank()) {
+            throw new IllegalArgumentException("date is required. format: yyyy-MM-dd");
+        }
+
+        LocalDate parsedDate = parseApiDate(timerDto.getDate());
+        String formattedDate = toTimerDateKey(parsedDate);
 
         scheduleCalendarService.addOrUpdateEvent(
                 memberId,
@@ -115,6 +131,10 @@ public class PomodoroTimerService {
         pomodoroTimer.setFocusTime(timerDto.getFocusTime());
         pomodoroTimer.setBreakTime(timerDto.getBreakTime());
         pomodoroTimer.setTaskName(timerDto.getTaskName());
+
+        // 생성 시에는 무조건 0으로 고정
+        pomodoroTimer.setCurrentTimer(0);
+        pomodoroTimer.setCompletedCount(0);
 
         return repository.save(pomodoroTimer);
     }
@@ -311,10 +331,12 @@ public class PomodoroTimerService {
                 repository.findByMember_IdAndDate(memberId, timerDateKey);
 
         int totalFocusMinutes = todayTimers.stream()
-                .mapToInt(PomodoroTimerEntity::getFocusTime)
+                .mapToInt(timer -> timer.getFocusTime() * timer.getCompletedCount())
                 .sum();
 
-        int completedCount = todayTimers.size();
+        int completedCount = todayTimers.stream()
+                .mapToInt(PomodoroTimerEntity::getCompletedCount)
+                .sum();
 
         int averageFocusMinutes = completedCount == 0
                 ? 0
@@ -327,8 +349,6 @@ public class PomodoroTimerService {
         entity.setMember(member);
         entity.setDate(apiDate);
         entity.setFocusLevel(request.getFocusLevel());
-
-        // 서버가 PomodoroTimerEntity 기준으로 자동 계산해서 저장
         entity.setTotalFocusMinutes(totalFocusMinutes);
         entity.setCompletedCount(completedCount);
         entity.setAverageFocusMinutes(averageFocusMinutes);
@@ -469,4 +489,35 @@ public class PomodoroTimerService {
 
         dailyFocusRepository.delete(entity);
     }
+
+    @Transactional
+    public PomodoroTimerEntity updateTimer(
+            Long memberId,
+            Long timerId,
+            PomodoroTimerUpdateRequestDto request
+    ) {
+        PomodoroTimerEntity timer = repository.findByIdAndMember_Id(timerId, memberId)
+                .orElseThrow(() -> new EntityNotFoundException("Pomodoro timer not found"));
+
+        if (request.getTaskName() != null) {
+            timer.setTaskName(request.getTaskName());
+        }
+
+        if (request.getFocusTime() != null) {
+            if (request.getFocusTime() <= 0) {
+                throw new IllegalArgumentException("focusTime must be greater than 0.");
+            }
+            timer.setFocusTime(request.getFocusTime());
+        }
+
+        if (request.getBreakTime() != null) {
+            if (request.getBreakTime() < 0) {
+                throw new IllegalArgumentException("breakTime must be 0 or greater.");
+            }
+            timer.setBreakTime(request.getBreakTime());
+        }
+
+        return repository.save(timer);
+    }
+
 }

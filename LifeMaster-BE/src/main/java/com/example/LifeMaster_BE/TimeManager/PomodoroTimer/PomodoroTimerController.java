@@ -2,9 +2,7 @@ package com.example.LifeMaster_BE.TimeManager.PomodoroTimer;
 
 import com.example.LifeMaster_BE.FunctionManager.Calender.ScheduleCalendarService;
 import com.example.LifeMaster_BE.Security.CustomUserDetails;
-import com.example.LifeMaster_BE.TimeManager.PomodoroTimer.Dto.PomodoroFocusSaveRequestDto;
-import com.example.LifeMaster_BE.TimeManager.PomodoroTimer.Dto.PomodoroTimerDTO;
-import com.example.LifeMaster_BE.TimeManager.PomodoroTimer.Dto.PomodoroTimerResponseDto;
+import com.example.LifeMaster_BE.TimeManager.PomodoroTimer.Dto.*;
 import com.example.LifeMaster_BE.UserManager.Login;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -12,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import com.example.LifeMaster_BE.TimeManager.PomodoroTimer.Dto.PomodoroCompleteRequestDto;
 
 import java.util.List;
 import java.util.Optional;
@@ -55,30 +52,44 @@ public class PomodoroTimerController {
         return service.findByDate(date);
     }
 
-    @Operation(summary = "새로운 포모도로 타이머 생성",
-            description = "새로운 포모도로 타이머를 생성하고, 캘린더에 관련 항목을 추가합니다.")
+    @Operation(
+            summary = "새로운 포모도로 타이머 생성",
+            description = "로그인된 회원 본인의 포모도로 타이머를 생성합니다. " +
+                    "요청에서는 작업명, 집중 시간, 휴식 시간, 날짜, Todo ID를 받습니다. " +
+                    "날짜는 yyyy-MM-dd 형식으로 요청하며, 서버에서는 yyyyMMdd 형식으로 변환해 저장합니다. " +
+                    "CurrentTimer와 completedCount는 생성 시 항상 0으로 저장되며 요청값으로 받지 않습니다. " +
+                    "회원 ID는 요청값으로 받지 않고 JWT 인증 정보에서 가져옵니다."
+    )
     @PostMapping("/create")
-    public ResponseEntity<?> createTimer(@RequestBody PomodoroTimerDTO timer, @AuthenticationPrincipal CustomUserDetails user) {
+    public ResponseEntity<?> createTimer(
+            @RequestBody PomodoroTimerDTO timer,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
         ResponseEntity<?> loginCheck = login.checkLogin(user);
         if (loginCheck != null) return loginCheck;
+
         Long memberId = user.getId();
-        PomodoroTimerEntity pomodoroTimerEntity = service.create(timer,memberId);
+        PomodoroTimerEntity pomodoroTimerEntity = service.create(timer, memberId);
 
         return ResponseEntity.ok(pomodoroTimerEntity);
     }
 
-    @Operation(summary = "ID로 특정 포모도로 타이머 업데이트",
-            description = "ID를 사용해 특정 포모도로 타이머의 정보를 업데이트합니다.")
+    @Operation(
+            summary = "포모도로 타이머 수정",
+            description = "로그인된 회원 본인의 포모도로 타이머를 수정합니다. " +
+                    "수정 가능한 항목은 작업명, 집중 시간, 휴식 시간입니다. " +
+                    "완료 횟수, 날짜, 회원 정보, Todo 연결 정보는 이 API에서 수정하지 않습니다."
+    )
     @PutMapping("/{id}")
-    public ResponseEntity<PomodoroTimerEntity> updateTimer(@PathVariable(name = "id") Long id, @RequestBody PomodoroTimerEntity timerDetails) {
-        return service.findById(id).map(timer -> {
-            timer.setTaskName(timerDetails.getTaskName());
-            timer.setCurrentTimer(timerDetails.getCurrentTimer());
-            timer.setFocusTime(timerDetails.getFocusTime());
-            timer.setBreakTime(timerDetails.getBreakTime());
-            timer.setDate(timerDetails.getDate());
-            return ResponseEntity.ok(service.save(timer));
-        }).orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<?> updateTimer(
+            @PathVariable(name = "id") Long id,
+            @RequestBody PomodoroTimerUpdateRequestDto request,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        ResponseEntity<?> loginCheck = login.checkLogin(user);
+        if (loginCheck != null) return loginCheck;
+
+        return ResponseEntity.ok(service.updateTimer(user.getId(), id, request));
     }
 
     @Operation(summary = "ID로 특정 포모도로 타이머 삭제",
