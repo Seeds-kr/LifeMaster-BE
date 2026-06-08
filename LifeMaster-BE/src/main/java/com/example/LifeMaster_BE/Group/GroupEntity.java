@@ -53,6 +53,9 @@ public class GroupEntity {
     @Column(nullable = false)
     private GroupAccessType accessType = GroupAccessType.PUBLIC;
 
+    @Column(unique = true, length = 8)
+    private String inviteCode;
+
     public GroupEntity() {}
 
     public GroupEntity(

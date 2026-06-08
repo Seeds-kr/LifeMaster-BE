@@ -6,11 +6,16 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
-
-import java.util.List;
 import java.util.Optional;
 
 public interface GroupRepository extends JpaRepository<GroupEntity, Long> {
+
+    // 초대 코드로 그룹 조회
+    Optional<GroupEntity> findByInviteCode(String inviteCode);
+
+    // 초대 코드 중복 확인
+    boolean existsByInviteCode(String inviteCode);
+
     // 특정 유저 ID로 사용자가 속한 그룹의 목표 조회
     @Query("SELECT g.goals FROM GroupEntity g JOIN g.members m WHERE m.id = :memberId")
     List<GoalEntity> findGoalsByMemberId(@Param("memberId") Long memberId);

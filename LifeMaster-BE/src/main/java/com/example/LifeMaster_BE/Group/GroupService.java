@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import com.example.LifeMaster_BE.Group.Goal.GoalCondition;
 import com.example.LifeMaster_BE.Group.Goal.GoalDuration;
+import java.security.SecureRandom;
 
 import java.time.*;
 import java.util.*;
@@ -588,10 +589,12 @@ public class GroupService {
         goalRepository.deleteByGroupId(groupId);
     }
 
-    // 초대 코드 생성 (그룹 ID + 해싱된 비밀번호 조합)
+    // 초대 코드 생성
+    @Transactional
     public String generateInviteCode(Long groupId, Long requestUserId) {
 
         MemberEntity member = getMemberOrThrow(requestUserId);
+
         // 프리미엄 기능 접근 검사
         subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
 
@@ -609,7 +612,12 @@ public class GroupService {
             throw new IllegalArgumentException("Group password is not set.");
         }
 
-        return groupId + ":" + groupPasswordHash;
+        if (group.getInviteCode() == null || group.getInviteCode().isBlank()) {
+            group.setInviteCode(generateShortInviteCode());
+            groupRepository.save(group);
+        }
+
+        return group.getInviteCode();
     }
 
     // 초대 코드로 그룹 가입
@@ -617,28 +625,21 @@ public class GroupService {
     public String joinGroupWithInviteCode(Long userId, String inviteCode) {
 
         MemberEntity member = getMemberOrThrow(userId);
+
         // 프리미엄 기능 접근 검사
         subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
 
-        String[] parts = inviteCode.split(":");
-        if (parts.length != 2) {
-            throw new IllegalArgumentException("Invalid invite code format. Expected: groupId:passwordHash");
+        if (inviteCode == null || inviteCode.isBlank()) {
+            throw new IllegalArgumentException("Invite code is required.");
         }
 
-        Long groupId = Long.parseLong(parts[0]);
-        String inviteHash = parts[1];
+        String normalizedInviteCode = inviteCode.trim().toUpperCase();
 
-        GroupEntity group = groupRepository.findById(groupId)
-                .orElseThrow(() -> new IllegalArgumentException("Group not found with ID: " + groupId));
+        GroupEntity group = groupRepository.findByInviteCode(normalizedInviteCode)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid invite code."));
 
-        String dbHash = group.getPassword();
-        if (dbHash == null || dbHash.isBlank()) {
-            throw new IllegalArgumentException("Group password is not set.");
-        }
-
-        // ✅ 해시 문자열 동일 비교
-        if (!dbHash.equals(inviteHash)) {
-            throw new IllegalArgumentException("Invalid invite code.");
+        if (group.getAccessType() == GroupAccessType.PUBLIC) {
+            throw new IllegalArgumentException("Public group does not require invite code.");
         }
 
         if (group.getMembers().contains(member)) {
@@ -647,9 +648,10 @@ public class GroupService {
 
         group.getMembers().add(member);
         member.getGroups().add(group);
+
         groupRepository.save(group);
 
-        groupMemberService.joinAsMember(groupId, userId);
+        groupMemberService.joinAsMember(group.getId(), userId);
 
         return "User successfully joined the group.";
     }
@@ -847,5 +849,26 @@ public class GroupService {
     private MemberEntity getMemberOrThrow(Long userId) {
         return memberRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
+    }
+
+    private static final String INVITE_CODE_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    private static final int INVITE_CODE_LENGTH = 8;
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+
+    private String generateShortInviteCode() {
+        String code;
+
+        do {
+            StringBuilder sb = new StringBuilder(INVITE_CODE_LENGTH);
+
+            for (int i = 0; i < INVITE_CODE_LENGTH; i++) {
+                int index = SECURE_RANDOM.nextInt(INVITE_CODE_CHARS.length());
+                sb.append(INVITE_CODE_CHARS.charAt(index));
+            }
+
+            code = sb.toString();
+        } while (groupRepository.existsByInviteCode(code));
+
+        return code;
     }
 }
