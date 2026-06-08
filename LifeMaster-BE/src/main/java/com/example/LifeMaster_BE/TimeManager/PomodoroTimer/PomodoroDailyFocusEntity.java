@@ -24,10 +24,11 @@ public class PomodoroDailyFocusEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // API 기준 날짜 형식: yyyy-MM-dd
+    // yyyy-MM-dd
     @Column(nullable = false)
     private String date;
 
+    @Column(nullable = false)
     private int totalFocusMinutes;
 
     @Enumerated(EnumType.STRING)

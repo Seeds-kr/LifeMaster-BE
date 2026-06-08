@@ -185,7 +185,9 @@ public class PomodoroTimerController {
             summary = "포모도로 통계 조회",
             description = "로그인된 회원 본인의 포모도로 통계를 조회합니다. " +
                     "입력한 날짜를 기준으로 오늘 총 집중 시간, 평소보다 더 집중한 시간, 완료 횟수, 평균 집중 시간, 주간 누적 집중 시간을 반환합니다. " +
-                    "회원 ID는 요청값으로 받지 않고, JWT 인증 정보에서 가져온 로그인 회원 ID를 기준으로 조회합니다."
+                    "집중 시간 통계는 pomodoro_daily_focus에 저장된 totalFocusMinutes를 기준으로 계산합니다. " +
+                    "완료 횟수는 pomodoro_timer 기록 개수를 기준으로 계산합니다. " +
+                    "회원 ID는 요청값으로 받지 않고 JWT 인증 정보에서 가져옵니다."
     )
     @GetMapping("/stats")
     public ResponseEntity<?> getPomodoroStats(
@@ -200,9 +202,10 @@ public class PomodoroTimerController {
 
     @Operation(
             summary = "오늘의 집중도 저장",
-            description = "로그인된 회원 본인의 특정 날짜 집중도를 저장하거나 수정합니다. " +
-                    "같은 날짜의 집중도 데이터가 이미 있으면 수정하고, 없으면 새로 생성합니다. " +
-                    "회원 ID는 요청값으로 받지 않고, JWT 인증 정보에서 가져온 로그인 회원 ID를 기준으로 저장합니다."
+            description = "로그인된 회원 본인의 특정 날짜 총 집중 시간과 집중 레벨을 저장하거나 수정합니다. " +
+                    "같은 날짜의 데이터가 이미 있으면 수정하고, 없으면 새로 생성합니다. " +
+                    "focusLevel은 LOW, NORMAL, GOOD, VERY_GOOD 중 하나를 선택합니다. " +
+                    "회원 ID는 요청값으로 받지 않고 JWT 인증 정보에서 가져옵니다."
     )
     @PostMapping("/focus")
     public ResponseEntity<?> saveDailyFocus(
@@ -219,8 +222,9 @@ public class PomodoroTimerController {
             summary = "최근 7일 집중 데이터 조회",
             description = "로그인된 회원 본인의 최근 7일 집중 데이터를 조회합니다. " +
                     "endDate를 포함한 최근 7일의 날짜별 총 집중 시간과 저장된 집중 레벨을 반환합니다. " +
-                    "포모도로 기록이 없는 날짜는 totalFocusMinutes가 0, 저장된 집중 레벨이 없는 날짜는 focusLevel이 null로 반환됩니다. " +
-                    "회원 ID는 요청값으로 받지 않고, JWT 인증 정보에서 가져온 로그인 회원 ID를 기준으로 조회합니다."
+                    "집중 시간은 pomodoro_daily_focus에 저장된 totalFocusMinutes를 기준으로 반환합니다. " +
+                    "기록이 없는 날짜는 totalFocusMinutes가 0, focusLevel이 null로 반환됩니다. " +
+                    "회원 ID는 요청값으로 받지 않고 JWT 인증 정보에서 가져옵니다."
     )
     @GetMapping("/focus/recent")
     public ResponseEntity<?> getRecent7DaysFocus(
