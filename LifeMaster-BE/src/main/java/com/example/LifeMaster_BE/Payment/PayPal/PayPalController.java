@@ -16,6 +16,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.view.RedirectView;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -78,32 +81,42 @@ public class PayPalController {
     @GetMapping("/success")
     @Operation(
             summary = "PayPal 결제 성공 콜백",
-            description = "PayPal 결제 승인 후 자동으로 호출되며, 저장된 orderId-member 매핑으로 결제를 캡처하고 DB에 저장합니다."
+            description = "PayPal 결제 승인 후 자동으로 호출되며, 결제를 캡처하고 DB에 저장한 뒤 앱으로 리다이렉트합니다."
     )
-    public ResponseEntity<?> success(
+    public RedirectView success(
             @RequestParam("token") String orderId,
             @RequestParam(value = "PayerID", required = false) String payerId
     ) {
-        PayPalOrderEntity paypalOrder = payPalOrderRepository.findByPaypalOrderId(orderId)
-                .orElseThrow(() -> new RuntimeException("주문 매핑 정보를 찾을 수 없습니다. orderId=" + orderId));
+        try {
+            PayPalOrderEntity paypalOrder = payPalOrderRepository.findByPaypalOrderId(orderId)
+                    .orElseThrow(() -> new RuntimeException("주문 매핑 정보를 찾을 수 없습니다. orderId=" + orderId));
 
-        MemberEntity member = paypalOrder.getMember();
-        String result = payPalService.captureOrder(orderId, member);
+            MemberEntity member = paypalOrder.getMember();
 
-        return ResponseEntity.ok(Map.of(
-                "message", "결제 성공 및 저장 완료",
-                "orderId", orderId,
-                "payerId", payerId == null ? "" : payerId,
-                "result", result
-        ));
+            String result = payPalService.captureOrder(orderId, member);
+
+            String redirectUrl = "lifemaster://payment/success"
+                    + "?orderId=" + encode(orderId)
+                    + "&payerId=" + encode(payerId == null ? "" : payerId)
+                    + "&message=" + encode("결제 성공 및 저장 완료");
+
+            return new RedirectView(redirectUrl);
+
+        } catch (Exception e) {
+            String redirectUrl = "lifemaster://payment/fail"
+                    + "?orderId=" + encode(orderId)
+                    + "&message=" + encode(e.getMessage());
+
+            return new RedirectView(redirectUrl);
+        }
     }
 
     @GetMapping("/cancel")
     @Operation(
             summary = "PayPal 결제 취소 콜백",
-            description = "사용자가 결제를 취소했을 때 호출됩니다."
+            description = "사용자가 결제를 취소했을 때 호출되며, 앱으로 리다이렉트합니다."
     )
-    public ResponseEntity<?> cancel(
+    public RedirectView cancel(
             @RequestParam(value = "token", required = false) String orderId
     ) {
         if (orderId != null) {
@@ -113,11 +126,15 @@ public class PayPalController {
             });
         }
 
-        return ResponseEntity.ok(Map.of(
-                "message", "결제가 취소되었습니다.",
-                "orderId", orderId == null ? "" : orderId,
-                "cancelledAt", LocalDateTime.now().toString()
-        ));
+        String redirectUrl = "lifemaster://payment/cancel"
+                + "?orderId=" + encode(orderId == null ? "" : orderId)
+                + "&message=" + encode("결제가 취소되었습니다.");
+
+        return new RedirectView(redirectUrl);
+    }
+
+    private String encode(String value) {
+        return URLEncoder.encode(value == null ? "" : value, StandardCharsets.UTF_8);
     }
 
     @Operation(
