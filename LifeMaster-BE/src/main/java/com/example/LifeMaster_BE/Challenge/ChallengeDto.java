@@ -1,8 +1,7 @@
 package com.example.LifeMaster_BE.Challenge;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Builder;
-import lombok.Getter;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -44,6 +43,8 @@ public class ChallengeDto {
 
     @Builder
     @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
     @Schema(name = "ChallengeCompleteRequest")
     public static class CompleteRequest {
         private Long challId;

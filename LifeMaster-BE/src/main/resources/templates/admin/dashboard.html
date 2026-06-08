@@ -578,6 +578,127 @@
                 </div>
             </div>
 
+            <!-- 챌린지 상세 -->
+            <div id="page-challenge-detail" class="page-section" style="display:none;">
+                <div class="breadcrumb">Home / <span>챌린지 상세</span></div>
+
+                <!-- 상단 요약 -->
+                <div class="summary-grid">
+                    <div class="summary-card purple">
+                        <h3 id="challengeTotalCount">0</h3>
+                        <p>전체 챌린지</p>
+                    </div>
+
+                    <div class="summary-card blue">
+                        <h3 id="myChallengeCount">0</h3>
+                        <p>내 참여 챌린지</p>
+                    </div>
+
+                    <div class="summary-card yellow">
+                        <h3 id="todayCompletedCount">0</h3>
+                        <p>오늘 완료</p>
+                    </div>
+
+                    <div class="summary-card red">
+                        <h3 id="completionRate">0%</h3>
+                        <p>완료율</p>
+                    </div>
+                </div>
+
+                <!-- 챌린지 목록 -->
+                <div class="table-card">
+                    <div class="table-header">
+                        <div>
+                            <h2>전체 챌린지 목록</h2>
+                            <p>등록된 챌린지와 참여 상태를 확인합니다.</p>
+                        </div>
+
+                        <div class="filter-box">
+                            <input type="text" id="challengeSearchInput" placeholder="챌린지 이름 검색">
+                            <button onclick="loadChallenges()">조회</button>
+                        </div>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>이미지</th>
+                                <th>챌린지명</th>
+                                <th>설명</th>
+                                <th>참여자 수</th>
+                                <th>내 참여 여부</th>
+                                <th>작업</th>
+                            </tr>
+                            </thead>
+
+                            <tbody id="challengeTableBody"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="pagination-box">
+                        <button id="challengePrevBtn" onclick="prevChallengePage()">이전</button>
+                        <span id="challengePageInfo">1 / 1</span>
+                        <button id="challengeNextBtn" onclick="nextChallengePage()">다음</button>
+                    </div>
+                </div>
+
+                <!-- 내 챌린지 -->
+                <div class="table-card">
+                    <div class="table-header">
+                        <div>
+                            <h2>내 챌린지</h2>
+                            <p>내가 현재 참여 중인 챌린지 목록입니다.</p>
+                        </div>
+
+                        <button onclick="loadMyChallenges()">새로고침</button>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>챌린지명</th>
+                                <th>설명</th>
+                                <th>참여자 수</th>
+                                <th>작업</th>
+                            </tr>
+                            </thead>
+
+                            <tbody id="myChallengeTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 오늘 완료 챌린지 -->
+                <div class="table-card">
+                    <div class="table-header">
+                        <div>
+                            <h2>오늘 완료한 챌린지</h2>
+                            <p>오늘 기준으로 완료 처리된 챌린지 기록입니다.</p>
+                        </div>
+
+                        <button onclick="loadCompletedChallenges()">새로고침</button>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                            <tr>
+                                <th>챌린지 ID</th>
+                                <th>완료 상태</th>
+                                <th>완료 시간</th>
+                            </tr>
+                            </thead>
+
+                            <tbody id="challengeCompleteTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
         </section>
     </div>
 </div>
@@ -590,6 +711,7 @@
 <script src="/js/admin/admin-members.js"></script>
 <script src="/js/admin/admin-groups.js"></script>
 <script src="/js/admin/admin-stats.js"></script>
+<script src="/js/admin/admin-challenge.js"></script>
 
 </body>
 </html>
