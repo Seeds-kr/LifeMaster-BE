@@ -26,6 +26,7 @@ import org.springframework.web.server.ResponseStatusException;
 import com.example.LifeMaster_BE.Group.Goal.GoalCondition;
 import com.example.LifeMaster_BE.Group.Goal.GoalDuration;
 
+import java.security.SecureRandom;
 import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -51,6 +52,7 @@ public class GroupService {
     private final GoalAchievementRepository goalAchievementRepository;
 
     private final SubscriptionAccessService subscriptionAccessService;
+    private final InviteCodeRepository inviteCodeRepository;
 
 
     // Create a group
@@ -589,57 +591,114 @@ public class GroupService {
     }
 
     // 초대 코드 생성 (그룹 ID + 해싱된 비밀번호 조합)
+    private static final String INVITE_CHARACTERS =
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+    private String generateRandomCode() {
+
+        Random random = new SecureRandom();
+
+        String code;
+
+        do {
+
+            StringBuilder sb = new StringBuilder();
+
+            for (int i = 0; i < 6; i++) {
+                sb.append(
+                        INVITE_CHARACTERS.charAt(
+                                random.nextInt(INVITE_CHARACTERS.length())
+                        )
+                );
+            }
+
+            code = sb.toString();
+
+        } while (inviteCodeRepository.existsByCode(code));
+
+        return code;
+    }
+
+    @Transactional
     public String generateInviteCode(Long groupId, Long requestUserId) {
 
         MemberEntity member = getMemberOrThrow(requestUserId);
-        // 프리미엄 기능 접근 검사
-        subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
 
-        groupMemberService.requireAtLeastAdmin(groupId, requestUserId);
+        subscriptionAccessService.validateFeatureAccess(
+                member,
+                FeatureType.GROUP
+        );
+
+        groupMemberService.requireAtLeastAdmin(
+                groupId,
+                requestUserId
+        );
 
         GroupEntity group = groupRepository.findById(groupId)
-                .orElseThrow(() -> new IllegalArgumentException("Group not found with ID: " + groupId));
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "Group not found with ID: " + groupId
+                        )
+                );
 
         if (group.getAccessType() == GroupAccessType.PUBLIC) {
-            throw new IllegalArgumentException("Public group does not require invite code.");
+            throw new IllegalArgumentException(
+                    "Public group does not require invite code."
+            );
         }
 
-        String groupPasswordHash = group.getPassword();
-        if (groupPasswordHash == null || groupPasswordHash.isBlank()) {
-            throw new IllegalArgumentException("Group password is not set.");
-        }
+        String code = generateRandomCode();
 
-        return groupId + ":" + groupPasswordHash;
+        InviteCode inviteCode = InviteCode.builder()
+                .code(code)
+                .group(group)
+                .expiresAt(LocalDateTime.now().plusDays(7))
+                .build();
+
+        inviteCodeRepository.save(inviteCode);
+
+        return code;
     }
 
     // 초대 코드로 그룹 가입
     @Transactional
-    public String joinGroupWithInviteCode(Long userId, String inviteCode) {
+    public String joinGroupWithInviteCode(
+            Long userId,
+            String inviteCode
+    ) {
 
         MemberEntity member = getMemberOrThrow(userId);
-        // 프리미엄 기능 접근 검사
-        subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
 
-        String[] parts = inviteCode.split(":");
-        if (parts.length != 2) {
-            throw new IllegalArgumentException("Invalid invite code format. Expected: groupId:passwordHash");
+        subscriptionAccessService.validateFeatureAccess(
+                member,
+                FeatureType.GROUP
+        );
+
+        InviteCode invite = inviteCodeRepository
+                .findByCode(inviteCode)
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "Invalid invite code."
+                        )
+                );
+
+        if (invite.getExpiresAt().isBefore(LocalDateTime.now())) {
+
+            inviteCodeRepository.delete(invite);
+
+            throw new IllegalArgumentException(
+                    "Invite code has expired."
+            );
         }
 
-        Long groupId = Long.parseLong(parts[0]);
-        String inviteHash = parts[1];
+        Long groupId = invite.getGroup().getId();
 
         GroupEntity group = groupRepository.findById(groupId)
-                .orElseThrow(() -> new IllegalArgumentException("Group not found with ID: " + groupId));
-
-        String dbHash = group.getPassword();
-        if (dbHash == null || dbHash.isBlank()) {
-            throw new IllegalArgumentException("Group password is not set.");
-        }
-
-        // ✅ 해시 문자열 동일 비교
-        if (!dbHash.equals(inviteHash)) {
-            throw new IllegalArgumentException("Invalid invite code.");
-        }
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "Group not found."
+                        )
+                );
 
         if (group.getMembers().contains(member)) {
             return "User already in the group.";
@@ -647,9 +706,13 @@ public class GroupService {
 
         group.getMembers().add(member);
         member.getGroups().add(group);
+
         groupRepository.save(group);
 
-        groupMemberService.joinAsMember(groupId, userId);
+        groupMemberService.joinAsMember(
+                groupId,
+                userId
+        );
 
         return "User successfully joined the group.";
     }
