@@ -196,10 +196,13 @@ public class PomodoroTimerController {
     @Operation(
             summary = "포모도로 통계 조회",
             description = "로그인된 회원 본인의 포모도로 통계를 조회합니다. " +
-                    "입력한 날짜를 기준으로 오늘 총 누적 집중 시간, 오늘 평균 집중 시간, 완료 횟수, 평소 대비 차이값, 주간 누적 집중 시간을 반환합니다. " +
-                    "오늘 통계는 pomodoro_daily_focus에 저장된 일일 통계 스냅샷을 기준으로 조회합니다. " +
+                    "통계는 pomodoro_timer 원본 기록을 기준으로 계산합니다. " +
+                    "오늘 총 누적 집중 시간은 focusTime * completedCount 합계입니다. " +
+                    "완료 횟수는 completedCount 합계입니다. " +
+                    "평균 집중 시간은 총 누적 집중 시간 / 완료 횟수입니다. " +
                     "focusMinutesDiff는 오늘 누적 집중 시간과 직전 30일의 하루 누적 집중 시간 평균의 차이입니다. " +
                     "averageFocusMinutesDiff는 오늘 평균 집중 시간과 직전 30일의 하루 평균 집중 시간 평균의 차이입니다. " +
+                    "이 API에서는 집중도 focusLevel을 반환하지 않습니다. " +
                     "회원 ID는 요청값으로 받지 않고 JWT 인증 정보에서 가져옵니다."
     )
     @GetMapping("/stats")
@@ -215,9 +218,9 @@ public class PomodoroTimerController {
 
     @Operation(
             summary = "오늘의 집중도 저장",
-            description = "로그인된 회원 본인의 특정 날짜 집중도를 저장하거나 수정합니다. " +
+            description = "로그인된 회원 본인의 특정 날짜 집중도만 저장하거나 수정합니다. " +
                     "요청에서는 date와 focusLevel만 받습니다. " +
-                    "오늘 총 누적 집중 시간, 완료한 포모도로 횟수, 오늘 평균 집중 시간은 해당 날짜의 pomodoro_timer 기록에서 서버가 자동 계산하여 저장합니다. " +
+                    "총 집중 시간, 완료 횟수, 평균 집중 시간은 저장하지 않습니다. " +
                     "focusLevel은 LOW, NORMAL, GOOD, VERY_GOOD 중 하나를 선택합니다. " +
                     "회원 ID는 요청값으로 받지 않고 JWT 인증 정보에서 가져옵니다."
     )
@@ -235,7 +238,8 @@ public class PomodoroTimerController {
     @Operation(
             summary = "최근 7일 집중 데이터 조회",
             description = "로그인된 회원 본인의 최근 7일 집중 데이터를 조회합니다. " +
-                    "endDate를 포함한 최근 7일의 날짜별 총 누적 집중 시간, 완료 횟수, 평균 집중 시간, 저장된 집중 레벨을 반환합니다. " +
+                    "총 누적 집중 시간, 완료 횟수, 평균 집중 시간은 pomodoro_timer 원본 기록에서 계산합니다. " +
+                    "focusLevel은 pomodoro_daily_focus에 저장된 집중도 값을 함께 반환합니다. " +
                     "기록이 없는 날짜는 totalFocusMinutes, completedCount, averageFocusMinutes가 0이고 focusLevel은 null로 반환됩니다. " +
                     "회원 ID는 요청값으로 받지 않고 JWT 인증 정보에서 가져옵니다."
     )

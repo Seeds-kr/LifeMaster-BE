@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.*;
@@ -26,8 +25,6 @@ public class PomodoroTimerService {
     private final TodoRepository todoRepository;
     private final ScheduleCalendarService scheduleCalendarService;
     private final PomodoroDailyFocusRepository dailyFocusRepository;
-
-    private static final ZoneId KOREA_ZONE_ID = ZoneId.of("Asia/Seoul");
 
     private static final DateTimeFormatter API_DATE_FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -75,8 +72,10 @@ public class PomodoroTimerService {
     /**
      * 새로운 포모도로 타이머 생성
      *
-     * 날짜는 한국 시간 기준으로 저장됩니다.
-     * 저장 형식: yyyyMMdd
+     * 요청 날짜 형식: yyyy-MM-dd
+     * 저장 날짜 형식: yyyyMMdd
+     *
+     * 생성 시 CurrentTimer와 completedCount는 항상 0으로 고정합니다.
      */
     @Transactional
     public PomodoroTimerEntity create(PomodoroTimerDTO timerDto, Long memberId) {
@@ -118,6 +117,7 @@ public class PomodoroTimerService {
         LocalDate parsedDate = parseApiDate(timerDto.getDate());
         String formattedDate = toTimerDateKey(parsedDate);
 
+        // 달력 저장 유지
         scheduleCalendarService.addOrUpdateEvent(
                 memberId,
                 formattedDate,
@@ -183,41 +183,27 @@ public class PomodoroTimerService {
     /**
      * 포모도로 통계 조회
      *
-     * 요청 date 형식: yyyy-MM-dd
+     * 통계는 pomodoro_daily_focus가 아니라 pomodoro_timer 원본 기록 기준으로 계산합니다.
      *
-     * 계산 기준:
-     * - 오늘 총 집중 시간: 해당 날짜 포모도로 focusTime 합계
-     * - 오늘의 집중도: PomodoroDailyFocusEntity에 저장된 focusLevel
-     * - 평소보다 더 집중한 시간: 오늘 총 집중 시간 - 직전 30일 하루 평균 집중 시간
-     * - 완료한 뽀모도로 횟수: 해당 날짜 포모도로 기록 개수
-     * - 완료 횟수 차이: 오늘 완료 횟수 - 직전 30일 하루 평균 완료 횟수
-     * - 평균 집중 시간: 오늘 총 집중 시간 / 오늘 완료 횟수
-     * - 평균 집중 시간 차이: 오늘 평균 집중 시간 - 직전 30일 포모도로 1회당 평균 집중 시간
-     * - 주간 누적 집중 시간: 오늘 포함 최근 7일 focusTime 합계
+     * 계산식:
+     * - 오늘 총 누적 집중 시간 = sum(focusTime * completedCount)
+     * - 오늘 완료 횟수 = sum(completedCount)
+     * - 오늘 평균 집중 시간 = 오늘 총 누적 집중 시간 / 오늘 완료 횟수
+     * - focusMinutesDiff = 오늘 총 누적 집중 시간 - 직전 30일 하루 누적 집중 시간 평균
+     * - completedCountDiff = 오늘 완료 횟수 - 직전 30일 하루 완료 횟수 평균
+     * - averageFocusMinutesDiff = 오늘 평균 집중 시간 - 직전 30일 하루 평균 집중 시간 평균
+     * - weeklyTotalFocusMinutes = 오늘 포함 최근 7일 총 누적 집중 시간
      */
     public PomodoroStatsResponseDto getPomodoroStats(Long memberId, String date) {
         LocalDate targetDate = parseApiDate(date);
         String apiDate = targetDate.format(API_DATE_FORMATTER);
 
-        PomodoroDailyFocusEntity todayFocus =
-                dailyFocusRepository.findByMember_IdAndDate(memberId, apiDate)
-                        .orElse(null);
+        DailyPomodoroSummary todaySummary =
+                calculateDailyPomodoroSummary(memberId, targetDate);
 
-        int todayTotalFocusMinutes = todayFocus != null
-                ? todayFocus.getTotalFocusMinutes()
-                : 0;
-
-        int completedCount = todayFocus != null
-                ? todayFocus.getCompletedCount()
-                : 0;
-
-        int averageFocusMinutes = todayFocus != null
-                ? todayFocus.getAverageFocusMinutes()
-                : 0;
-
-        PomodoroFocusLevel focusLevel = todayFocus != null
-                ? todayFocus.getFocusLevel()
-                : null;
+        int todayTotalFocusMinutes = todaySummary.totalFocusMinutes;
+        int completedCount = todaySummary.completedCount;
+        int averageFocusMinutes = todaySummary.averageFocusMinutes;
 
         /*
          * 평소 평균 기준
@@ -226,44 +212,45 @@ public class PomodoroTimerService {
         LocalDate baselineStartDate = targetDate.minusDays(BASELINE_DAYS);
         LocalDate baselineEndDate = targetDate.minusDays(1);
 
-        List<PomodoroDailyFocusEntity> baselineFocusList =
-                dailyFocusRepository.findByMember_IdAndDateBetweenOrderByDateAsc(
+        Map<String, DailyPomodoroSummary> baselineSummaryMap =
+                calculateDailyPomodoroSummaryMap(
                         memberId,
-                        baselineStartDate.format(API_DATE_FORMATTER),
-                        baselineEndDate.format(API_DATE_FORMATTER)
+                        baselineStartDate,
+                        baselineEndDate
                 );
 
-        int baselineTotalFocusMinutes = baselineFocusList.stream()
-                .mapToInt(PomodoroDailyFocusEntity::getTotalFocusMinutes)
-                .sum();
+        int baselineTotalFocusMinutesSum = 0;
+        int baselineCompletedCountSum = 0;
+        int baselineAverageFocusMinutesSum = 0;
+
+        for (int i = 0; i < BASELINE_DAYS; i++) {
+            LocalDate currentDate = baselineStartDate.plusDays(i);
+            String currentApiDate = currentDate.format(API_DATE_FORMATTER);
+
+            DailyPomodoroSummary summary = baselineSummaryMap.getOrDefault(
+                    currentApiDate,
+                    DailyPomodoroSummary.empty()
+            );
+
+            baselineTotalFocusMinutesSum += summary.totalFocusMinutes;
+            baselineCompletedCountSum += summary.completedCount;
+            baselineAverageFocusMinutesSum += summary.averageFocusMinutes;
+        }
 
         int baselineTotalFocusAverage =
-                Math.round((float) baselineTotalFocusMinutes / BASELINE_DAYS);
+                Math.round((float) baselineTotalFocusMinutesSum / BASELINE_DAYS);
 
         int focusMinutesDiff =
                 todayTotalFocusMinutes - baselineTotalFocusAverage;
 
-        int baselineCompletedCountTotal = baselineFocusList.stream()
-                .mapToInt(PomodoroDailyFocusEntity::getCompletedCount)
-                .sum();
-
         int baselineCompletedCountAverage =
-                Math.round((float) baselineCompletedCountTotal / BASELINE_DAYS);
+                Math.round((float) baselineCompletedCountSum / BASELINE_DAYS);
 
         int completedCountDiff =
                 completedCount - baselineCompletedCountAverage;
 
-        /*
-         * 30일간의 집중 시간 평균
-         * 누적 집중 시간 평균이 아니라,
-         * daily_focus.averageFocusMinutes의 30일 평균
-         */
-        int baselineAverageFocusMinutesTotal = baselineFocusList.stream()
-                .mapToInt(PomodoroDailyFocusEntity::getAverageFocusMinutes)
-                .sum();
-
         int baselineAverageFocusMinutes =
-                Math.round((float) baselineAverageFocusMinutesTotal / BASELINE_DAYS);
+                Math.round((float) baselineAverageFocusMinutesSum / BASELINE_DAYS);
 
         int averageFocusMinutesDiff =
                 averageFocusMinutes - baselineAverageFocusMinutes;
@@ -275,16 +262,26 @@ public class PomodoroTimerService {
         LocalDate weekStartDate = targetDate.minusDays(RECENT_DAYS - 1);
         LocalDate weekEndDate = targetDate;
 
-        List<PomodoroDailyFocusEntity> weeklyFocusList =
-                dailyFocusRepository.findByMember_IdAndDateBetweenOrderByDateAsc(
+        Map<String, DailyPomodoroSummary> weekSummaryMap =
+                calculateDailyPomodoroSummaryMap(
                         memberId,
-                        weekStartDate.format(API_DATE_FORMATTER),
-                        weekEndDate.format(API_DATE_FORMATTER)
+                        weekStartDate,
+                        weekEndDate
                 );
 
-        int weeklyTotalFocusMinutes = weeklyFocusList.stream()
-                .mapToInt(PomodoroDailyFocusEntity::getTotalFocusMinutes)
-                .sum();
+        int weeklyTotalFocusMinutes = 0;
+
+        for (int i = 0; i < RECENT_DAYS; i++) {
+            LocalDate currentDate = weekStartDate.plusDays(i);
+            String currentApiDate = currentDate.format(API_DATE_FORMATTER);
+
+            DailyPomodoroSummary summary = weekSummaryMap.getOrDefault(
+                    currentApiDate,
+                    DailyPomodoroSummary.empty()
+            );
+
+            weeklyTotalFocusMinutes += summary.totalFocusMinutes;
+        }
 
         return new PomodoroStatsResponseDto(
                 apiDate,
@@ -294,18 +291,15 @@ public class PomodoroTimerService {
                 completedCountDiff,
                 averageFocusMinutes,
                 averageFocusMinutesDiff,
-                weeklyTotalFocusMinutes,
-                focusLevel
+                weeklyTotalFocusMinutes
         );
     }
 
     /**
      * 오늘의 집중도 저장/수정
      *
-     * 같은 memberId + date 데이터가 있으면 수정,
-     * 없으면 새로 생성합니다.
-     *
-     * 요청 date 형식: yyyy-MM-dd
+     * 이제 집중도만 저장합니다.
+     * 시간, 완료 횟수, 평균 집중 시간은 저장하지 않습니다.
      */
     @Transactional
     public PomodoroDailyFocusResponseDto saveDailyFocus(
@@ -325,22 +319,6 @@ public class PomodoroTimerService {
 
         LocalDate parsedDate = parseApiDate(request.getDate());
         String apiDate = parsedDate.format(API_DATE_FORMATTER);
-        String timerDateKey = toTimerDateKey(parsedDate);
-
-        List<PomodoroTimerEntity> todayTimers =
-                repository.findByMember_IdAndDate(memberId, timerDateKey);
-
-        int totalFocusMinutes = todayTimers.stream()
-                .mapToInt(timer -> timer.getFocusTime() * timer.getCompletedCount())
-                .sum();
-
-        int completedCount = todayTimers.stream()
-                .mapToInt(PomodoroTimerEntity::getCompletedCount)
-                .sum();
-
-        int averageFocusMinutes = completedCount == 0
-                ? 0
-                : Math.round((float) totalFocusMinutes / completedCount);
 
         PomodoroDailyFocusEntity entity = dailyFocusRepository
                 .findByMember_IdAndDate(memberId, apiDate)
@@ -349,17 +327,11 @@ public class PomodoroTimerService {
         entity.setMember(member);
         entity.setDate(apiDate);
         entity.setFocusLevel(request.getFocusLevel());
-        entity.setTotalFocusMinutes(totalFocusMinutes);
-        entity.setCompletedCount(completedCount);
-        entity.setAverageFocusMinutes(averageFocusMinutes);
 
         PomodoroDailyFocusEntity saved = dailyFocusRepository.save(entity);
 
         return new PomodoroDailyFocusResponseDto(
                 saved.getDate(),
-                saved.getTotalFocusMinutes(),
-                saved.getCompletedCount(),
-                saved.getAverageFocusMinutes(),
                 saved.getFocusLevel()
         );
     }
@@ -367,15 +339,15 @@ public class PomodoroTimerService {
     /**
      * 최근 7일 집중 데이터 조회
      *
-     * endDate 요청 형식: yyyy-MM-dd
-     * 반환 범위: endDate 포함 최근 7일
-     *
-     * totalFocusMinutes는 실제 PomodoroTimerEntity 기록 기준으로 계산합니다.
-     * focusLevel은 저장된 값이 없으면 null입니다.
+     * - totalFocusMinutes, completedCount, averageFocusMinutes는 pomodoro_timer 기준 계산
+     * - focusLevel은 pomodoro_daily_focus에서 가져옴
      */
     public PomodoroRecentFocusListResponseDto getRecent7DaysFocus(Long memberId, String endDate) {
         LocalDate end = parseApiDate(endDate);
         LocalDate start = end.minusDays(RECENT_DAYS - 1);
+
+        Map<String, DailyPomodoroSummary> summaryMap =
+                calculateDailyPomodoroSummaryMap(memberId, start, end);
 
         List<PomodoroDailyFocusEntity> savedFocusList =
                 dailyFocusRepository.findByMember_IdAndDateBetweenOrderByDateAsc(
@@ -384,47 +356,115 @@ public class PomodoroTimerService {
                         end.format(API_DATE_FORMATTER)
                 );
 
-        Map<String, PomodoroDailyFocusEntity> focusByDate = savedFocusList.stream()
+        Map<String, PomodoroFocusLevel> focusLevelByDate = savedFocusList.stream()
                 .collect(Collectors.toMap(
                         PomodoroDailyFocusEntity::getDate,
-                        focus -> focus,
+                        PomodoroDailyFocusEntity::getFocusLevel,
                         (oldValue, newValue) -> newValue
                 ));
 
-        List<PomodoroDailyFocusResponseDto> items = new ArrayList<>();
+        List<PomodoroRecentFocusItemDto> items = new ArrayList<>();
 
         for (int i = 0; i < RECENT_DAYS; i++) {
             LocalDate currentDate = start.plusDays(i);
             String apiDate = currentDate.format(API_DATE_FORMATTER);
 
-            PomodoroDailyFocusEntity focus = focusByDate.get(apiDate);
-
-            int totalFocusMinutes = focus != null
-                    ? focus.getTotalFocusMinutes()
-                    : 0;
-
-            int completedCount = focus != null
-                    ? focus.getCompletedCount()
-                    : 0;
-
-            int averageFocusMinutes = focus != null
-                    ? focus.getAverageFocusMinutes()
-                    : 0;
-
-            PomodoroFocusLevel focusLevel = focus != null
-                    ? focus.getFocusLevel()
-                    : null;
-
-            items.add(new PomodoroDailyFocusResponseDto(
+            DailyPomodoroSummary summary = summaryMap.getOrDefault(
                     apiDate,
-                    totalFocusMinutes,
-                    completedCount,
-                    averageFocusMinutes,
+                    DailyPomodoroSummary.empty()
+            );
+
+            PomodoroFocusLevel focusLevel = focusLevelByDate.get(apiDate);
+
+            items.add(new PomodoroRecentFocusItemDto(
+                    apiDate,
+                    summary.totalFocusMinutes,
+                    summary.completedCount,
+                    summary.averageFocusMinutes,
                     focusLevel
             ));
         }
 
         return new PomodoroRecentFocusListResponseDto(items);
+    }
+
+    /**
+     * 포모도로 완료 횟수 추가
+     */
+    @Transactional
+    public PomodoroTimerEntity addCompletedCount(Long memberId, Long timerId, int count) {
+        if (count <= 0) {
+            throw new IllegalArgumentException("count must be greater than 0.");
+        }
+
+        PomodoroTimerEntity timer = repository.findByIdAndMember_Id(timerId, memberId)
+                .orElseThrow(() -> new EntityNotFoundException("Pomodoro timer not found"));
+
+        timer.setCompletedCount(timer.getCompletedCount() + count);
+
+        return repository.save(timer);
+    }
+
+    /**
+     * 오늘의 집중도 삭제
+     */
+    @Transactional
+    public void deleteDailyFocus(Long memberId, String date) {
+        LocalDate parsedDate = parseApiDate(date);
+        String apiDate = parsedDate.format(API_DATE_FORMATTER);
+
+        PomodoroDailyFocusEntity entity = dailyFocusRepository
+                .findByMember_IdAndDate(memberId, apiDate)
+                .orElseThrow(() -> new EntityNotFoundException("Daily focus data not found"));
+
+        dailyFocusRepository.delete(entity);
+    }
+
+    /**
+     * 포모도로 타이머 수정
+     *
+     * 수정 가능:
+     * - taskName
+     * - focusTime
+     * - breakTime
+     *
+     * 수정 불가:
+     * - date
+     * - CurrentTimer
+     * - completedCount
+     * - member
+     * - todo
+     */
+    @Transactional
+    public PomodoroTimerEntity updateTimer(
+            Long memberId,
+            Long timerId,
+            PomodoroTimerUpdateRequestDto request
+    ) {
+        PomodoroTimerEntity timer = repository.findByIdAndMember_Id(timerId, memberId)
+                .orElseThrow(() -> new EntityNotFoundException("Pomodoro timer not found"));
+
+        if (request.getTaskName() != null) {
+            timer.setTaskName(request.getTaskName());
+        }
+
+        if (request.getFocusTime() != null) {
+            if (request.getFocusTime() <= 0) {
+                throw new IllegalArgumentException("focusTime must be greater than 0.");
+            }
+
+            timer.setFocusTime(request.getFocusTime());
+        }
+
+        if (request.getBreakTime() != null) {
+            if (request.getBreakTime() < 0) {
+                throw new IllegalArgumentException("breakTime must be 0 or greater.");
+            }
+
+            timer.setBreakTime(request.getBreakTime());
+        }
+
+        return repository.save(timer);
     }
 
     private PomodoroTimerResponseDto convertToDto(PomodoroTimerEntity timer) {
@@ -441,6 +481,65 @@ public class PomodoroTimerService {
                 timer.getDate(),
                 memberId
         );
+    }
+
+    /**
+     * 특정 날짜의 포모도로 통계 계산
+     */
+    private DailyPomodoroSummary calculateDailyPomodoroSummary(Long memberId, LocalDate date) {
+        String timerDateKey = toTimerDateKey(date);
+
+        List<PomodoroTimerEntity> timers =
+                repository.findByMember_IdAndDate(memberId, timerDateKey);
+
+        return calculateSummaryFromTimers(timers);
+    }
+
+    /**
+     * 날짜 범위의 포모도로 통계 계산
+     */
+    private Map<String, DailyPomodoroSummary> calculateDailyPomodoroSummaryMap(
+            Long memberId,
+            LocalDate startDate,
+            LocalDate endDate
+    ) {
+        List<PomodoroTimerEntity> timers =
+                repository.findByMember_IdAndDateBetween(
+                        memberId,
+                        toTimerDateKey(startDate),
+                        toTimerDateKey(endDate)
+                );
+
+        Map<String, List<PomodoroTimerEntity>> groupedByDate = timers.stream()
+                .collect(Collectors.groupingBy(PomodoroTimerEntity::getDate));
+
+        Map<String, DailyPomodoroSummary> result = new HashMap<>();
+
+        for (Map.Entry<String, List<PomodoroTimerEntity>> entry : groupedByDate.entrySet()) {
+            String timerDateKey = entry.getKey();
+            List<PomodoroTimerEntity> dayTimers = entry.getValue();
+
+            String apiDate = toApiDateFromTimerDateKey(timerDateKey);
+
+            result.put(apiDate, calculateSummaryFromTimers(dayTimers));
+        }
+
+        return result;
+    }
+
+    /**
+     * 타이머 리스트에서 총 집중 시간, 완료 횟수, 평균 집중 시간 계산
+     */
+    private DailyPomodoroSummary calculateSummaryFromTimers(List<PomodoroTimerEntity> timers) {
+        int totalFocusMinutes = timers.stream()
+                .mapToInt(timer -> timer.getFocusTime() * timer.getCompletedCount())
+                .sum();
+
+        int completedCount = timers.stream()
+                .mapToInt(PomodoroTimerEntity::getCompletedCount)
+                .sum();
+
+        return new DailyPomodoroSummary(totalFocusMinutes, completedCount);
     }
 
     private LocalDate parseApiDate(String date) {
@@ -464,60 +563,24 @@ public class PomodoroTimerService {
         return date.format(API_DATE_FORMATTER);
     }
 
-    @Transactional
-    public PomodoroTimerEntity addCompletedCount(Long memberId, Long timerId, int count) {
-        if (count <= 0) {
-            throw new IllegalArgumentException("count must be greater than 0.");
+    /**
+     * 내부 계산용 클래스
+     */
+    private static class DailyPomodoroSummary {
+        private final int totalFocusMinutes;
+        private final int completedCount;
+        private final int averageFocusMinutes;
+
+        private DailyPomodoroSummary(int totalFocusMinutes, int completedCount) {
+            this.totalFocusMinutes = totalFocusMinutes;
+            this.completedCount = completedCount;
+            this.averageFocusMinutes = completedCount == 0
+                    ? 0
+                    : Math.round((float) totalFocusMinutes / completedCount);
         }
 
-        PomodoroTimerEntity timer = repository.findByIdAndMember_Id(timerId, memberId)
-                .orElseThrow(() -> new EntityNotFoundException("Pomodoro timer not found"));
-
-        timer.setCompletedCount(timer.getCompletedCount() + count);
-
-        return repository.save(timer);
+        private static DailyPomodoroSummary empty() {
+            return new DailyPomodoroSummary(0, 0);
+        }
     }
-
-    @Transactional
-    public void deleteDailyFocus(Long memberId, String date) {
-        LocalDate parsedDate = parseApiDate(date);
-        String apiDate = parsedDate.format(API_DATE_FORMATTER);
-
-        PomodoroDailyFocusEntity entity = dailyFocusRepository
-                .findByMember_IdAndDate(memberId, apiDate)
-                .orElseThrow(() -> new EntityNotFoundException("Daily focus data not found"));
-
-        dailyFocusRepository.delete(entity);
-    }
-
-    @Transactional
-    public PomodoroTimerEntity updateTimer(
-            Long memberId,
-            Long timerId,
-            PomodoroTimerUpdateRequestDto request
-    ) {
-        PomodoroTimerEntity timer = repository.findByIdAndMember_Id(timerId, memberId)
-                .orElseThrow(() -> new EntityNotFoundException("Pomodoro timer not found"));
-
-        if (request.getTaskName() != null) {
-            timer.setTaskName(request.getTaskName());
-        }
-
-        if (request.getFocusTime() != null) {
-            if (request.getFocusTime() <= 0) {
-                throw new IllegalArgumentException("focusTime must be greater than 0.");
-            }
-            timer.setFocusTime(request.getFocusTime());
-        }
-
-        if (request.getBreakTime() != null) {
-            if (request.getBreakTime() < 0) {
-                throw new IllegalArgumentException("breakTime must be 0 or greater.");
-            }
-            timer.setBreakTime(request.getBreakTime());
-        }
-
-        return repository.save(timer);
-    }
-
 }

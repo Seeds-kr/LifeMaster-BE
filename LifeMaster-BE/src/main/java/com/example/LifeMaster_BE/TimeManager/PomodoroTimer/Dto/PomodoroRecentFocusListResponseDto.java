@@ -1,6 +1,5 @@
 package com.example.LifeMaster_BE.TimeManager.PomodoroTimer.Dto;
 
-import com.example.LifeMaster_BE.TimeManager.PomodoroTimer.Dto.PomodoroDailyFocusResponseDto;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -10,5 +9,5 @@ import java.util.List;
 @AllArgsConstructor
 public class PomodoroRecentFocusListResponseDto {
 
-    private List<PomodoroDailyFocusResponseDto> items;
+    private List<PomodoroRecentFocusItemDto> items;
 }

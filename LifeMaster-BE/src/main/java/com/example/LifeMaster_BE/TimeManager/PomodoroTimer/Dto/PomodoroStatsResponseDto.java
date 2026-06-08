@@ -1,6 +1,5 @@
 package com.example.LifeMaster_BE.TimeManager.PomodoroTimer.Dto;
 
-import com.example.LifeMaster_BE.TimeManager.PomodoroTimer.PomodoroFocusLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -10,27 +9,24 @@ public class PomodoroStatsResponseDto {
 
     private String date;
 
-    // 오늘 총 집중 시간
+    // 오늘 총 누적 집중 시간
     private int todayTotalFocusMinutes;
 
-    // 오늘 집중 시간이 평소보다 얼마나 많은지
+    // 오늘 누적 집중 시간 - 직전 30일의 하루 누적 집중 시간 평균
     private int focusMinutesDiff;
 
-    // 완료한 뽀모도로 횟수
+    // 오늘 완료한 포모도로 횟수
     private int completedCount;
 
-    // 완료 횟수가 평소보다 얼마나 많은지
+    // 오늘 완료 횟수 - 직전 30일 하루 완료 횟수 평균
     private int completedCountDiff;
 
     // 오늘 평균 집중 시간
     private int averageFocusMinutes;
 
-    // 평균 집중 시간이 평소보다 얼마나 많은지
+    // 오늘 평균 집중 시간 - 직전 30일 하루 평균 집중 시간 평균
     private int averageFocusMinutesDiff;
 
-    // 주간 누적 집중 시간
+    // 오늘 포함 최근 7일 누적 집중 시간
     private int weeklyTotalFocusMinutes;
-
-    // 오늘의 집중도
-    private PomodoroFocusLevel focusLevel;
 }

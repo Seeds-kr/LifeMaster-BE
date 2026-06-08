@@ -9,10 +9,7 @@ import lombok.Setter;
 @Setter
 public class PomodoroFocusSaveRequestDto {
 
-    @Schema(
-            description = "저장할 날짜",
-            example = "2026-06-08"
-    )
+    @Schema(description = "저장할 날짜", example = "2026-06-08")
     private String date;
 
     @Schema(
