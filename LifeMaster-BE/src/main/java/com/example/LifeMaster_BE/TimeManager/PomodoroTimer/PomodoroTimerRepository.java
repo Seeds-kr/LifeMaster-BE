@@ -4,6 +4,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface PomodoroTimerRepository extends JpaRepository<PomodoroTimerEntity, Long> {
 
@@ -25,6 +26,9 @@ public interface PomodoroTimerRepository extends JpaRepository<PomodoroTimerEnti
             String startDate,
             String endDate
     );
+
+    // ID + 회원 기준 조회
+    Optional<PomodoroTimerEntity> findByIdAndMember_Id(Long id, Long memberId);
 
     // Todo ID 기준 전체 삭제
     @Transactional

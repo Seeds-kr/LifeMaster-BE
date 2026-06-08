@@ -10,16 +10,10 @@ import lombok.Setter;
 public class PomodoroFocusSaveRequestDto {
 
     @Schema(
-            description = "날짜",
+            description = "저장할 날짜",
             example = "2026-06-08"
     )
     private String date;
-
-    @Schema(
-            description = "해당 날짜의 총 집중 시간",
-            example = "180"
-    )
-    private int totalFocusMinutes;
 
     @Schema(
             description = "집중도 레벨",

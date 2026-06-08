@@ -12,8 +12,14 @@ public class PomodoroDailyFocusResponseDto {
     @Schema(description = "날짜", example = "2026-06-08")
     private String date;
 
-    @Schema(description = "해당 날짜의 총 집중 시간", example = "180")
+    @Schema(description = "해당 날짜의 총 누적 집중 시간", example = "150")
     private int totalFocusMinutes;
+
+    @Schema(description = "해당 날짜의 완료한 포모도로 횟수", example = "6")
+    private int completedCount;
+
+    @Schema(description = "해당 날짜의 평균 집중 시간", example = "25")
+    private int averageFocusMinutes;
 
     @Schema(
             description = "집중도 레벨",

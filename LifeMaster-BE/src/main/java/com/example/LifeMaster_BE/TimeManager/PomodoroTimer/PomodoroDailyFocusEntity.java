@@ -24,12 +24,22 @@ public class PomodoroDailyFocusEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // yyyy-MM-dd
+    // API 기준 날짜: yyyy-MM-dd
     @Column(nullable = false)
     private String date;
 
+    // 해당 날짜의 총 누적 집중 시간
     @Column(nullable = false)
     private int totalFocusMinutes;
+
+    // 해당 날짜의 완료한 포모도로 횟수
+    @Column(nullable = false)
+    private int completedCount;
+
+    // 해당 날짜의 평균 집중 시간
+    // 계산식: totalFocusMinutes / completedCount
+    @Column(nullable = false)
+    private int averageFocusMinutes;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
