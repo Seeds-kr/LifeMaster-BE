@@ -68,4 +68,12 @@ public class AdminMemberController {
         memberSubscriptionService.extendPremiumOneMonthForAdmin(memberId);
         return ResponseEntity.ok("구독 기한이 1개월 연장되었습니다.");
     }
+
+    @PatchMapping("/{memberId}/subscription/revoke")
+    public ResponseEntity<String> revokeSubscription(
+            @PathVariable Long memberId
+    ) {
+        memberSubscriptionService.revokePremiumForAdmin(memberId);
+        return ResponseEntity.ok("구독이 회수되었습니다.");
+    }
 }

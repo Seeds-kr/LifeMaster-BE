@@ -70,7 +70,23 @@ function memberActionButtons(member) {
         <div class="action-buttons">
             ${adminRoleActionButton(member)}
             ${extendSubscriptionButton(member)}
+            ${revokeSubscriptionButton(member)}
         </div>
+    `;
+}
+
+function revokeSubscriptionButton(member) {
+    if (member.subscriptionPlan !== "PREMIUM") {
+        return "";
+    }
+
+    return `
+        <button 
+            class="danger-btn"
+            onclick="revokeMemberSubscription(${member.memberId})"
+        >
+            구독 회수
+        </button>
     `;
 }
 
@@ -290,6 +306,36 @@ async function extendMemberSubscriptionOneMonth(memberId) {
     await loadMemberSummary();
 
     // 프리미엄 계정 페이지도 같이 쓰고 있다면 갱신
+    if (typeof loadPremiumMembers === "function") {
+        await loadPremiumMembers();
+    }
+}
+
+async function revokeMemberSubscription(memberId) {
+    const confirmed = confirm("이 회원의 프리미엄 구독을 회수하시겠습니까?");
+    if (!confirmed) return;
+
+    const response = await fetch(
+        `/admin/members/${memberId}/subscription/revoke`,
+        {
+            method: "PATCH",
+            headers: authHeaders()
+        }
+    );
+
+    if (await handleAuthError(response)) return;
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        alert("구독 회수 실패\n" + errorText);
+        return;
+    }
+
+    alert("구독이 회수되었습니다.");
+
+    await loadMembers();
+    await loadMemberSummary();
+
     if (typeof loadPremiumMembers === "function") {
         await loadPremiumMembers();
     }
