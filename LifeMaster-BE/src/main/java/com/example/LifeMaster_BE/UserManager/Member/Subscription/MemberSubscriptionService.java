@@ -91,6 +91,52 @@ public class MemberSubscriptionService {
     }
 
     /**
+     * 어드민용 - 구독 기한 1개월 추가
+     *
+     * FREE / 만료 회원이면 오늘부터 1개월 부여
+     * PREMIUM / 아직 유효한 회원이면 기존 만료일 다음 날부터 1개월 연장
+     * 영구 회원이면 연장하지 않음
+     */
+    @Transactional
+    public void extendPremiumOneMonthForAdmin(Long memberId) {
+        MemberEntity member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 ID의 멤버를 찾을 수 없습니다."));
+
+        LocalDate now = LocalDate.now();
+        LocalDate currentExpirationDate = member.getSubscriptionExpirationDate();
+
+        // 영구 프리미엄 계정이면 연장 불필요
+        if (currentExpirationDate != null
+                && currentExpirationDate.equals(LocalDate.of(9999, 12, 31))) {
+            throw new IllegalStateException("영구 프리미엄 회원은 구독 기한을 연장할 수 없습니다.");
+        }
+
+        LocalDate startDate;
+
+        if (member.getSubscriptionPlan() == SubscriptionPlan.PREMIUM
+                && currentExpirationDate != null
+                && !currentExpirationDate.isBefore(now)) {
+
+            // 기존 구독이 아직 유효하면 만료일 다음 날부터 연장
+            startDate = currentExpirationDate.plusDays(1);
+
+        } else {
+            // FREE 또는 만료 회원이면 오늘부터 시작
+            startDate = now;
+        }
+
+        LocalDate expirationDate = startDate.plusMonths(1).minusDays(1);
+
+        member.updateSubscription(
+                SubscriptionPlan.PREMIUM,
+                now,
+                expirationDate
+        );
+
+        memberRepository.save(member);
+    }
+
+    /**
      * 사용자의 영구적 요금제 변경
      */
     @Transactional

@@ -654,3 +654,11 @@ tr:hover {
         padding: 18px;
     }
 }
+
+.action-buttons {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+}

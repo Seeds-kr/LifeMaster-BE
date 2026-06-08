@@ -1,5 +1,6 @@
 package com.example.LifeMaster_BE.Admin.Member;
 
+import com.example.LifeMaster_BE.UserManager.Member.Subscription.MemberSubscriptionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -11,6 +12,8 @@ import org.springframework.web.bind.annotation.*;
 public class AdminMemberController {
 
     private final AdminMemberService adminMemberService;
+
+    private final MemberSubscriptionService memberSubscriptionService;
 
     /**
      * 전체 회원 조회
@@ -56,5 +59,13 @@ public class AdminMemberController {
     ) {
         adminMemberService.revokeAdminRole(memberId);
         return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{memberId}/subscription/extend-one-month")
+    public ResponseEntity<String> extendSubscriptionOneMonth(
+            @PathVariable Long memberId
+    ) {
+        memberSubscriptionService.extendPremiumOneMonthForAdmin(memberId);
+        return ResponseEntity.ok("구독 기한이 1개월 연장되었습니다.");
     }
 }

@@ -58,11 +58,31 @@ function renderMembers(members) {
             <td>${paymentStatusBadge(member.paymentStatus)}</td>
             <td>${formatDate(member.expirationDate)}</td>
             <td>${formatDateTime(member.createdAt)}</td>
-            <td>${adminRoleActionButton(member)}</td>
+            <td>${memberActionButtons(member)}</td>
         `;
 
         tbody.appendChild(tr);
     });
+}
+
+function memberActionButtons(member) {
+    return `
+        <div class="action-buttons">
+            ${adminRoleActionButton(member)}
+            ${extendSubscriptionButton(member)}
+        </div>
+    `;
+}
+
+function extendSubscriptionButton(member) {
+    return `
+        <button 
+            class="primary-btn"
+            onclick="extendMemberSubscriptionOneMonth(${member.memberId})"
+        >
+            1개월 연장
+        </button>
+    `;
 }
 
 function adminRoleActionButton(member) {
@@ -242,4 +262,35 @@ function paymentStatusBadge(status) {
     }
 
     return `<span class="badge gray">${status ?? "-"}</span>`;
+}
+
+async function extendMemberSubscriptionOneMonth(memberId) {
+    const confirmed = confirm("이 회원의 구독 기한을 1개월 연장하시겠습니까?");
+    if (!confirmed) return;
+
+    const response = await fetch(
+        `/admin/members/${memberId}/subscription/extend-one-month`,
+        {
+            method: "PATCH",
+            headers: authHeaders()
+        }
+    );
+
+    if (await handleAuthError(response)) return;
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        alert("구독 기한 1개월 연장 실패\n" + errorText);
+        return;
+    }
+
+    alert("구독 기한이 1개월 연장되었습니다.");
+
+    await loadMembers();
+    await loadMemberSummary();
+
+    // 프리미엄 계정 페이지도 같이 쓰고 있다면 갱신
+    if (typeof loadPremiumMembers === "function") {
+        await loadPremiumMembers();
+    }
 }
