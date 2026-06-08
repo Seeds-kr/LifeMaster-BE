@@ -208,6 +208,9 @@ public class PomodoroTimerService {
         /*
          * 평소 평균 기준
          * 오늘 제외 직전 30일
+         *
+         * 단, 평균 계산은 포모도로 기록이 있는 날짜만 기준으로 계산합니다.
+         * 기록이 없는 날짜를 0으로 포함하지 않습니다.
          */
         LocalDate baselineStartDate = targetDate.minusDays(BASELINE_DAYS);
         LocalDate baselineEndDate = targetDate.minusDays(1);
@@ -222,6 +225,7 @@ public class PomodoroTimerService {
         int baselineTotalFocusMinutesSum = 0;
         int baselineCompletedCountSum = 0;
         int baselineAverageFocusMinutesSum = 0;
+        int activeBaselineDays = 0;
 
         for (int i = 0; i < BASELINE_DAYS; i++) {
             LocalDate currentDate = baselineStartDate.plusDays(i);
@@ -232,25 +236,35 @@ public class PomodoroTimerService {
                     DailyPomodoroSummary.empty()
             );
 
-            baselineTotalFocusMinutesSum += summary.totalFocusMinutes;
-            baselineCompletedCountSum += summary.completedCount;
-            baselineAverageFocusMinutesSum += summary.averageFocusMinutes;
+            /*
+             * completedCount가 0보다 큰 날만 평소 평균 기준에 포함
+             */
+            if (summary.completedCount > 0) {
+                activeBaselineDays++;
+
+                baselineTotalFocusMinutesSum += summary.totalFocusMinutes;
+                baselineCompletedCountSum += summary.completedCount;
+                baselineAverageFocusMinutesSum += summary.averageFocusMinutes;
+            }
         }
 
-        int baselineTotalFocusAverage =
-                Math.round((float) baselineTotalFocusMinutesSum / BASELINE_DAYS);
+        int baselineTotalFocusAverage = activeBaselineDays == 0
+                ? 0
+                : Math.round((float) baselineTotalFocusMinutesSum / activeBaselineDays);
 
         int focusMinutesDiff =
                 todayTotalFocusMinutes - baselineTotalFocusAverage;
 
-        int baselineCompletedCountAverage =
-                Math.round((float) baselineCompletedCountSum / BASELINE_DAYS);
+        int baselineCompletedCountAverage = activeBaselineDays == 0
+                ? 0
+                : Math.round((float) baselineCompletedCountSum / activeBaselineDays);
 
         int completedCountDiff =
                 completedCount - baselineCompletedCountAverage;
 
-        int baselineAverageFocusMinutes =
-                Math.round((float) baselineAverageFocusMinutesSum / BASELINE_DAYS);
+        int baselineAverageFocusMinutes = activeBaselineDays == 0
+                ? 0
+                : Math.round((float) baselineAverageFocusMinutesSum / activeBaselineDays);
 
         int averageFocusMinutesDiff =
                 averageFocusMinutes - baselineAverageFocusMinutes;
@@ -258,6 +272,8 @@ public class PomodoroTimerService {
         /*
          * 주간 누적 집중 시간
          * 오늘 포함 최근 7일
+         *
+         * 주간 누적은 기록 없는 날도 그냥 0으로 보고 합산합니다.
          */
         LocalDate weekStartDate = targetDate.minusDays(RECENT_DAYS - 1);
         LocalDate weekEndDate = targetDate;
