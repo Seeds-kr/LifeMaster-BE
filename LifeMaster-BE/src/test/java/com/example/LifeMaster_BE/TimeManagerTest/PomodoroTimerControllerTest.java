@@ -1,6 +1,6 @@
 package com.example.LifeMaster_BE.TimeManagerTest;
 
-import com.example.LifeMaster_BE.TimeManager.PomodoroTimer.PomodoroTimerDTO;
+import com.example.LifeMaster_BE.TimeManager.PomodoroTimer.Dto.PomodoroTimerDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

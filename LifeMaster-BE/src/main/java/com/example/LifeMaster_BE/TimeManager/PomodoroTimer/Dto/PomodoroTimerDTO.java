@@ -1,4 +1,4 @@
-package com.example.LifeMaster_BE.TimeManager.PomodoroTimer;
+package com.example.LifeMaster_BE.TimeManager.PomodoroTimer.Dto;
 
 import lombok.Getter;
 import lombok.Setter;
