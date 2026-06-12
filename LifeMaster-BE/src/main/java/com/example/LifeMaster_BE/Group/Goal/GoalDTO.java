@@ -28,14 +28,6 @@ public class GoalDTO {
     @Schema(
             description = "목표 타입",
             example = "SLEEP",
-            allowableValues = {
-                    "SLEEP",
-                    "POMODORO",
-                    "DETOX",
-                    "CHALLENGE",
-                    "GRATITUDE",
-                    "REFLECTION"
-            },
             requiredMode = Schema.RequiredMode.REQUIRED
     )
     private GoalType goalType;

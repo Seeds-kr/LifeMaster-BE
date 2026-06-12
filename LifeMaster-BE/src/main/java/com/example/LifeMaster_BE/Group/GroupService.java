@@ -245,16 +245,20 @@ public class GroupService {
     }
 
     // 목표를 그룹에 추가
+    @Transactional
     public GroupEntity addGoalToGroup(Long userId, Long groupId, GoalEntity goal) {
 
         MemberEntity member = getMemberOrThrow(userId);
+
         // 프리미엄 기능 접근 검사
         subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
+
+        // ✅ OWNER / ADMIN만 목표 추가 가능
+        groupMemberService.requireAtLeastAdmin(groupId, userId);
 
         GroupEntity group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new RuntimeException("Group not found with id: " + groupId));
 
-        // enum/null 방어
         if (goal.getDuration() == null) {
             throw new RuntimeException("Goal duration is required.");
         }
@@ -263,12 +267,14 @@ public class GroupService {
             throw new RuntimeException("Goal condition is required.");
         }
 
-        // 값 방어
+        if (goal.getGoalType() == null) {
+            throw new RuntimeException("Goal type is required.");
+        }
+
         if (goal.getValue() <= 0) {
             throw new RuntimeException("Goal value must be greater than 0.");
         }
 
-        // 이미 목표가 그룹에 존재하는지 체크
         boolean goalExists = group.getGoals().stream()
                 .anyMatch(existingGoal -> existingGoal.getName().equals(goal.getName()));
 
@@ -279,8 +285,7 @@ public class GroupService {
         goal.setGroup(group);
         group.addGoal(goal);
 
-        groupRepository.save(group);
-        return group;
+        return groupRepository.save(group);
     }
 
 

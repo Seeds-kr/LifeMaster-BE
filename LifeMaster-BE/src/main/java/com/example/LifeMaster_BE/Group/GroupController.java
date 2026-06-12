@@ -3,6 +3,7 @@ package com.example.LifeMaster_BE.Group;
 import com.example.LifeMaster_BE.Group.Goal.GoalDTO;
 import com.example.LifeMaster_BE.Group.Goal.GoalEntity;
 import com.example.LifeMaster_BE.Group.Goal.GoalStatisticsResponseDto;
+import com.example.LifeMaster_BE.Group.GroupMember.GroupMemberException;
 import com.example.LifeMaster_BE.Security.CustomUserDetails;
 import com.example.LifeMaster_BE.UserManager.Login;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
@@ -186,10 +187,11 @@ public class GroupController {
 
     @Operation(
             summary = "Add a goal to a group",
-            description = "목표 이름 / 목표 기준 / 목표 기한 / 목표값을 입력하여 그룹에 목표를 추가합니다."
+            description = "목표 이름 / 목표 타입 / 목표 기준 / 목표 기한 / 목표값을 입력하여 그룹에 목표를 추가합니다. OWNER 또는 ADMIN만 가능합니다."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Goal added successfully"),
+            @ApiResponse(responseCode = "403", description = "Only OWNER or ADMIN can add goals"),
             @ApiResponse(responseCode = "404", description = "Group not found")
     })
     @PostMapping(
@@ -208,18 +210,32 @@ public class GroupController {
         ResponseEntity<?> loginCheck = login.checkLogin(user);
         if (loginCheck != null) return loginCheck;
 
-        GroupEntity group = groupService.findById(groupId);
+        try {
+            GoalEntity goal = new GoalEntity();
+            goal.setName(goalDTO.getName());
+            goal.setGoalType(goalDTO.getGoalType());
+            goal.setGoalCondition(goalDTO.getGoalCondition());
+            goal.setDuration(goalDTO.getDuration());
+            goal.setValue(goalDTO.getValue());
 
-        GoalEntity goal = new GoalEntity();
-        goal.setName(goalDTO.getName());
-        goal.setGoalCondition(goalDTO.getGoalCondition());
-        goal.setDuration(goalDTO.getDuration());
-        goal.setGoalType(goalDTO.getGoalType()); //추가
-        goal.setValue(goalDTO.getValue());
-        goal.setGroup(group);
+            GroupEntity updatedGroup = groupService.addGoalToGroup(user.getId(), groupId, goal);
+            return ResponseEntity.ok(updatedGroup);
 
-        GroupEntity updatedGroup = groupService.addGoalToGroup(user.getId(), groupId, goal);
-        return ResponseEntity.ok(updatedGroup);
+        } catch (GroupMemberException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of(
+                            "status", 403,
+                            "message", "Only OWNER or ADMIN can add goals to this group."
+                    ));
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(e.getMessage());
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(e.getMessage());
+        }
     }
 
     @Operation(summary = "Delete a goal from a group", description = "Deletes a specific goal from a group.")
