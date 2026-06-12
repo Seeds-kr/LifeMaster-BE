@@ -419,7 +419,7 @@ public class GroupService {
     public List<Map<String, Object>> getGroupGoalProgress(Long UserId, Long groupId) {
 
         MemberEntity member = getMemberOrThrow(UserId);
-        // 프리미엄 기능 접근 검사
+
         subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
 
         GroupEntity group = groupRepository.findById(groupId)
@@ -446,16 +446,19 @@ public class GroupService {
             goalData.put("goalDuration", goal.getDuration());
             goalData.put("goalValue", goal.getValue());
             goalData.put("goalCondition", goal.getGoalCondition());
+            goalData.put("goalType", goal.getGoalType());
 
             List<Map<String, Object>> userProgressList = new ArrayList<>();
 
             int goalValue = goal.getValue();
 
             for (MemberEntity user : allUsers) {
-                int totalProgress = progressList.stream()
+                double totalProgress = progressList.stream()
                         .filter(progress -> progress.getUser().getId().equals(user.getId()))
-                        .mapToInt(GoalProgressEntity::getProgressValue)
+                        .mapToDouble(GoalProgressEntity::getProgressValue)
                         .sum();
+
+                totalProgress = roundToTwoDecimalPlaces(totalProgress);
 
                 double progressPercentage;
                 boolean isAchieved;
@@ -464,8 +467,9 @@ public class GroupService {
                     progressPercentage = 0.0;
                     isAchieved = false;
                 } else {
-                    double raw = (totalProgress / (double) goalValue) * 100.0;
+                    double raw = (totalProgress / goalValue) * 100.0;
                     progressPercentage = Math.min(raw, 100.0);
+                    progressPercentage = roundToTwoDecimalPlaces(progressPercentage);
                     isAchieved = totalProgress >= goalValue;
                 }
 

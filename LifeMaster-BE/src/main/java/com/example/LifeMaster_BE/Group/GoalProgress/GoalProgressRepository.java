@@ -26,7 +26,9 @@ public interface GoalProgressRepository extends JpaRepository<GoalProgressEntity
     List<GoalProgressEntity> findByUser(MemberEntity user);
 
     void deleteByGroupId(Long groupId);
+
     void deleteByGoalId(Long goalId);
+
     void deleteByUserId(Long userId);
 
     List<GoalProgressEntity> findByGoal(GoalEntity goal);
@@ -53,22 +55,30 @@ public interface GoalProgressRepository extends JpaRepository<GoalProgressEntity
     List<GoalProgressEntity> findByUserWithDetails(@Param("user") MemberEntity user);
 
     @Query("""
-        select gp.user.id, gp.user.nickname, gp.user.imageUrl, count(gp)
+        select 
+            gp.user.id,
+            gp.user.nickname,
+            gp.user.imageUrl,
+            coalesce(sum(gp.progressValue), 0)
         from GoalProgressEntity gp
         where gp.group.id = :groupId
         group by gp.user.id, gp.user.nickname, gp.user.imageUrl
-        order by count(gp) desc, gp.user.id asc
+        order by coalesce(sum(gp.progressValue), 0) desc, gp.user.id asc
     """)
     List<Object[]> findGroupRankingTotal(@Param("groupId") Long groupId);
 
     @Query("""
-        select gp.user.id, gp.user.nickname, gp.user.imageUrl, count(gp)
+        select 
+            gp.user.id,
+            gp.user.nickname,
+            gp.user.imageUrl,
+            coalesce(sum(gp.progressValue), 0)
         from GoalProgressEntity gp
         where gp.group.id = :groupId
           and gp.submittedAt >= :startDateTime
           and gp.submittedAt < :endDateTime
         group by gp.user.id, gp.user.nickname, gp.user.imageUrl
-        order by count(gp) desc, gp.user.id asc
+        order by coalesce(sum(gp.progressValue), 0) desc, gp.user.id asc
     """)
     List<Object[]> findGroupRankingWeekly(
             @Param("groupId") Long groupId,
@@ -76,7 +86,6 @@ public interface GoalProgressRepository extends JpaRepository<GoalProgressEntity
             @Param("endDateTime") LocalDateTime endDateTime
     );
 
-    // ✅ 그룹 목표별 최근 N일 통계용
     @Query("""
         select gp
         from GoalProgressEntity gp

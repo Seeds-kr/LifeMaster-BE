@@ -30,7 +30,7 @@ public class GoalProgressResponseDTO {
     private String goalName;
 
     @Schema(description = "진행 값", example = "2")
-    private int progressValue;
+    private double progressValue;
 
     @Schema(description = "제출 시간")
     private LocalDateTime submittedAt;

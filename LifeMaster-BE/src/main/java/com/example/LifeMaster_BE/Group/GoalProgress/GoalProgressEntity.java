@@ -6,9 +6,9 @@ import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Entity
 @Getter
@@ -24,27 +24,41 @@ public class GoalProgressEntity {
     private MemberEntity user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "group_id", nullable = false,
-            foreignKey = @ForeignKey(name = "FK_PROGRESS_GROUP_ID"))
+    @JoinColumn(
+            name = "group_id",
+            nullable = false,
+            foreignKey = @ForeignKey(name = "FK_PROGRESS_GROUP_ID")
+    )
     private GroupEntity group;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "goal_id", nullable = false,
-            foreignKey = @ForeignKey(name = "FK_PROGRESS_GOAL_ID"))
+    @JoinColumn(
+            name = "goal_id",
+            nullable = false,
+            foreignKey = @ForeignKey(name = "FK_PROGRESS_GOAL_ID")
+    )
     private GoalEntity goal;
 
-    private int progressValue;
+    @Column(nullable = false)
+    private double progressValue;
 
-    @CreationTimestamp
+    @Column(nullable = false)
     private LocalDateTime submittedAt;
 
     public GoalProgressEntity() {
     }
 
-    public GoalProgressEntity(MemberEntity user, GroupEntity group, GoalEntity goal, int progressValue) {
+    public GoalProgressEntity(MemberEntity user, GroupEntity group, GoalEntity goal, double progressValue) {
         this.user = user;
         this.group = group;
         this.goal = goal;
         this.progressValue = progressValue;
+    }
+
+    @PrePersist
+    public void prePersist() {
+        if (submittedAt == null) {
+            submittedAt = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
+        }
     }
 }

@@ -30,7 +30,6 @@ public class GoalProgressService {
     private final GroupRepository groupRepository;
     private final MemberRepository memberRepository;
     private final GoalAchievementRepository goalAchievementRepository;
-
     private final SubscriptionAccessService subscriptionAccessService;
 
     public GoalProgressService(
@@ -38,7 +37,8 @@ public class GoalProgressService {
             GoalRepository goalRepository,
             GroupRepository groupRepository,
             MemberRepository memberRepository,
-            GoalAchievementRepository goalAchievementRepository, SubscriptionAccessService subscriptionAccessService
+            GoalAchievementRepository goalAchievementRepository,
+            SubscriptionAccessService subscriptionAccessService
     ) {
         this.goalProgressRepository = goalProgressRepository;
         this.goalRepository = goalRepository;
@@ -55,7 +55,7 @@ public class GoalProgressService {
     public double calculateProgress(Long userId, GoalEntity goal) {
 
         MemberEntity member = getMemberOrThrow(userId);
-        // 프리미엄 기능 접근 검사
+
         subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
 
         LocalDateTime startTime = getStartDateTimeForCurrentPeriod(goal.getDuration());
@@ -63,7 +63,6 @@ public class GoalProgressService {
         List<GoalProgressEntity> progressList =
                 goalProgressRepository.findByGoalAndSubmittedAtAfter(goal, startTime);
 
-        // 그룹 전체 인원
         int groupMemberCount = goal.getGroup().getMembers().size();
 
         if (groupMemberCount == 0) {
@@ -75,11 +74,11 @@ public class GoalProgressService {
             return 0.0;
         }
 
-        int totalProgress = progressList.stream()
-                .mapToInt(GoalProgressEntity::getProgressValue)
+        double totalProgress = progressList.stream()
+                .mapToDouble(GoalProgressEntity::getProgressValue)
                 .sum();
 
-        double raw = (totalProgress / (double) (goalValue * groupMemberCount)) * 100.0;
+        double raw = (totalProgress / (goalValue * (double) groupMemberCount)) * 100.0;
         return Math.min(raw, 100.0);
     }
 
@@ -90,7 +89,7 @@ public class GoalProgressService {
     public double calculateUserProgress(GoalEntity goal, MemberEntity user) {
 
         MemberEntity member = getMemberOrThrow(user.getId());
-        // 프리미엄 기능 접근 검사
+
         subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
 
         LocalDateTime startTime = getStartDateTimeForCurrentPeriod(goal.getDuration());
@@ -98,8 +97,8 @@ public class GoalProgressService {
         List<GoalProgressEntity> progressList =
                 goalProgressRepository.findByGoalAndUserAndSubmittedAtAfter(goal, user, startTime);
 
-        int totalProgress = progressList.stream()
-                .mapToInt(GoalProgressEntity::getProgressValue)
+        double totalProgress = progressList.stream()
+                .mapToDouble(GoalProgressEntity::getProgressValue)
                 .sum();
 
         int goalValue = goal.getValue();
@@ -107,7 +106,7 @@ public class GoalProgressService {
             return 0.0;
         }
 
-        double raw = (totalProgress / (double) goalValue) * 100.0;
+        double raw = (totalProgress / goalValue) * 100.0;
         return Math.min(raw, 100.0);
     }
 
@@ -161,10 +160,15 @@ public class GoalProgressService {
      * 목표 진행 기록 추가
      */
     @Transactional
-    public GoalProgressEntity addGoalProgress(Long groupId, Long goalId, Long userId, int progressValue) {
+    public GoalProgressEntity addGoalProgress(
+            Long groupId,
+            Long goalId,
+            Long userId,
+            double progressValue
+    ) {
 
         MemberEntity member = getMemberOrThrow(userId);
-        // 프리미엄 기능 접근 검사
+
         subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
 
         GroupEntity group = groupRepository.findById(groupId)
@@ -176,7 +180,21 @@ public class GoalProgressService {
         MemberEntity user = memberRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
 
-        GoalProgressEntity goalProgress = new GoalProgressEntity(user, group, goal, progressValue);
+        if (!group.getMembers().contains(user)) {
+            throw new IllegalArgumentException("User is not a member of this group.");
+        }
+
+        if (!goal.getGroup().getId().equals(groupId)) {
+            throw new IllegalArgumentException("Goal does not belong to this group.");
+        }
+
+        if (progressValue <= 0) {
+            throw new IllegalArgumentException("Progress value must be greater than 0.");
+        }
+
+        GoalProgressEntity goalProgress =
+                new GoalProgressEntity(user, group, goal, progressValue);
+
         GoalProgressEntity saved = goalProgressRepository.save(goalProgress);
 
         saveAchievementIfCompleted(group, goal, user);
@@ -208,10 +226,9 @@ public class GoalProgressService {
         List<GoalProgressEntity> progressList =
                 goalProgressRepository.findByGoalAndUserAndSubmittedAtAfter(goal, user, startTime);
 
-        int totalProgress = progressList.stream()
-                .mapToInt(GoalProgressEntity::getProgressValue)
+        double totalProgress = progressList.stream()
+                .mapToDouble(GoalProgressEntity::getProgressValue)
                 .sum();
-
 
         double userProgress = calculateUserProgress(goal, user);
 
@@ -234,12 +251,13 @@ public class GoalProgressService {
     public void deleteGoalProgress(Long userId, Long progressId) {
 
         MemberEntity member = getMemberOrThrow(userId);
-        // 프리미엄 기능 접근 검사
+
         subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
 
         if (!goalProgressRepository.existsById(progressId)) {
             throw new RuntimeException("Goal progress not found with id: " + progressId);
         }
+
         goalProgressRepository.deleteById(progressId);
     }
 
