@@ -19,9 +19,8 @@ public class GoalEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String name; // 목표 이름 (수면 시간, 공부 시간 등)
-    // setGoalCondition 수동 추가
-    @Setter
+    private String name;
+
     @JsonProperty("goalCondition")
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -30,17 +29,21 @@ public class GoalEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private GoalDuration duration;
-    private int value; // 목표값 (예: 7시간, 50회 등)
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private GoalType goalType; // ✅ 추가
+
+    private int value;
 
     @ManyToOne
     @JoinColumn(name = "group_id", nullable = false, foreignKey = @ForeignKey(name = "FK_GROUP_ID"))
     @JsonBackReference
-    private GroupEntity group; // GroupEntity 참조
+    private GroupEntity group;
 
     @CreationTimestamp
-    private LocalDateTime createdAt; // 목표 생성 시간
+    private LocalDateTime createdAt;
 
-    // 생성자, getter, setter
     public GoalEntity() {}
 
     public GoalEntity(GoalDTO goalDTO, GroupEntity group) {
@@ -48,7 +51,7 @@ public class GoalEntity {
         this.goalCondition = goalDTO.getGoalCondition();
         this.value = goalDTO.getValue();
         this.duration = goalDTO.getDuration();
+        this.goalType = goalDTO.getGoalType(); // ✅ 추가
         this.group = group;
     }
 }
-

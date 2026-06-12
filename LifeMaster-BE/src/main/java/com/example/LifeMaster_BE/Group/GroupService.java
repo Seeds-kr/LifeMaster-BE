@@ -1,7 +1,6 @@
 package com.example.LifeMaster_BE.Group;
 
-import com.example.LifeMaster_BE.Group.Goal.GoalEntity;
-import com.example.LifeMaster_BE.Group.Goal.GoalRepository;
+import com.example.LifeMaster_BE.Group.Goal.*;
 import com.example.LifeMaster_BE.Group.GoalAchievement.GoalAchievementRepository;
 import com.example.LifeMaster_BE.Group.GoalProgress.GoalProgressEntity;
 import com.example.LifeMaster_BE.Group.GoalProgress.GoalProgressRepository;
@@ -23,8 +22,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
-import com.example.LifeMaster_BE.Group.Goal.GoalCondition;
-import com.example.LifeMaster_BE.Group.Goal.GoalDuration;
+
 import java.security.SecureRandom;
 
 import java.time.*;
@@ -870,5 +868,108 @@ public class GroupService {
         } while (groupRepository.existsByInviteCode(code));
 
         return code;
+    }
+
+    @Transactional(readOnly = true)
+    public List<GoalStatisticsResponseDto> getRecentGoalStatistics(Long requestUserId, Long groupId) {
+
+        MemberEntity requestUser = getMemberOrThrow(requestUserId);
+
+        subscriptionAccessService.validateFeatureAccess(
+                requestUser,
+                FeatureType.ADVANCED_STATISTICS
+        );
+
+        GroupEntity group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new IllegalArgumentException("Group not found with ID: " + groupId));
+
+        if (!group.getMembers().contains(requestUser)) {
+            throw new IllegalArgumentException("User is not a member of this group.");
+        }
+
+        List<GoalEntity> goals = new ArrayList<>(group.getGoals());
+
+        if (group.getStatistics() != null && !group.getStatistics().isEmpty()) {
+            Set<Long> statisticGoalIds = new HashSet<>(group.getStatistics());
+
+            goals = goals.stream()
+                    .filter(goal -> statisticGoalIds.contains(goal.getId()))
+                    .toList();
+        }
+
+        if (goals.isEmpty()) {
+            return List.of();
+        }
+
+        ZoneId zoneId = ZoneId.of("Asia/Seoul");
+
+        LocalDate today = LocalDate.now(zoneId);
+        LocalDate startDate = today.minusDays(5);
+
+        LocalDateTime startDateTime = startDate.atStartOfDay();
+        LocalDateTime endDateTime = today.plusDays(1).atStartOfDay();
+
+        List<GoalProgressEntity> progressList =
+                goalProgressRepository.findRecentProgressByGroupAndGoals(
+                        groupId,
+                        goals,
+                        startDateTime,
+                        endDateTime
+                );
+
+        int memberCount = group.getMembers().size();
+
+        List<GoalStatisticsResponseDto> result = new ArrayList<>();
+
+        for (GoalEntity goal : goals) {
+
+            List<Double> userValues = new ArrayList<>();
+            List<Double> groupAverageValues = new ArrayList<>();
+
+            for (int i = 5; i >= 0; i--) {
+                LocalDate targetDate = today.minusDays(i);
+
+                double userTotal = progressList.stream()
+                        .filter(progress -> progress.getGoal().getId().equals(goal.getId()))
+                        .filter(progress -> progress.getUser().getId().equals(requestUserId))
+                        .filter(progress -> isSameDate(progress.getSubmittedAt(), targetDate))
+                        .mapToDouble(GoalProgressEntity::getProgressValue)
+                        .sum();
+
+                double groupTotal = progressList.stream()
+                        .filter(progress -> progress.getGoal().getId().equals(goal.getId()))
+                        .filter(progress -> isSameDate(progress.getSubmittedAt(), targetDate))
+                        .mapToDouble(GoalProgressEntity::getProgressValue)
+                        .sum();
+
+                double groupAverage = memberCount == 0
+                        ? 0.0
+                        : groupTotal / memberCount;
+
+                userValues.add(roundToTwoDecimalPlaces(userTotal));
+                groupAverageValues.add(roundToTwoDecimalPlaces(groupAverage));
+            }
+
+            result.add(new GoalStatisticsResponseDto(
+                    goal.getId(),
+                    goal.getGoalType(),
+                    userValues,
+                    groupAverageValues
+            ));
+        }
+
+        return result;
+    }
+
+    private boolean isSameDate(LocalDateTime submittedAt, LocalDate targetDate) {
+        if (submittedAt == null) {
+            return false;
+        }
+
+        return submittedAt.toLocalDate().equals(targetDate);
+    }
+
+    private double roundToTwoDecimalPlaces(double value) {
+        return Math.round(value * 100.0) / 100.0;
     }
 }

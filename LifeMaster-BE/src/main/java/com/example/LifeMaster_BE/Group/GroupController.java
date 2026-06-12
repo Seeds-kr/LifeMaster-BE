@@ -2,6 +2,7 @@ package com.example.LifeMaster_BE.Group;
 
 import com.example.LifeMaster_BE.Group.Goal.GoalDTO;
 import com.example.LifeMaster_BE.Group.Goal.GoalEntity;
+import com.example.LifeMaster_BE.Group.Goal.GoalStatisticsResponseDto;
 import com.example.LifeMaster_BE.Security.CustomUserDetails;
 import com.example.LifeMaster_BE.UserManager.Login;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
@@ -213,6 +214,7 @@ public class GroupController {
         goal.setName(goalDTO.getName());
         goal.setGoalCondition(goalDTO.getGoalCondition());
         goal.setDuration(goalDTO.getDuration());
+        goal.setGoalType(goalDTO.getGoalType()); //추가
         goal.setValue(goalDTO.getValue());
         goal.setGroup(group);
 
@@ -382,5 +384,23 @@ public class GroupController {
 
         GroupDto.Static sleepStats = groupService.getUserStatic(user.getId(), email, group);
         return ResponseEntity.ok(sleepStats);
+    }
+
+    @Operation(
+            summary = "그룹 목표별 최근 6일 통계",
+            description = "그룹 통계에 등록된 목표별로 최근 6일 동안의 내 달성 값과 그룹 평균 값을 반환합니다."
+    )
+    @GetMapping("/{groupId}/goals/statistics/recent")
+    public ResponseEntity<?> getRecentGoalStatistics(
+            @PathVariable Long groupId,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        ResponseEntity<?> loginCheck = login.checkLogin(user);
+        if (loginCheck != null) return loginCheck;
+
+        List<GoalStatisticsResponseDto> response =
+                groupService.getRecentGoalStatistics(user.getId(), groupId);
+
+        return ResponseEntity.ok(response);
     }
 }

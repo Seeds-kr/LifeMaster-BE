@@ -24,6 +24,22 @@ public class GoalDTO {
     )
     private String name;
 
+    @NotNull(message = "목표 타입은 필수입니다.")
+    @Schema(
+            description = "목표 타입",
+            example = "SLEEP",
+            allowableValues = {
+                    "SLEEP",
+                    "POMODORO",
+                    "DETOX",
+                    "CHALLENGE",
+                    "GRATITUDE",
+                    "REFLECTION"
+            },
+            requiredMode = Schema.RequiredMode.REQUIRED
+    )
+    private GoalType goalType;
+
     @NotNull(message = "목표 기준은 필수입니다.")
     @Schema(
             description = "목표 기준",

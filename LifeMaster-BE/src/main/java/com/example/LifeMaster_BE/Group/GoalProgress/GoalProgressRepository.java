@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 
 public interface GoalProgressRepository extends JpaRepository<GoalProgressEntity, Long> {
@@ -71,6 +72,26 @@ public interface GoalProgressRepository extends JpaRepository<GoalProgressEntity
     """)
     List<Object[]> findGroupRankingWeekly(
             @Param("groupId") Long groupId,
+            @Param("startDateTime") LocalDateTime startDateTime,
+            @Param("endDateTime") LocalDateTime endDateTime
+    );
+
+    // ✅ 그룹 목표별 최근 N일 통계용
+    @Query("""
+        select gp
+        from GoalProgressEntity gp
+        join fetch gp.user
+        join fetch gp.group
+        join fetch gp.goal
+        where gp.group.id = :groupId
+          and gp.goal in :goals
+          and gp.submittedAt >= :startDateTime
+          and gp.submittedAt < :endDateTime
+        order by gp.submittedAt asc
+    """)
+    List<GoalProgressEntity> findRecentProgressByGroupAndGoals(
+            @Param("groupId") Long groupId,
+            @Param("goals") Collection<GoalEntity> goals,
             @Param("startDateTime") LocalDateTime startDateTime,
             @Param("endDateTime") LocalDateTime endDateTime
     );
