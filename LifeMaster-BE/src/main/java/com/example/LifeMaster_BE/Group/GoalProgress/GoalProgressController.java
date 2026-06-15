@@ -142,27 +142,4 @@ public class GoalProgressController {
 
         return ResponseEntity.ok(result);
     }
-
-    @GetMapping("/{groupId}/goal-progress")
-    public ResponseEntity<?> getGroupGoalProgress(
-            @PathVariable Long groupId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
-    ) {
-        size = Math.min(Math.max(size, 1), 100);
-
-        Pageable pageable = PageRequest.of(
-                Math.max(page, 0),
-                size,
-                Sort.by(Sort.Direction.DESC, "submittedAt")
-                        .and(Sort.by(Sort.Direction.DESC, "id"))
-        );
-
-        return ResponseEntity.ok(
-                goalProgressService.getGoalProgressByGroupId(
-                        groupId,
-                        pageable
-                )
-        );
-    }
 }
