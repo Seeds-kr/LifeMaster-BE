@@ -432,11 +432,12 @@
                     </div>
                 </div>
 
+                <!-- 전체 그룹 -->
                 <div class="table-card">
                     <div class="table-header">
                         <div>
                             <h2>전체 그룹 조회</h2>
-                            <p>그룹 행을 선택하면 인원과 활동 정보가 함께 표시됩니다.</p>
+                            <p>그룹을 선택하면 상세 정보가 함께 표시됩니다.</p>
                         </div>
 
                         <button onclick="loadGroups()">새로고침</button>
@@ -457,6 +458,7 @@
                                 <th>작업</th>
                             </tr>
                             </thead>
+
                             <tbody id="groupTableBody"></tbody>
                         </table>
                     </div>
@@ -468,6 +470,7 @@
                     </div>
                 </div>
 
+                <!-- 그룹 인원 -->
                 <div class="table-card">
                     <div class="table-header">
                         <div>
@@ -485,6 +488,7 @@
                                 <th>닉네임</th>
                             </tr>
                             </thead>
+
                             <tbody id="groupMemberTableBody">
                             <tr>
                                 <td colspan="3">그룹을 선택하세요.</td>
@@ -494,16 +498,69 @@
                     </div>
                 </div>
 
+                <!-- 그룹 활동 -->
                 <div class="table-card">
                     <div class="table-header">
                         <div>
                             <h2>그룹 활동 정보</h2>
-                            <p>선택한 그룹의 인원, 목표, 통계 설정, 비정상 여부를 확인합니다.</p>
+                            <p>인원, 목표, 통계 설정 및 비정상 여부를 확인합니다.</p>
                         </div>
                     </div>
 
                     <div id="groupActivityBox" class="activity-box">
                         그룹을 선택하세요.
+                    </div>
+                </div>
+
+                <!-- 목표 수행 기록 -->
+                <div class="table-card">
+                    <div class="table-header">
+                        <div>
+                            <h2>그룹 목표 수행 기록</h2>
+                            <p>목표를 수행한 사용자와 진행값을 최신순으로 확인합니다.</p>
+                        </div>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                            <tr>
+                                <th>기록 ID</th>
+                                <th>회원 ID</th>
+                                <th>이메일</th>
+                                <th>닉네임</th>
+                                <th>목표명</th>
+                                <th>목표 타입</th>
+                                <th>기간</th>
+                                <th>진행값</th>
+                                <th>수행 시간</th>
+                            </tr>
+                            </thead>
+
+                            <tbody id="groupGoalProgressTableBody">
+                            <tr>
+                                <td colspan="9">그룹을 선택하세요.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="pagination-box">
+                        <button
+                                id="groupProgressPrevBtn"
+                                onclick="prevGroupProgressPage()"
+                                disabled>
+                            이전
+                        </button>
+
+                        <span id="groupProgressPageInfo">1 / 1</span>
+
+                        <button
+                                id="groupProgressNextBtn"
+                                onclick="nextGroupProgressPage()"
+                                disabled>
+                            다음
+                        </button>
                     </div>
                 </div>
             </div>

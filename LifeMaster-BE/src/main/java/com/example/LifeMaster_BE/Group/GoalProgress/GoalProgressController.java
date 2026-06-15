@@ -7,10 +7,13 @@ import com.example.LifeMaster_BE.UserManager.Login;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import io.swagger.v3.oas.annotations.Operation;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 @RestController
@@ -122,5 +125,44 @@ public class GoalProgressController {
                 goalProgressService.getGoalProgressByUserId(user.getId());
 
         return ResponseEntity.ok(progressList);
+    }
+
+    @GetMapping("/{groupId}/goal-progress")
+    public ResponseEntity<?> getGroupGoalProgress(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable Long groupId
+    ) {
+        ResponseEntity<?> loginCheck = login.checkLogin(user);
+        if (loginCheck != null) {
+            return loginCheck;
+        }
+
+        List<AdminGroupGoalProgressDTO> result =
+                goalProgressService.getGoalProgressByGroupId(groupId);
+
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/{groupId}/goal-progress")
+    public ResponseEntity<?> getGroupGoalProgress(
+            @PathVariable Long groupId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        size = Math.min(Math.max(size, 1), 100);
+
+        Pageable pageable = PageRequest.of(
+                Math.max(page, 0),
+                size,
+                Sort.by(Sort.Direction.DESC, "submittedAt")
+                        .and(Sort.by(Sort.Direction.DESC, "id"))
+        );
+
+        return ResponseEntity.ok(
+                goalProgressService.getGoalProgressByGroupId(
+                        groupId,
+                        pageable
+                )
+        );
     }
 }

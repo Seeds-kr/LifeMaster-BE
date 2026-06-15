@@ -2,10 +2,13 @@ package com.example.LifeMaster_BE.Group.GoalProgress;
 
 import com.example.LifeMaster_BE.Group.Goal.GoalEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import org.springframework.data.domain.Pageable;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
@@ -103,5 +106,24 @@ public interface GoalProgressRepository extends JpaRepository<GoalProgressEntity
             @Param("goals") Collection<GoalEntity> goals,
             @Param("startDateTime") LocalDateTime startDateTime,
             @Param("endDateTime") LocalDateTime endDateTime
+    );
+
+    @Query("""
+    select gp
+    from GoalProgressEntity gp
+    join fetch gp.user
+    join fetch gp.group
+    join fetch gp.goal
+    where gp.group.id = :groupId
+    order by gp.submittedAt desc, gp.id desc
+""")
+    List<GoalProgressEntity> findByGroupIdWithDetails(
+            @Param("groupId") Long groupId
+    );
+
+    @EntityGraph(attributePaths = {"user", "group", "goal"})
+    Page<GoalProgressEntity> findByGroup_Id(
+            Long groupId,
+            Pageable pageable
     );
 }

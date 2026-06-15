@@ -11,9 +11,11 @@ import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import com.example.LifeMaster_BE.UserManager.Member.Subscription.FeatureType;
 import com.example.LifeMaster_BE.UserManager.Member.Subscription.SubscriptionAccessService;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.data.domain.Pageable;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -309,5 +311,72 @@ public class GoalProgressService {
     private MemberEntity getMemberOrThrow(Long userId) {
         return memberRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
+    }
+
+    @Transactional(readOnly = true)
+    public List<AdminGroupGoalProgressDTO> getGoalProgressByGroupId(Long groupId) {
+
+        if (!groupRepository.existsById(groupId)) {
+            throw new IllegalArgumentException(
+                    "Group not found with id: " + groupId
+            );
+        }
+
+        return goalProgressRepository.findByGroupIdWithDetails(groupId)
+                .stream()
+                .map(progress -> new AdminGroupGoalProgressDTO(
+                        progress.getId(),
+                        progress.getUser().getId(),
+                        progress.getUser().getEmail(),
+                        progress.getUser().getNickname(),
+                        progress.getGoal().getId(),
+                        progress.getGoal().getName(),
+                        progress.getGoal().getGoalType() == null
+                                ? null
+                                : progress.getGoal().getGoalType().name(),
+                        progress.getGoal().getDuration() == null
+                                ? null
+                                : progress.getGoal().getDuration().name(),
+                        progress.getProgressValue(),
+                        progress.getSubmittedAt()
+                ))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public Page<AdminGroupGoalProgressDTO> getGoalProgressByGroupId(
+            Long groupId,
+            Pageable pageable
+    ) {
+        if (!groupRepository.existsById(groupId)) {
+            throw new IllegalArgumentException(
+                    "Group not found with id: " + groupId
+            );
+        }
+
+        return goalProgressRepository
+                .findByGroup_Id(groupId, pageable)
+                .map(this::toAdminDto);
+    }
+
+    private AdminGroupGoalProgressDTO toAdminDto(
+            GoalProgressEntity progress
+    ) {
+        return new AdminGroupGoalProgressDTO(
+                progress.getId(),
+                progress.getUser().getId(),
+                progress.getUser().getEmail(),
+                progress.getUser().getNickname(),
+                progress.getGoal().getId(),
+                progress.getGoal().getName(),
+                progress.getGoal().getGoalType() == null
+                        ? null
+                        : progress.getGoal().getGoalType().name(),
+                progress.getGoal().getDuration() == null
+                        ? null
+                        : progress.getGoal().getDuration().name(),
+                progress.getProgressValue(),
+                progress.getSubmittedAt()
+        );
     }
 }

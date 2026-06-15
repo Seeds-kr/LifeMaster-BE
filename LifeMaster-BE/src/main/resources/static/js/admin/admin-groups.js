@@ -1,6 +1,9 @@
 let allGroups = [];
 let groupCurrentPage = 1;
 let selectedGroupId = null;
+let groupProgressCurrentPage = 0;
+let groupProgressTotalPages = 1;
+const groupProgressPageSize = 10;
 
 const groupPageSize = 10;
 
@@ -88,12 +91,14 @@ function renderGroups() {
 
 async function selectGroup(groupId) {
     selectedGroupId = groupId;
+    groupProgressCurrentPage = 0;
 
     renderGroups();
 
     await Promise.all([
         loadGroupMembers(groupId),
-        loadGroupActivity(groupId)
+        loadGroupActivity(groupId),
+        loadGroupGoalProgress(groupId, 0)
     ]);
 }
 
@@ -243,7 +248,14 @@ function clearGroupDetailPanels() {
         </tr>
     `;
 
-    document.getElementById("groupActivityBox").innerText = "그룹을 선택하세요.";
+    document.getElementById("groupActivityBox").innerText =
+        "그룹을 선택하세요.";
+
+    document.getElementById("groupGoalProgressTableBody").innerHTML = `
+        <tr>
+            <td colspan="9">그룹을 선택하세요.</td>
+        </tr>
+    `;
 }
 
 function escapeHtml(value) {
@@ -253,4 +265,118 @@ function escapeHtml(value) {
         .replaceAll(">", "&gt;")
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&#039;");
+}
+
+async function loadGroupGoalProgress(groupId, page = 0) {
+    const tbody = document.getElementById("groupGoalProgressTableBody");
+
+    const response = await fetch(
+        `/admin/groups/${groupId}/goal-progress?page=${page}&size=${groupProgressPageSize}`,
+        {
+            method: "GET",
+            headers: authHeaders()
+        }
+    );
+
+    if (await handleAuthError(response)) return;
+
+    if (!response.ok) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="9">목표 수행 기록 조회에 실패했습니다.</td>
+            </tr>
+        `;
+        return;
+    }
+
+    const data = await response.json();
+
+    if (selectedGroupId !== groupId) return;
+
+    groupProgressCurrentPage = data.number;
+    groupProgressTotalPages = Math.max(data.totalPages, 1);
+
+    tbody.innerHTML = "";
+
+    if (!data.content || data.content.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="9">목표 수행 기록이 없습니다.</td>
+            </tr>
+        `;
+    } else {
+        data.content.forEach(progress => {
+            tbody.insertAdjacentHTML("beforeend", `
+                <tr>
+                    <td>${progress.progressId}</td>
+                    <td>${progress.userId}</td>
+                    <td>${escapeHtml(progress.userEmail || "-")}</td>
+                    <td>${escapeHtml(progress.userNickname || "-")}</td>
+                    <td>${escapeHtml(progress.goalName || "-")}</td>
+                    <td>${escapeHtml(progress.goalType || "-")}</td>
+                    <td>${escapeHtml(progress.goalDuration || "-")}</td>
+                    <td>${formatProgressValue(progress.progressValue)}</td>
+                    <td>${formatSubmittedAt(progress.submittedAt)}</td>
+                </tr>
+            `);
+        });
+    }
+
+    updateGroupProgressPagination();
+}
+
+function updateGroupProgressPagination() {
+    document.getElementById("groupProgressPageInfo").innerText =
+        `${groupProgressCurrentPage + 1} / ${groupProgressTotalPages}`;
+
+    document.getElementById("groupProgressPrevBtn").disabled =
+        groupProgressCurrentPage <= 0;
+
+    document.getElementById("groupProgressNextBtn").disabled =
+        groupProgressCurrentPage >= groupProgressTotalPages - 1;
+}
+
+function prevGroupProgressPage() {
+    if (selectedGroupId !== null && groupProgressCurrentPage > 0) {
+        loadGroupGoalProgress(
+            selectedGroupId,
+            groupProgressCurrentPage - 1
+        );
+    }
+}
+
+function nextGroupProgressPage() {
+    if (
+        selectedGroupId !== null &&
+        groupProgressCurrentPage < groupProgressTotalPages - 1
+    ) {
+        loadGroupGoalProgress(
+            selectedGroupId,
+            groupProgressCurrentPage + 1
+        );
+    }
+}
+
+function formatProgressValue(value) {
+    const number = Number(value);
+
+    if (!Number.isFinite(number)) {
+        return "-";
+    }
+
+    return number.toLocaleString("ko-KR", {
+        maximumFractionDigits: 2
+    });
+}
+
+function formatSubmittedAt(value) {
+    if (!value) {
+        return "-";
+    }
+
+    return escapeHtml(
+        String(value)
+            .replace("T", " ")
+            .substring(0, 19)
+    );
 }
