@@ -18,13 +18,13 @@ public class AdminPurchaseController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
-    public ResponseEntity<Page<AdminPurchaseResponseDto>> getAllPurchases(
+    public ResponseEntity<Page<AdminPurchaseResponseDto>> getPurchases(
+            @RequestParam(required = false) Long memberId,
+            @RequestParam(required = false) String email,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
-        if (page < 0) {
-            page = 0;
-        }
+        page = Math.max(page, 0);
 
         if (size < 1) {
             size = 20;
@@ -40,7 +40,31 @@ public class AdminPurchaseController {
                 Sort.by(Sort.Direction.DESC, "purchaseTime")
         );
 
-        Page<AdminPurchaseResponseDto> result = adminPurchaseService.getAllPurchases(pageable);
+        Page<AdminPurchaseResponseDto> result;
+
+        if (memberId != null) {
+            result = adminPurchaseService.getPurchasesByMemberId(
+                    memberId,
+                    pageable
+            );
+        } else if (email != null && !email.isBlank()) {
+            result = adminPurchaseService.getPurchasesByMemberEmail(
+                    email.trim(),
+                    pageable
+            );
+        } else {
+            result = adminPurchaseService.getAllPurchases(pageable);
+        }
+
         return ResponseEntity.ok(result);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/{purchaseToken}")
+    public ResponseEntity<?> deletePurchase(
+            @PathVariable String purchaseToken
+    ) {
+        adminPurchaseService.deletePurchase(purchaseToken);
+        return ResponseEntity.ok("결제 내역이 삭제되었습니다.");
     }
 }

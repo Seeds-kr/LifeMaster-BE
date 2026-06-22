@@ -16,30 +16,62 @@ public interface PurchaseRepo extends JpaRepository<PurchaseEntity, String> {
     // 단건 조회
     Optional<PurchaseEntity> findByOrderId(String orderId);
 
+    Optional<PurchaseEntity> findByPurchaseToken(String purchaseToken);
+
     // 회원별 최신순 전체
     List<PurchaseEntity> findAllByMember_IdOrderByPurchaseTimeDesc(Long memberId);
 
     // 회원 + 결제원(provider) 필터 + 최신순
-    List<PurchaseEntity> findAllByMember_IdAndProviderOrderByPurchaseTimeDesc(Long memberId, String provider);
+    List<PurchaseEntity> findAllByMember_IdAndProviderOrderByPurchaseTimeDesc(
+            Long memberId,
+            String provider
+    );
 
-    // 페이지네이션 (정렬은 Pageable에서 지정)
-    Page<PurchaseEntity> findAllByMember_Id(Long memberId, Pageable pageable);
+    // 페이지네이션 - 회원 ID 기준
+    Page<PurchaseEntity> findAllByMember_Id(
+            Long memberId,
+            Pageable pageable
+    );
+
+    // 관리자 페이지 - 회원 ID 기준 최신순
+    Page<PurchaseEntity> findByMember_IdOrderByPurchaseTimeDesc(
+            Long memberId,
+            Pageable pageable
+    );
+
+    // 관리자 페이지 - 이메일 검색 최신순
+    Page<PurchaseEntity> findByMember_EmailContainingIgnoreCaseOrderByPurchaseTimeDesc(
+            String email,
+            Pageable pageable
+    );
 
     // 기간 필터 + 최신순
     List<PurchaseEntity> findAllByMember_IdAndPurchaseTimeBetweenOrderByPurchaseTimeDesc(
-            Long memberId, LocalDateTime start, LocalDateTime end
+            Long memberId,
+            LocalDateTime start,
+            LocalDateTime end
     );
 
-    // 존재 여부(멱등성 등)
+    // 존재 여부
     boolean existsByPurchaseToken(String purchaseToken);
+
     boolean existsByOrderId(String orderId);
 
-    // 회원 + 주문ID
-    Optional<PurchaseEntity> findByMember_IdAndOrderId(Long memberId, String orderId);
+    // 회원 + 주문 ID
+    Optional<PurchaseEntity> findByMember_IdAndOrderId(
+            Long memberId,
+            String orderId
+    );
 
     // 어드민 전체 조회용
     Page<PurchaseEntity> findAllByOrderByPurchaseTimeDesc(Pageable pageable);
 
-    // 필요하면 회원별 조회도 pageable 버전 추가 가능
-    Page<PurchaseEntity> findAllByMember(MemberEntity member, Pageable pageable);
+    // 회원별 조회 pageable 버전
+    Page<PurchaseEntity> findAllByMember(
+            MemberEntity member,
+            Pageable pageable
+    );
+
+    // 관리자 삭제용
+    void deleteByPurchaseToken(String purchaseToken);
 }
