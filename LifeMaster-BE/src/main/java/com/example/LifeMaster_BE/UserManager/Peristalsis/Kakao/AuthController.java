@@ -5,6 +5,7 @@ import com.example.LifeMaster_BE.UserManager.Member.LoginRole;
 import com.example.LifeMaster_BE.UserManager.Member.LoginType;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
+import com.example.LifeMaster_BE.UserManager.Member.MemberStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -47,8 +48,8 @@ public class AuthController {
                 return ResponseEntity.status(400).body(Map.of("message", "사용자 이메일이 없습니다."));
             }
 
-            // 3. DB 조회 혹은 신규 생성
-            MemberEntity user = memberRepository.findByEmail(email).orElseGet(() -> {
+            // 3. DB 조회 혹은 신규 생성 (탈퇴하지 않은 회원만)
+            MemberEntity user = memberRepository.findByEmailAndMemberStatusNot(email, MemberStatus.DELETED).orElseGet(() -> {
                 MemberEntity newUser = MemberEntity.builder()
                         .email(email)
                         .nickname(nickname)
@@ -85,7 +86,8 @@ public class AuthController {
             // JwtUtil로 email 추출
             String email = jwtUtil.extractEmail(refreshToken);
 
-            MemberEntity user = memberRepository.findByEmail(email)
+            // 탈퇴하지 않은 회원만 조회
+            MemberEntity user = memberRepository.findByEmailAndMemberStatusNot(email, MemberStatus.DELETED)
                     .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다: " + email));
 
             String newAccessToken = jwtUtil.generateToken(user.getEmail());

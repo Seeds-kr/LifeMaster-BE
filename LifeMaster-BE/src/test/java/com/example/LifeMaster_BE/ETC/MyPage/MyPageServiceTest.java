@@ -93,7 +93,8 @@ class MyPageServiceTest {
 
         myPageService.deleteMemberInfo(memberId);
 
-        verify(memberRepository).delete(member);
+        // Soft delete이므로 save() 호출됨
+        verify(memberRepository).save(member);
     }
 
     @Test

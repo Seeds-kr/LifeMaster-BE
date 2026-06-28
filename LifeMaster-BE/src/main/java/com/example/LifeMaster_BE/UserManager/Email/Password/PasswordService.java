@@ -2,6 +2,7 @@ package com.example.LifeMaster_BE.UserManager.Email.Password;
 
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
+import com.example.LifeMaster_BE.UserManager.Member.MemberStatus;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +21,8 @@ public class PasswordService {
     private final TokenService tokenService;
 
     public void sendPasswordResetEmail(String email) {
-        MemberEntity memberEntity = memberRepository.findByEmail(email)
+        // 탈퇴하지 않은 회원만 조회
+        MemberEntity memberEntity = memberRepository.findByEmailAndMemberStatusNot(email, MemberStatus.DELETED)
                 .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 이메일 정보입니다."));
 
         String code = tokenService.createVerificationCode(email, memberEntity.getId());
@@ -55,6 +57,11 @@ public class PasswordService {
         Long userId = tokenService.validateAndConsumeToken(token);
         MemberEntity memberEntity = memberRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("Invalid member"));
+
+        // 탈퇴한 회원인지 확인
+        if (memberEntity.isDeleted()) {
+            throw new IllegalStateException("탈퇴한 회원입니다.");
+        }
 
         BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder();
         String hashedPassword = bCryptPasswordEncoder.encode(newPassword);
