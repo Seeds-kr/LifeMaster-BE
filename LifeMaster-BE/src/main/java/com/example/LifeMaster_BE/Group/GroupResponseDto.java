@@ -12,5 +12,5 @@ public class GroupResponseDto {
     private String description;
     private Long creatorId;
     private long memberCount;
+    private GroupAccessType accessType;
 }
-

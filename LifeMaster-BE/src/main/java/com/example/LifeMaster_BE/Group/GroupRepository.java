@@ -23,36 +23,72 @@ public interface GroupRepository extends JpaRepository<GroupEntity, Long> {
     // GET /group (전체 그룹 리스트)
     @Query("""
         select new com.example.LifeMaster_BE.Group.GroupResponseDto(
-            g.id, g.icon, g.name, g.description, g.creator.id, count(distinct m)
+            g.id,
+            g.icon,
+            g.name,
+            g.description,
+            g.creator.id,
+            count(distinct m),
+            g.accessType
         )
         from GroupEntity g
         left join g.members m
-        group by g.id, g.icon, g.name, g.description, g.creator.id
+        group by
+            g.id,
+            g.icon,
+            g.name,
+            g.description,
+            g.creator.id,
+            g.accessType
     """)
     List<GroupResponseDto> findAllWithMemberCount();
 
     // GET /group/{id} (단건)
     @Query("""
         select new com.example.LifeMaster_BE.Group.GroupResponseDto(
-            g.id, g.icon, g.name, g.description, g.creator.id, count(distinct m)
+            g.id,
+            g.icon,
+            g.name,
+            g.description,
+            g.creator.id,
+            count(distinct m),
+            g.accessType
         )
         from GroupEntity g
         left join g.members m
         where g.id = :groupId
-        group by g.id, g.icon, g.name, g.description, g.creator.id
+        group by
+            g.id,
+            g.icon,
+            g.name,
+            g.description,
+            g.creator.id,
+            g.accessType
     """)
     Optional<GroupResponseDto> findByIdWithMemberCount(@Param("groupId") Long groupId);
 
     // GET /group/user/me (내가 속한 그룹)
     @Query("""
         select new com.example.LifeMaster_BE.Group.GroupResponseDto(
-            g.id, g.icon, g.name, g.description, g.creator.id, count(distinct m2)
+            g.id,
+            g.icon,
+            g.name,
+            g.description,
+            g.creator.id,
+            count(distinct m2),
+            g.accessType
         )
         from GroupEntity g
         join g.members me
         left join g.members m2
         where me.id = :memberId
-        group by g.id, g.icon, g.name, g.description, g.creator.id
+        group by
+            g.id,
+            g.icon,
+            g.name,
+            g.description,
+            g.creator.id,
+            g.accessType
     """)
     List<GroupResponseDto> findMyGroupsWithMemberCount(@Param("memberId") Long memberId);
 }
