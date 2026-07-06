@@ -3,7 +3,6 @@ package com.example.LifeMaster_BE.Admin.User;
 import com.example.LifeMaster_BE.Admin.User.Dto.AdminUserDetailDto;
 import com.example.LifeMaster_BE.Admin.User.Dto.AdminUserListDto;
 import com.example.LifeMaster_BE.Admin.User.Dto.RoleUpdateRequest;
-import com.example.LifeMaster_BE.UserManager.Member.LoginRole;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import com.example.LifeMaster_BE.UserManager.Member.MemberStatus;
@@ -20,14 +19,40 @@ public class AdminUserService {
 
     private final MemberRepository memberRepository;
 
-    public Page<AdminUserListDto> getUsers(String keyword, MemberStatus status, Pageable pageable) {
-        Page<MemberEntity> members = memberRepository.searchMembers(keyword, status, pageable);
+    public Page<AdminUserListDto> getUsers(
+            String keyword,
+            MemberStatus status,
+            Pageable pageable
+    ) {
+        String trimmedKeyword = null;
+        Long memberId = null;
+
+        if (keyword != null && !keyword.isBlank()) {
+            trimmedKeyword = keyword.trim();
+
+            try {
+                memberId = Long.parseLong(trimmedKeyword);
+            } catch (NumberFormatException ignored) {
+                // 숫자가 아니면 회원 ID 검색은 하지 않고,
+                // 이메일/닉네임 검색만 수행
+            }
+        }
+
+        Page<MemberEntity> members =
+                memberRepository.searchMembers(
+                        trimmedKeyword,
+                        memberId,
+                        status,
+                        pageable
+                );
+
         return members.map(AdminUserListDto::from);
     }
 
     public AdminUserDetailDto getUserDetail(Long userId) {
         MemberEntity member = memberRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다. ID: " + userId));
+
         return AdminUserDetailDto.from(member);
     }
 
@@ -35,6 +60,7 @@ public class AdminUserService {
     public void updateUserRole(Long userId, RoleUpdateRequest request) {
         MemberEntity member = memberRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다. ID: " + userId));
+
         member.setLoginRole(request.getLoginRole());
     }
 
@@ -42,6 +68,7 @@ public class AdminUserService {
     public void deleteUser(Long userId) {
         MemberEntity member = memberRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다. ID: " + userId));
+
         member.setMemberStatus(MemberStatus.DELETED);
     }
 
@@ -49,6 +76,7 @@ public class AdminUserService {
     public void updateUserStatus(Long userId, MemberStatus status) {
         MemberEntity member = memberRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다. ID: " + userId));
+
         member.setMemberStatus(status);
     }
 
@@ -56,6 +84,7 @@ public class AdminUserService {
     public void addWarning(Long userId) {
         MemberEntity member = memberRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다. ID: " + userId));
+
         member.setWarningCount(member.getWarningCount() + 1);
         member.setMemberStatus(MemberStatus.WARNED);
     }

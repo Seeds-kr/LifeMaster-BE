@@ -20,17 +20,31 @@ public interface MemberRepository extends JpaRepository<MemberEntity, Long> {
     boolean existsByEmail(String Email);
 
     Optional<MemberEntity> findByEmail(String email);
+
     @Query("SELECT m.email FROM MemberEntity m WHERE m.id = :id")
     Optional<String> findEmailById(@Param("id") Long id);
 
     // 관리자용 검색 메서드
-    @Query("SELECT m FROM MemberEntity m WHERE " +
-            "(:keyword IS NULL OR m.email LIKE %:keyword% OR m.nickname LIKE %:keyword%) AND " +
-            "(:status IS NULL OR m.memberStatus = :status)")
+    // 회원 ID / 이메일 / 닉네임 검색
+    @Query("""
+        SELECT m
+        FROM MemberEntity m
+        WHERE
+            (
+                :keyword IS NULL
+                OR :keyword = ''
+                OR LOWER(m.email) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(m.nickname) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR (:memberId IS NOT NULL AND m.id = :memberId)
+            )
+            AND (:status IS NULL OR m.memberStatus = :status)
+    """)
     Page<MemberEntity> searchMembers(
             @Param("keyword") String keyword,
+            @Param("memberId") Long memberId,
             @Param("status") MemberStatus status,
-            Pageable pageable);
+            Pageable pageable
+    );
 
     // 통계용 메서드
     long countByMemberStatus(MemberStatus status);
@@ -45,34 +59,66 @@ public interface MemberRepository extends JpaRepository<MemberEntity, Long> {
             Pageable pageable
     );
 
+    // 어드민용 - 프리미엄 회원 검색
+    @Query("""
+        SELECT m
+        FROM MemberEntity m
+        WHERE m.subscriptionPlan = :subscriptionPlan
+          AND (
+                (:memberId IS NOT NULL AND m.id = :memberId)
+                OR LOWER(m.email) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(m.nickname) LIKE LOWER(CONCAT('%', :keyword, '%'))
+          )
+    """)
+    List<MemberEntity> searchPremiumMembersForAdmin(
+            @Param("subscriptionPlan") SubscriptionPlan subscriptionPlan,
+            @Param("memberId") Long memberId,
+            @Param("keyword") String keyword
+    );
+
+    // 어드민용 - 일반 회원 검색
+    @Query("""
+        SELECT m
+        FROM MemberEntity m
+        WHERE m.subscriptionPlan = :subscriptionPlan
+          AND (
+                (:memberId IS NOT NULL AND m.id = :memberId)
+                OR LOWER(m.email) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(m.nickname) LIKE LOWER(CONCAT('%', :keyword, '%'))
+          )
+    """)
+    Page<MemberEntity> searchNonPremiumMembersForAdmin(
+            @Param("subscriptionPlan") SubscriptionPlan subscriptionPlan,
+            @Param("memberId") Long memberId,
+            @Param("keyword") String keyword,
+            Pageable pageable
+    );
+
     List<MemberEntity> findAll();
 
     @Query("""
-SELECT new com.example.LifeMaster_BE.Admin.Dto.DailyCountDto(
-    FUNCTION('DATE_FORMAT', m.createdAt, '%Y-%m-%d'),
-    COUNT(m)
-)
-FROM MemberEntity m
-GROUP BY FUNCTION('DATE_FORMAT', m.createdAt, '%Y-%m-%d')
-ORDER BY FUNCTION('DATE_FORMAT', m.createdAt, '%Y-%m-%d')
-""")
+        SELECT new com.example.LifeMaster_BE.Admin.Dto.DailyCountDto(
+            FUNCTION('DATE_FORMAT', m.createdAt, '%Y-%m-%d'),
+            COUNT(m)
+        )
+        FROM MemberEntity m
+        GROUP BY FUNCTION('DATE_FORMAT', m.createdAt, '%Y-%m-%d')
+        ORDER BY FUNCTION('DATE_FORMAT', m.createdAt, '%Y-%m-%d')
+    """)
     List<DailyCountDto> countDailyUsers();
 
-
     @Query("""
-SELECT new com.example.LifeMaster_BE.Admin.Dto.MonthlyCountDto(
-    YEAR(m.createdAt),
-    MONTH(m.createdAt),
-    COUNT(m)
-)
-FROM MemberEntity m
-GROUP BY YEAR(m.createdAt), MONTH(m.createdAt)
-ORDER BY YEAR(m.createdAt), MONTH(m.createdAt)
-""")
+        SELECT new com.example.LifeMaster_BE.Admin.Dto.MonthlyCountDto(
+            YEAR(m.createdAt),
+            MONTH(m.createdAt),
+            COUNT(m)
+        )
+        FROM MemberEntity m
+        GROUP BY YEAR(m.createdAt), MONTH(m.createdAt)
+        ORDER BY YEAR(m.createdAt), MONTH(m.createdAt)
+    """)
     List<MonthlyCountDto> countMonthlyUsers();
 
-
-    // 🔥 활성 유저 (최근 7일 로그인 기준 예시)
     @Query("""
         SELECT COUNT(m)
         FROM MemberEntity m
@@ -81,13 +127,13 @@ ORDER BY YEAR(m.createdAt), MONTH(m.createdAt)
     Long countActiveUsers();
 
     @Query("""
-    SELECT new com.example.LifeMaster_BE.Admin.Dto.LoginTypeCountDto(
-        m.loginType,
-        COUNT(m)
-    )
-    FROM MemberEntity m
-    GROUP BY m.loginType
-""")
+        SELECT new com.example.LifeMaster_BE.Admin.Dto.LoginTypeCountDto(
+            m.loginType,
+            COUNT(m)
+        )
+        FROM MemberEntity m
+        GROUP BY m.loginType
+    """)
     List<LoginTypeCountDto> countByLoginType();
 
     Page<MemberEntity> findAll(Pageable pageable);
@@ -96,5 +142,3 @@ ORDER BY YEAR(m.createdAt), MONTH(m.createdAt)
 
     long countByLoginRole(LoginRole loginRole);
 }
-
-

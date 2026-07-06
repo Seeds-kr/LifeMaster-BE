@@ -19,9 +19,11 @@ public class AdminSubscriptionController {
      * 전체 프리미엄 유저 조회
      */
     @GetMapping("/premium-members")
-    public ResponseEntity<List<PremiumMemberAdminDto>> getAllPremiumMembers() {
+    public ResponseEntity<List<PremiumMemberAdminDto>> getAllPremiumMembers(
+            @RequestParam(required = false) String keyword
+    ) {
         List<PremiumMemberAdminDto> result =
-                memberSubscriptionService.getAllPremiumMembersForAdmin();
+                memberSubscriptionService.getAllPremiumMembersForAdmin(keyword);
 
         return ResponseEntity.ok(result);
     }
@@ -32,10 +34,11 @@ public class AdminSubscriptionController {
     @GetMapping("/non-premium-members")
     public ResponseEntity<Page<NonPremiumMemberAdminDto>> getNonPremiumMembers(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String keyword
     ) {
         Page<NonPremiumMemberAdminDto> result =
-                memberSubscriptionService.getNonPremiumMembersForAdmin(page, size);
+                memberSubscriptionService.getNonPremiumMembersForAdmin(page, size, keyword);
 
         return ResponseEntity.ok(result);
     }

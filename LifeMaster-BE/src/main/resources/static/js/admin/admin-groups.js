@@ -1,11 +1,18 @@
 let allGroups = [];
+let filteredGroups = [];
+
 let groupCurrentPage = 1;
 let selectedGroupId = null;
+
 let groupProgressCurrentPage = 0;
 let groupProgressTotalPages = 1;
-const groupProgressPageSize = 10;
 
 const groupPageSize = 10;
+const groupProgressPageSize = 10;
+
+/* =========================
+   전체 그룹 조회
+========================= */
 
 async function loadGroups() {
     const response = await fetch("/admin/groups/dashboard", {
@@ -23,10 +30,9 @@ async function loadGroups() {
     const data = await response.json();
 
     allGroups = data.groups || [];
-    groupCurrentPage = 1;
 
     updateGroupSummary(data.summary);
-    renderGroups();
+    applyGroupSearch();
 }
 
 function updateGroupSummary(summary) {
@@ -46,7 +52,7 @@ function renderGroups() {
 
     const start = (groupCurrentPage - 1) * groupPageSize;
     const end = start + groupPageSize;
-    const pageItems = allGroups.slice(start, end);
+    const pageItems = filteredGroups.slice(start, end);
 
     if (pageItems.length === 0) {
         tbody.innerHTML = `
@@ -67,18 +73,20 @@ function renderGroups() {
             ? `<button class="danger-btn" onclick="event.stopPropagation(); deleteAbnormalGroup(${group.groupId})">비정상 삭제</button>`
             : `<button class="danger-btn" onclick="event.stopPropagation(); forceDeleteGroup(${group.groupId})">강제 삭제</button>`;
 
-        const selectedClass = selectedGroupId === group.groupId ? "selected-group-row" : "";
+        const selectedClass = selectedGroupId === group.groupId
+            ? "selected-group-row"
+            : "";
 
         const row = `
             <tr class="group-row ${selectedClass}" onclick="selectGroup(${group.groupId})">
                 <td>${group.groupId}</td>
                 <td>${escapeHtml(group.name || "-")}</td>
                 <td>${group.accessType || "-"}</td>
-                <td>${group.ownerEmail || "-"}</td>
-                <td>${group.memberCount}</td>
-                <td>${group.goalCount}</td>
+                <td>${escapeHtml(group.ownerEmail || "-")}</td>
+                <td>${group.memberCount ?? 0}</td>
+                <td>${group.goalCount ?? 0}</td>
                 <td>${statusText}</td>
-                <td>${group.abnormalReason || "-"}</td>
+                <td>${escapeHtml(group.abnormalReason || "-")}</td>
                 <td>${deleteButton}</td>
             </tr>
         `;
@@ -88,6 +96,61 @@ function renderGroups() {
 
     updateGroupPagination();
 }
+
+/* =========================
+   그룹 검색
+========================= */
+
+function applyGroupSearch() {
+    const input = document.getElementById("groupSearchInput");
+
+    const keyword = input
+        ? input.value.trim().toLowerCase()
+        : "";
+
+    if (!keyword) {
+        filteredGroups = [...allGroups];
+    } else {
+        filteredGroups = allGroups.filter(group => {
+            const groupId = String(group.groupId ?? "");
+            const groupName = String(group.name ?? "").toLowerCase();
+
+            return (
+                groupId === keyword ||
+                groupName.includes(keyword)
+            );
+        });
+    }
+
+    groupCurrentPage = 1;
+    renderGroups();
+}
+
+function searchGroups() {
+    applyGroupSearch();
+}
+
+function resetGroupSearch() {
+    const input = document.getElementById("groupSearchInput");
+
+    if (input) {
+        input.value = "";
+    }
+
+    filteredGroups = [...allGroups];
+    groupCurrentPage = 1;
+    renderGroups();
+}
+
+function handleGroupSearchEnter(event) {
+    if (event.key === "Enter") {
+        searchGroups();
+    }
+}
+
+/* =========================
+   그룹 선택
+========================= */
 
 async function selectGroup(groupId) {
     selectedGroupId = groupId;
@@ -102,12 +165,24 @@ async function selectGroup(groupId) {
     ]);
 }
 
-function updateGroupPagination() {
-    const totalPages = Math.max(1, Math.ceil(allGroups.length / groupPageSize));
+/* =========================
+   그룹 페이징
+========================= */
 
-    document.getElementById("groupPageInfo").innerText = `${groupCurrentPage} / ${totalPages}`;
-    document.getElementById("groupPrevBtn").disabled = groupCurrentPage <= 1;
-    document.getElementById("groupNextBtn").disabled = groupCurrentPage >= totalPages;
+function updateGroupPagination() {
+    const totalPages = Math.max(
+        1,
+        Math.ceil(filteredGroups.length / groupPageSize)
+    );
+
+    document.getElementById("groupPageInfo").innerText =
+        `${groupCurrentPage} / ${totalPages}`;
+
+    document.getElementById("groupPrevBtn").disabled =
+        groupCurrentPage <= 1;
+
+    document.getElementById("groupNextBtn").disabled =
+        groupCurrentPage >= totalPages;
 }
 
 function prevGroupPage() {
@@ -118,13 +193,20 @@ function prevGroupPage() {
 }
 
 function nextGroupPage() {
-    const totalPages = Math.max(1, Math.ceil(allGroups.length / groupPageSize));
+    const totalPages = Math.max(
+        1,
+        Math.ceil(filteredGroups.length / groupPageSize)
+    );
 
     if (groupCurrentPage < totalPages) {
         groupCurrentPage++;
         renderGroups();
     }
 }
+
+/* =========================
+   그룹 인원 조회
+========================= */
 
 async function loadGroupMembers(groupId) {
     const response = await fetch(`/admin/groups/${groupId}/members`, {
@@ -164,6 +246,10 @@ async function loadGroupMembers(groupId) {
     });
 }
 
+/* =========================
+   그룹 활동 조회
+========================= */
+
 async function loadGroupActivity(groupId) {
     const response = await fetch(`/admin/groups/${groupId}/activity`, {
         method: "GET",
@@ -183,13 +269,17 @@ async function loadGroupActivity(groupId) {
     box.innerHTML = `
         <div class="activity-row"><strong>그룹 ID:</strong> ${activity.groupId}</div>
         <div class="activity-row"><strong>그룹명:</strong> ${escapeHtml(activity.groupName || "-")}</div>
-        <div class="activity-row"><strong>인원 수:</strong> ${activity.memberCount}</div>
-        <div class="activity-row"><strong>목표 수:</strong> ${activity.goalCount}</div>
-        <div class="activity-row"><strong>통계 목표 수:</strong> ${activity.statisticGoalCount}</div>
+        <div class="activity-row"><strong>인원 수:</strong> ${activity.memberCount ?? 0}</div>
+        <div class="activity-row"><strong>목표 수:</strong> ${activity.goalCount ?? 0}</div>
+        <div class="activity-row"><strong>통계 목표 수:</strong> ${activity.statisticGoalCount ?? 0}</div>
         <div class="activity-row"><strong>비정상 여부:</strong> ${activity.abnormal ? "비정상" : "정상"}</div>
-        <div class="activity-row"><strong>사유:</strong> ${activity.abnormalReason || "-"}</div>
+        <div class="activity-row"><strong>사유:</strong> ${escapeHtml(activity.abnormalReason || "-")}</div>
     `;
 }
+
+/* =========================
+   그룹 삭제
+========================= */
 
 async function deleteAbnormalGroup(groupId) {
     if (!confirm(`비정상 그룹 ID ${groupId}를 삭제하시겠습니까?`)) {
@@ -256,16 +346,15 @@ function clearGroupDetailPanels() {
             <td colspan="9">그룹을 선택하세요.</td>
         </tr>
     `;
+
+    groupProgressCurrentPage = 0;
+    groupProgressTotalPages = 1;
+    updateGroupProgressPagination();
 }
 
-function escapeHtml(value) {
-    return String(value)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-}
+/* =========================
+   그룹 목표 수행 기록
+========================= */
 
 async function loadGroupGoalProgress(groupId, page = 0) {
     const tbody = document.getElementById("groupGoalProgressTableBody");
@@ -293,8 +382,8 @@ async function loadGroupGoalProgress(groupId, page = 0) {
 
     if (selectedGroupId !== groupId) return;
 
-    groupProgressCurrentPage = data.number;
-    groupProgressTotalPages = Math.max(data.totalPages, 1);
+    groupProgressCurrentPage = data.number ?? 0;
+    groupProgressTotalPages = Math.max(data.totalPages || 1, 1);
 
     tbody.innerHTML = "";
 
@@ -326,13 +415,21 @@ async function loadGroupGoalProgress(groupId, page = 0) {
 }
 
 function updateGroupProgressPagination() {
-    document.getElementById("groupProgressPageInfo").innerText =
+    const pageInfo = document.getElementById("groupProgressPageInfo");
+    const prevBtn = document.getElementById("groupProgressPrevBtn");
+    const nextBtn = document.getElementById("groupProgressNextBtn");
+
+    if (!pageInfo || !prevBtn || !nextBtn) {
+        return;
+    }
+
+    pageInfo.innerText =
         `${groupProgressCurrentPage + 1} / ${groupProgressTotalPages}`;
 
-    document.getElementById("groupProgressPrevBtn").disabled =
+    prevBtn.disabled =
         groupProgressCurrentPage <= 0;
 
-    document.getElementById("groupProgressNextBtn").disabled =
+    nextBtn.disabled =
         groupProgressCurrentPage >= groupProgressTotalPages - 1;
 }
 
@@ -357,6 +454,10 @@ function nextGroupProgressPage() {
     }
 }
 
+/* =========================
+   Format / Util
+========================= */
+
 function formatProgressValue(value) {
     const number = Number(value);
 
@@ -379,4 +480,13 @@ function formatSubmittedAt(value) {
             .replace("T", " ")
             .substring(0, 19)
     );
+}
+
+function escapeHtml(value) {
+    return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
 }

@@ -1,4 +1,5 @@
 let allCoupons = [];
+let filteredCoupons = [];
 let couponCurrentPage = 1;
 
 const couponPageSize = 10;
@@ -24,9 +25,10 @@ async function loadCoupons() {
     }
 
     allCoupons = await response.json();
-    couponCurrentPage = 1;
 
-    renderCoupons();
+    // 조회 시 현재 검색어도 같이 적용
+    applyCouponSearch();
+
     updateCouponSummary(allCoupons);
 }
 
@@ -34,10 +36,12 @@ function renderCoupons() {
     const tbody = document.getElementById("couponTableBody");
     tbody.innerHTML = "";
 
-    const totalPages = Math.ceil(allCoupons.length / couponPageSize) || 1;
+    const targetCoupons = filteredCoupons;
+
+    const totalPages = Math.ceil(targetCoupons.length / couponPageSize) || 1;
     const start = (couponCurrentPage - 1) * couponPageSize;
     const end = start + couponPageSize;
-    const pageCoupons = allCoupons.slice(start, end);
+    const pageCoupons = targetCoupons.slice(start, end);
 
     if (pageCoupons.length === 0) {
         tbody.innerHTML = `<tr><td colspan="6" class="empty">조회된 쿠폰이 없습니다.</td></tr>`;
@@ -74,6 +78,49 @@ function renderCoupons() {
 
     document.getElementById("couponNextBtn").disabled =
         couponCurrentPage >= totalPages;
+}
+
+function applyCouponSearch() {
+    const input = document.getElementById("couponSearchInput");
+
+    const keyword = input
+        ? input.value.trim().toUpperCase()
+        : "";
+
+    if (!keyword) {
+        filteredCoupons = [...allCoupons];
+    } else {
+        filteredCoupons = allCoupons.filter(coupon => {
+            const id = String(coupon.couponId ?? "");
+            const code = String(coupon.couponCode ?? "").toUpperCase();
+
+            return id === keyword || code.includes(keyword);
+        });
+    }
+
+    couponCurrentPage = 1;
+    renderCoupons();
+}
+
+function searchCoupons() {
+    applyCouponSearch();
+}
+
+function resetCouponSearch() {
+    const input = document.getElementById("couponSearchInput");
+    if (input) {
+        input.value = "";
+    }
+
+    filteredCoupons = [...allCoupons];
+    couponCurrentPage = 1;
+    renderCoupons();
+}
+
+function handleCouponSearchEnter(event) {
+    if (event.key === "Enter") {
+        searchCoupons();
+    }
 }
 
 function couponMemberText(coupon) {
@@ -149,7 +196,7 @@ function prevCouponPage() {
 }
 
 function nextCouponPage() {
-    const totalPages = Math.ceil(allCoupons.length / couponPageSize) || 1;
+    const totalPages = Math.ceil(filteredCoupons.length / couponPageSize) || 1;
 
     if (couponCurrentPage < totalPages) {
         couponCurrentPage++;

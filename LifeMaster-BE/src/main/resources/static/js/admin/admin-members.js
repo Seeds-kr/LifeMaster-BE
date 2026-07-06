@@ -8,13 +8,18 @@ const memberPageSize = 10;
 ========================= */
 
 async function loadMembers() {
-    const response = await fetch(
-        `/admin/members?page=${memberCurrentPage}&size=${memberPageSize}`,
-        {
-            method: "GET",
-            headers: authHeaders()
-        }
-    );
+    const keyword = document.getElementById("memberSearchInput")?.value.trim() ?? "";
+
+    let url = `/admin/members?page=${memberCurrentPage}&size=${memberPageSize}`;
+
+    if (keyword) {
+        url += `&keyword=${encodeURIComponent(keyword)}`;
+    }
+
+    const response = await fetch(url, {
+        method: "GET",
+        headers: authHeaders()
+    });
 
     if (await handleAuthError(response)) return;
 
@@ -30,6 +35,27 @@ async function loadMembers() {
 
     renderMembers(result.content ?? []);
     updateMemberPagination();
+}
+
+function searchMembers() {
+    memberCurrentPage = 0;
+    loadMembers();
+}
+
+function resetMemberSearch() {
+    const input = document.getElementById("memberSearchInput");
+    if (input) {
+        input.value = "";
+    }
+
+    memberCurrentPage = 0;
+    loadMembers();
+}
+
+function handleMemberSearchEnter(event) {
+    if (event.key === "Enter") {
+        searchMembers();
+    }
 }
 
 function renderMembers(members) {
@@ -199,6 +225,11 @@ function nextMemberPage() {
 }
 
 function reloadMembers() {
+    const input = document.getElementById("memberSearchInput");
+    if (input) {
+        input.value = "";
+    }
+
     memberCurrentPage = 0;
     loadMembers();
     loadMemberSummary();

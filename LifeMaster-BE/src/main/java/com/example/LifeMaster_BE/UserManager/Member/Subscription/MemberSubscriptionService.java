@@ -230,28 +230,69 @@ public class MemberSubscriptionService {
     }
 
     /**
-     * 어드민용 - 전체 프리미엄 유저의 유효기간 조회
+     * 어드민용 - 전체 프리미엄 유저의 유효기간 조회 + 검색
      */
     @Transactional(readOnly = true)
-    public List<PremiumMemberAdminDto> getAllPremiumMembersForAdmin() {
-        return memberRepository.findAllBySubscriptionPlan(SubscriptionPlan.PREMIUM)
+    public List<PremiumMemberAdminDto> getAllPremiumMembersForAdmin(String keyword) {
+
+        if (keyword == null || keyword.isBlank()) {
+            return memberRepository.findAllBySubscriptionPlan(SubscriptionPlan.PREMIUM)
+                    .stream()
+                    .map(PremiumMemberAdminDto::from)
+                    .toList();
+        }
+
+        String trimmedKeyword = keyword.trim();
+
+        Long memberId = null;
+        try {
+            memberId = Long.parseLong(trimmedKeyword);
+        } catch (NumberFormatException ignored) {
+        }
+
+        return memberRepository
+                .searchPremiumMembersForAdmin(
+                        SubscriptionPlan.PREMIUM,
+                        memberId,
+                        trimmedKeyword
+                )
                 .stream()
                 .map(PremiumMemberAdminDto::from)
                 .toList();
     }
 
     /**
-     * 어드민용 - 일반 회원 조회
+     * 어드민용 - 일반 회원 조회 + 검색
      */
     @Transactional(readOnly = true)
     public Page<NonPremiumMemberAdminDto> getNonPremiumMembersForAdmin(
             int page,
-            int size
+            int size,
+            String keyword
     ) {
         Pageable pageable = PageRequest.of(page, size);
 
+        if (keyword == null || keyword.isBlank()) {
+            return memberRepository
+                    .findAllBySubscriptionPlan(SubscriptionPlan.FREE, pageable)
+                    .map(NonPremiumMemberAdminDto::from);
+        }
+
+        String trimmedKeyword = keyword.trim();
+
+        Long memberId = null;
+        try {
+            memberId = Long.parseLong(trimmedKeyword);
+        } catch (NumberFormatException ignored) {
+        }
+
         return memberRepository
-                .findAllBySubscriptionPlan(SubscriptionPlan.FREE, pageable)
+                .searchNonPremiumMembersForAdmin(
+                        SubscriptionPlan.FREE,
+                        memberId,
+                        trimmedKeyword,
+                        pageable
+                )
                 .map(NonPremiumMemberAdminDto::from);
     }
 

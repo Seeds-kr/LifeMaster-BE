@@ -1,10 +1,25 @@
+let premiumMembers = [];
+
 let nonPremiumCurrentPage = 0;
 let nonPremiumTotalPages = 1;
 
 const nonPremiumPageSize = 10;
 
+/* =========================
+   프리미엄 회원 조회
+========================= */
+
 async function loadPremiumMembers() {
-    const response = await fetch("/admin/premium/premium-members", {
+    const keyword =
+        document.getElementById("premiumSearchInput")?.value.trim() ?? "";
+
+    let url = "/admin/premium/premium-members";
+
+    if (keyword) {
+        url += `?keyword=${encodeURIComponent(keyword)}`;
+    }
+
+    const response = await fetch(url, {
         method: "GET",
         headers: authHeaders()
     });
@@ -16,10 +31,10 @@ async function loadPremiumMembers() {
         return;
     }
 
-    const members = await response.json();
+    premiumMembers = await response.json();
 
-    renderPremiumMembers(members);
-    updatePremiumSummary(members);
+    renderPremiumMembers(premiumMembers);
+    updatePremiumSummary(premiumMembers);
 }
 
 function renderPremiumMembers(members) {
@@ -55,6 +70,26 @@ function renderPremiumMembers(members) {
     });
 }
 
+function searchPremiumMembers() {
+    loadPremiumMembers();
+}
+
+function resetPremiumSearch() {
+    const input = document.getElementById("premiumSearchInput");
+
+    if (input) {
+        input.value = "";
+    }
+
+    loadPremiumMembers();
+}
+
+function handlePremiumSearchEnter(event) {
+    if (event.key === "Enter") {
+        searchPremiumMembers();
+    }
+}
+
 function updatePremiumSummary(members) {
     const now = new Date();
     const sevenDaysLater = new Date();
@@ -64,18 +99,30 @@ function updatePremiumSummary(members) {
     const expiredMembers = members.filter(m => m.expired === true);
 
     const expireSoonMembers = members.filter(m => {
-        if (m.expired === true || !m.subscriptionExpirationDate) return false;
+        if (m.expired === true || !m.subscriptionExpirationDate) {
+            return false;
+        }
 
         const expireDate = new Date(m.subscriptionExpirationDate);
-        if (isNaN(expireDate.getTime())) return false;
+
+        if (isNaN(expireDate.getTime())) {
+            return false;
+        }
 
         return expireDate >= now && expireDate <= sevenDaysLater;
     });
 
-    document.getElementById("premiumTotalCount").textContent = members.length;
-    document.getElementById("premiumActiveCount").textContent = activeMembers.length;
-    document.getElementById("premiumExpireSoonCount").textContent = expireSoonMembers.length;
-    document.getElementById("premiumExpiredCount").textContent = expiredMembers.length;
+    document.getElementById("premiumTotalCount").textContent =
+        members.length;
+
+    document.getElementById("premiumActiveCount").textContent =
+        activeMembers.length;
+
+    document.getElementById("premiumExpireSoonCount").textContent =
+        expireSoonMembers.length;
+
+    document.getElementById("premiumExpiredCount").textContent =
+        expiredMembers.length;
 }
 
 function premiumStatusBadge(expired) {
@@ -91,13 +138,20 @@ function premiumStatusBadge(expired) {
 ========================= */
 
 async function loadNonPremiumMembers(page = 0) {
-    const response = await fetch(
-        `/admin/premium/non-premium-members?page=${page}&size=${nonPremiumPageSize}`,
-        {
-            method: "GET",
-            headers: authHeaders()
-        }
-    );
+    const keyword =
+        document.getElementById("nonPremiumSearchInput")?.value.trim() ?? "";
+
+    let url =
+        `/admin/premium/non-premium-members?page=${page}&size=${nonPremiumPageSize}`;
+
+    if (keyword) {
+        url += `&keyword=${encodeURIComponent(keyword)}`;
+    }
+
+    const response = await fetch(url, {
+        method: "GET",
+        headers: authHeaders()
+    });
 
     if (await handleAuthError(response)) return;
 
@@ -153,6 +207,28 @@ function renderNonPremiumMembers(members) {
     });
 }
 
+function searchNonPremiumMembers() {
+    nonPremiumCurrentPage = 0;
+    loadNonPremiumMembers(0);
+}
+
+function resetNonPremiumSearch() {
+    const input = document.getElementById("nonPremiumSearchInput");
+
+    if (input) {
+        input.value = "";
+    }
+
+    nonPremiumCurrentPage = 0;
+    loadNonPremiumMembers(0);
+}
+
+function handleNonPremiumSearchEnter(event) {
+    if (event.key === "Enter") {
+        searchNonPremiumMembers();
+    }
+}
+
 function updateNonPremiumPagination() {
     document.getElementById("nonPremiumPageInfo").textContent =
         `${nonPremiumCurrentPage + 1} / ${nonPremiumTotalPages}`;
@@ -182,6 +258,12 @@ function nextNonPremiumPage() {
 
 async function grantPremium(memberId) {
     const select = document.getElementById(`grantType-${memberId}`);
+
+    if (!select) {
+        alert("권한 부여 기간 선택 정보를 찾을 수 없습니다.");
+        return;
+    }
+
     const grantType = select.value;
 
     const confirmed = confirm("이 회원에게 프리미엄 권한을 부여하시겠습니까?");
