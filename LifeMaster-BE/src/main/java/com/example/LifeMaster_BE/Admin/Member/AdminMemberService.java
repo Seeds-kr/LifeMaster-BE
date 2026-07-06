@@ -19,13 +19,36 @@ public class AdminMemberService {
     private final MemberRepository memberRepository;
 
     /**
-     * 전체 회원 페이징 조회
+     * 전체 회원 페이징 조회 + 검색
      */
     @Transactional(readOnly = true)
-    public Page<AdminMemberDto> getAllMembers(int page, int size) {
+    public Page<AdminMemberDto> getAllMembers(
+            int page,
+            int size,
+            String keyword
+    ) {
         Pageable pageable = PageRequest.of(page, size);
 
-        return memberRepository.findAll(pageable)
+        String trimmedKeyword = null;
+        Long memberId = null;
+
+        if (keyword != null && !keyword.isBlank()) {
+            trimmedKeyword = keyword.trim();
+
+            try {
+                memberId = Long.parseLong(trimmedKeyword);
+            } catch (NumberFormatException ignored) {
+                // 숫자가 아니면 회원 ID 검색은 제외
+            }
+        }
+
+        return memberRepository
+                .searchMembers(
+                        trimmedKeyword,
+                        memberId,
+                        null,
+                        pageable
+                )
                 .map(AdminMemberDto::from);
     }
 

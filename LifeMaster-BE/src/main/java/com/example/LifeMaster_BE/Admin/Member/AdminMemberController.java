@@ -18,13 +18,17 @@ public class AdminMemberController {
     /**
      * 전체 회원 조회
      */
+    /**
+     * 전체 회원 조회 + 검색
+     */
     @GetMapping
     public ResponseEntity<Page<AdminMemberDto>> getAllMembers(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String keyword
     ) {
         Page<AdminMemberDto> result =
-                adminMemberService.getAllMembers(page, size);
+                adminMemberService.getAllMembers(page, size, keyword);
 
         return ResponseEntity.ok(result);
     }

@@ -8,7 +8,8 @@ const memberPageSize = 10;
 ========================= */
 
 async function loadMembers() {
-    const keyword = document.getElementById("memberSearchInput")?.value.trim() ?? "";
+    const input = document.getElementById("memberSearchInput");
+    const keyword = input ? input.value.trim() : "";
 
     let url = `/admin/members?page=${memberCurrentPage}&size=${memberPageSize}`;
 
@@ -24,7 +25,8 @@ async function loadMembers() {
     if (await handleAuthError(response)) return;
 
     if (!response.ok) {
-        alert("회원 조회 실패");
+        const errorText = await response.text();
+        alert("회원 조회 실패\n" + errorText);
         return;
     }
 
@@ -44,6 +46,7 @@ function searchMembers() {
 
 function resetMemberSearch() {
     const input = document.getElementById("memberSearchInput");
+
     if (input) {
         input.value = "";
     }
@@ -73,8 +76,8 @@ function renderMembers(members) {
 
         tr.innerHTML = `
             <td>${member.memberId ?? "-"}</td>
-            <td>${member.email ?? "-"}</td>
-            <td>${member.nickname ?? "-"}</td>
+            <td>${escapeHtml(member.email ?? "-")}</td>
+            <td>${escapeHtml(member.nickname ?? "-")}</td>
             <td>${member.loginType ?? "-"}</td>
             <td>${loginStatusBadge(member.loginStatus)}</td>
             <td>${roleBadge(member.loginRole)}</td>
@@ -148,6 +151,10 @@ function adminRoleActionButton(member) {
         </button>
     `;
 }
+
+/* =========================
+   관리자 권한
+========================= */
 
 async function grantAdminRole(memberId) {
     const confirmed = confirm("이 회원에게 관리자 권한을 부여하시겠습니까?");
@@ -226,6 +233,7 @@ function nextMemberPage() {
 
 function reloadMembers() {
     const input = document.getElementById("memberSearchInput");
+
     if (input) {
         input.value = "";
     }
@@ -311,6 +319,10 @@ function paymentStatusBadge(status) {
     return `<span class="badge gray">${status ?? "-"}</span>`;
 }
 
+/* =========================
+   구독 처리
+========================= */
+
 async function extendMemberSubscriptionOneMonth(memberId) {
     const confirmed = confirm("이 회원의 구독 기한을 1개월 연장하시겠습니까?");
     if (!confirmed) return;
@@ -336,7 +348,6 @@ async function extendMemberSubscriptionOneMonth(memberId) {
     await loadMembers();
     await loadMemberSummary();
 
-    // 프리미엄 계정 페이지도 같이 쓰고 있다면 갱신
     if (typeof loadPremiumMembers === "function") {
         await loadPremiumMembers();
     }
@@ -371,3 +382,36 @@ async function revokeMemberSubscription(memberId) {
         await loadPremiumMembers();
     }
 }
+
+/* =========================
+   Util
+========================= */
+
+function escapeHtml(value) {
+    return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+/* =========================
+   inline onclick 전역 등록
+   일부 환경에서 함수 인식 안 되는 문제 방지
+========================= */
+
+window.loadMembers = loadMembers;
+window.searchMembers = searchMembers;
+window.resetMemberSearch = resetMemberSearch;
+window.handleMemberSearchEnter = handleMemberSearchEnter;
+
+window.prevMemberPage = prevMemberPage;
+window.nextMemberPage = nextMemberPage;
+window.reloadMembers = reloadMembers;
+
+window.grantAdminRole = grantAdminRole;
+window.revokeAdminRole = revokeAdminRole;
+
+window.extendMemberSubscriptionOneMonth = extendMemberSubscriptionOneMonth;
+window.revokeMemberSubscription = revokeMemberSubscription;
