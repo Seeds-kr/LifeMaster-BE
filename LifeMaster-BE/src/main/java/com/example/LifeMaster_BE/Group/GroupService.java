@@ -898,6 +898,7 @@ public class GroupService {
 
         List<GoalEntity> goals = new ArrayList<>(group.getGoals());
 
+        // 그룹 통계에 등록된 목표가 있으면 해당 목표만 통계로 표시
         if (group.getStatistics() != null && !group.getStatistics().isEmpty()) {
             Set<Long> statisticGoalIds = new HashSet<>(group.getStatistics());
 
@@ -913,7 +914,10 @@ public class GroupService {
         ZoneId zoneId = ZoneId.of("Asia/Seoul");
 
         LocalDate today = LocalDate.now(zoneId);
-        LocalDate startDate = today.minusDays(5);
+
+        // 오늘 포함 최근 7일
+        // 예: 오늘이 6월 18일이면 6월 12일 ~ 6월 18일
+        LocalDate startDate = today.minusDays(6);
 
         LocalDateTime startDateTime = startDate.atStartOfDay();
         LocalDateTime endDateTime = today.plusDays(1).atStartOfDay();
@@ -935,7 +939,9 @@ public class GroupService {
             List<Double> userValues = new ArrayList<>();
             List<Double> groupAverageValues = new ArrayList<>();
 
-            for (int i = 5; i >= 0; i--) {
+            // 오늘 포함 최근 7일
+            // 배열 순서: 6일 전, 5일 전, 4일 전, 3일 전, 2일 전, 어제, 오늘
+            for (int i = 6; i >= 0; i--) {
                 LocalDate targetDate = today.minusDays(i);
 
                 double userTotal = progressList.stream()

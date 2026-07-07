@@ -403,8 +403,8 @@ public class GroupController {
     }
 
     @Operation(
-            summary = "그룹 목표별 최근 6일 통계",
-            description = "그룹 통계에 등록된 목표별로 최근 6일 동안의 내 달성 값과 그룹 평균 값을 반환합니다."
+            summary = "그룹 목표별 최근 7일 통계",
+            description = "그룹 통계에 등록된 목표별로 최근 7일 동안의 내 달성 값과 그룹 평균 값을 반환합니다."
     )
     @GetMapping("/{groupId}/goals/statistics/recent")
     public ResponseEntity<?> getRecentGoalStatistics(
