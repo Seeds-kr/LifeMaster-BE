@@ -39,3 +39,14 @@ log.txt
 
 CLAUDE.md
 compiler.xml
+
+# logs
+*.log
+
+# Redis data
+dump.rdb
+appendonly.aof
+
+# Spring config
+src/main/resources/application.properties
+src/main/resources/application.yml
