@@ -1,9 +1,12 @@
-name: Deploy to EC2 via VPN
+name: Deploy to Server
 
 on:
   push:
     branches:
       - develop
+
+permissions:
+  contents: read
 
 jobs:
   deploy:
@@ -11,7 +14,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up SSH private key
         run: |
@@ -19,57 +22,24 @@ jobs:
           printf "%s" "${{ secrets.EC2_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
-      - name: Check SSH key
+      - name: Add server to known_hosts
         run: |
-          ls -al ~/.ssh
-          head -n 2 ~/.ssh/id_rsa
+          ssh-keyscan -H -p ${{ secrets.EC2_PORT }} ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Create VPN auth file
+      - name: Test SSH Connection
         run: |
-          echo "${{ secrets.VPN_USER }}" > ~/vpn_auth.txt
-          echo "${{ secrets.VPN_PASSWORD }}" >> ~/vpn_auth.txt
-          chmod 600 ~/vpn_auth.txt
+          ssh \
+            -o StrictHostKeyChecking=no \
+            -i ~/.ssh/id_rsa \
+            -p ${{ secrets.EC2_PORT }} \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+            "echo Connected"
 
-      - name: Create VPN config file
+      - name: Deploy
         run: |
-          echo "${{ secrets.VPN_OVPN_FILE }}" > ~/vpn_config.ovpn
-          chmod 600 ~/vpn_config.ovpn
-
-      - name: Install OpenVPN and connect
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y openvpn
-          sudo openvpn --config ~/vpn_config.ovpn --auth-user-pass ~/vpn_auth.txt --daemon
-          sleep 10
-
-      - name: Fix VPN MTU
-        run: |
-          ip a
-          sudo ip link set mtu 1300 dev tun0 || true
-          sudo ip link set mtu 1300 dev tun1 || true
-
-      - name: Check VPN connection
-        run: |
-          ip a
-          ping -c 3 ${{ secrets.EC2_HOST }} || true
-
-      - name: Add EC2 host to known_hosts
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -t rsa -p ${{ secrets.EC2_PORT }} -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts || true
-
-      - name: Deploy to EC2
-        run: |
-          ssh -vvv \
-          -o KexAlgorithms=curve25519-sha256 \
-          -o PreferredAuthentications=publickey \
-          -o StrictHostKeyChecking=no \
-          -o ConnectTimeout=10 \
-          -o ServerAliveInterval=10 \
-          -o ServerAliveCountMax=3 \
-          -o IPQoS=throughput \
-          -i ~/.ssh/id_rsa \
-          -p ${{ secrets.EC2_PORT }} \
-          ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
-          "bash ~/deploy.sh"
-          
+          ssh \
+            -o StrictHostKeyChecking=no \
+            -i ~/.ssh/id_rsa \
+            -p ${{ secrets.EC2_PORT }} \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+            "bash ~/deploy.sh"
