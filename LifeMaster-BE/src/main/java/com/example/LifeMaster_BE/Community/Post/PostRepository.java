@@ -59,72 +59,71 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
      */
     @Query(
             value = """
-                    SELECT new com.example.LifeMaster_BE.Admin.Dto.AdminPostResponseDto(
-                        p.id,
-                        p.title,
-                        CASE
-                            WHEN LENGTH(p.content) > 100
-                            THEN CONCAT(SUBSTRING(p.content, 1, 100), '...')
-                            ELSE p.content
-                        END,
-                        p.file,
-                        p.type,
-                        p.calendarShared,
-                        m.id,
-                        m.email,
-                        m.nickname,
-                        p.viewCount,
-                        p.commentCount,
-                        COUNT(DISTINCT pl.id),
-                        p.createdAt
+                SELECT new com.example.LifeMaster_BE.Admin.Dto.AdminPostResponseDto(
+                    p.id,
+                    p.title,
+                    CASE
+                        WHEN LENGTH(p.content) > 100
+                        THEN CONCAT(SUBSTRING(p.content, 1, 100), '...')
+                        ELSE p.content
+                    END,
+                    p.file,
+                    p.type,
+                    p.calendarShared,
+                    m.id,
+                    m.email,
+                    m.nickname,
+                    p.viewCount,
+                    p.commentCount,
+                    COUNT(DISTINCT pl.id),
+                    p.createdAt
+                )
+                FROM PostEntity p
+                JOIN p.member m
+                LEFT JOIN p.likes pl
+                WHERE
+                    (:type IS NULL OR p.type = :type)
+                    AND (
+                        :keyword IS NULL
+                        OR :keyword = ''
+                        OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                        OR LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                        OR LOWER(m.email) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                        OR LOWER(m.nickname) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                        OR (:postId IS NOT NULL AND p.id = :postId)
+                        OR (:memberId IS NOT NULL AND m.id = :memberId)
                     )
-                    FROM PostEntity p
-                    JOIN p.member m
-                    LEFT JOIN p.likes pl
-                    WHERE
-                        (:type IS NULL OR p.type = :type)
-                        AND (
-                            :keyword IS NULL
-                            OR :keyword = ''
-                            OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
-                            OR LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%'))
-                            OR LOWER(m.email) LIKE LOWER(CONCAT('%', :keyword, '%'))
-                            OR LOWER(m.nickname) LIKE LOWER(CONCAT('%', :keyword, '%'))
-                            OR (:postId IS NOT NULL AND p.id = :postId)
-                            OR (:memberId IS NOT NULL AND m.id = :memberId)
-                        )
-                    GROUP BY
-                        p.id,
-                        p.title,
-                        p.content,
-                        p.file,
-                        p.type,
-                        p.calendarShared,
-                        m.id,
-                        m.email,
-                        m.nickname,
-                        p.viewCount,
-                        p.commentCount,
-                        p.createdAt
-                    """,
+                GROUP BY
+                    p.id,
+                    p.title,
+                    p.content,
+                    p.file,
+                    p.type,
+                    p.calendarShared,
+                    m.id,
+                    m.email,
+                    m.nickname,
+                    p.viewCount,
+                    p.commentCount,
+                    p.createdAt
+                """,
             countQuery = """
-                    SELECT COUNT(p)
-                    FROM PostEntity p
-                    JOIN p.member m
-                    WHERE
-                        (:type IS NULL OR p.type = :type)
-                        AND (
-                            :keyword IS NULL
-                            OR :keyword = ''
-                            OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
-                            OR LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%'))
-                            OR LOWER(m.email) LIKE LOWER(CONCAT('%', :keyword, '%'))
-                            OR LOWER(m.nickname) LIKE LOWER(CONCAT('%', :keyword, '%'))
-                            OR (:postId IS NOT NULL AND p.id = :postId)
-                            OR (:memberId IS NOT NULL AND m.id = :memberId)
-                        )
+                SELECT COUNT(p)
+                FROM PostEntity p
+                JOIN p.member m
+                WHERE
+                    (:type IS NULL OR p.type = :type)
+                    AND (
+                        :keyword IS NULL
+                        OR :keyword = ''
+                        OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                        OR LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                        OR LOWER(m.email) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                        OR LOWER(m.nickname) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                        OR (:postId IS NOT NULL AND p.id = :postId)
+                        OR (:memberId IS NOT NULL AND m.id = :memberId)
                     )
-                    """
+                """
     )
     Page<AdminPostResponseDto> searchAdminPosts(
             @Param("keyword") String keyword,
