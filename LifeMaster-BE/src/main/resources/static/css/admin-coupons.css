@@ -662,3 +662,81 @@ tr:hover {
     align-items: center;
     flex-wrap: wrap;
 }
+
+/* 게시글 관리 */
+#page-posts .table-wrap {
+    overflow-x: auto;
+}
+
+#page-posts table {
+    min-width: 1450px;
+}
+
+#page-posts th,
+#page-posts td {
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+/* 제목 및 내용 요약 열 */
+#page-posts .post-summary-cell {
+    min-width: 280px;
+    max-width: 420px;
+    white-space: normal;
+}
+
+#page-posts .post-summary-cell strong {
+    display: block;
+    margin-bottom: 6px;
+    color: #252535;
+    font-size: 14px;
+}
+
+#page-posts .post-content-summary {
+    max-width: 400px;
+    color: #77778a;
+    font-size: 12px;
+    line-height: 1.5;
+    white-space: normal;
+    word-break: break-word;
+
+    /* 최대 3줄까지만 표시 */
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* 게시자 보조 정보 */
+#page-posts .sub-text {
+    margin-top: 3px;
+    color: #8a94a6;
+    font-size: 12px;
+}
+
+/* 게시글 타입 배지 */
+#page-posts .status-badge.normal {
+    background: #dbeafe;
+    color: #2563eb;
+}
+
+#page-posts .status-badge.warning {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+#page-posts .status-badge.success {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+/* 첨부파일 링크 */
+#page-posts td a {
+    color: #4f46e5;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+#page-posts td a:hover {
+    text-decoration: underline;
+}

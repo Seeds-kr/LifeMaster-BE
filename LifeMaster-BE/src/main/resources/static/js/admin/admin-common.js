@@ -109,6 +109,39 @@ function showPage(page, element) {
         }
     }
 
+    if (page === "posts") {
+        const postPage = document.getElementById("page-posts");
+
+        if (postPage) {
+            postPage.style.display = "block";
+        } else {
+            console.error("page-posts 요소가 없습니다. 관리자 HTML을 확인하세요.");
+            return;
+        }
+
+        pageTitle.textContent = "Post Management Dashboard";
+
+        if (typeof adminPostCurrentPage !== "undefined") {
+            adminPostCurrentPage = 0;
+        }
+
+        if (typeof loadAdminPosts === "function") {
+            loadAdminPosts(0);
+        } else {
+            console.error(
+                "loadAdminPosts 함수가 없습니다. admin-posts.js 로드 여부를 확인하세요."
+            );
+        }
+
+        if (typeof loadAdminPostSummary === "function") {
+            loadAdminPostSummary();
+        } else {
+            console.error(
+                "loadAdminPostSummary 함수가 없습니다. admin-posts.js 로드 여부를 확인하세요."
+            );
+        }
+    }
+
     if (page === "members") {
         document.getElementById("page-members").style.display = "block";
         pageTitle.textContent = "Member Management Dashboard";
@@ -137,7 +170,9 @@ function showPage(page, element) {
         if (typeof loadGroups === "function") {
             loadGroups();
         } else {
-            console.error("loadGroups 함수가 없습니다. admin-groups.js 로드 여부를 확인하세요.");
+            console.error(
+                "loadGroups 함수가 없습니다. admin-groups.js 로드 여부를 확인하세요."
+            );
         }
     }
 
@@ -148,7 +183,9 @@ function showPage(page, element) {
         if (typeof loadStats === "function") {
             loadStats();
         } else {
-            console.error("loadStats 함수가 없습니다. admin-stats.js 로드 여부를 확인하세요.");
+            console.error(
+                "loadStats 함수가 없습니다. admin-stats.js 로드 여부를 확인하세요."
+            );
         }
     }
 }

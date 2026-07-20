@@ -16,6 +16,7 @@
             <a href="#" class="nav-item" onclick="showPage('payments', this)">💳 결제 내역</a>
             <a href="#" class="nav-item" onclick="showPage('premium', this)">⭐ 프리미엄 계정</a>
             <a href="#" class="nav-item" onclick="showPage('reports', this)">📋 신고 관리</a>
+            <a href="#" class="nav-item" onclick="showPage('posts', this)">📝 게시글 관리</a>
             <a href="#" class="nav-item" onclick="showPage('members', this)">👤 회원 관리</a>
             <a href="#" class="nav-item" onclick="showPage('groups', this)">👥 그룹 관리</a>
             <a href="#" class="nav-item" onclick="showPage('stats', this)">📈 통계 대시보드</a>
@@ -379,6 +380,100 @@
                         <button id="reportPrevBtn" onclick="prevReportPage()">이전</button>
                         <span id="reportPageInfo">1 / 1</span>
                         <button id="reportNextBtn" onclick="nextReportPage()">다음</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 게시글 관리 -->
+            <div id="page-posts" class="page-section" style="display:none;">
+                <div class="breadcrumb">Home / <span>게시글 관리</span></div>
+
+                <div class="summary-grid">
+                    <div class="summary-card purple">
+                        <h3 id="adminPostTotalCount">0</h3>
+                        <p>전체 게시글</p>
+                    </div>
+
+                    <div class="summary-card blue">
+                        <h3 id="adminPostFreeCount">0</h3>
+                        <p>자유 게시글</p>
+                    </div>
+
+                    <div class="summary-card yellow">
+                        <h3 id="adminPostImprovementCount">0</h3>
+                        <p>개선 요청</p>
+                    </div>
+
+                    <div class="summary-card green">
+                        <h3 id="adminPostCalendarSharedCount">0</h3>
+                        <p>캘린더 공유</p>
+                    </div>
+                </div>
+
+                <div class="table-card">
+                    <div class="table-header">
+                        <div>
+                            <h2>전체 게시글 조회</h2>
+                            <p>게시글과 게시자 정보를 확인하고 문제가 있는 게시글을 삭제합니다.</p>
+                        </div>
+
+                        <div class="filter-box">
+                            <input
+                                    id="adminPostSearchInput"
+                                    type="text"
+                                    placeholder="게시글 ID / 제목 / 내용 / 이메일 / 닉네임 검색"
+                                    onkeydown="handleAdminPostSearchEnter(event)">
+
+                            <select id="adminPostTypeSelect">
+                                <option value="">전체 타입</option>
+                                <option value="FREE">자유 게시글</option>
+                                <option value="IMPROVEMENT">개선 요청</option>
+                            </select>
+
+                            <select id="adminPostSizeSelect" onchange="changeAdminPostPageSize()">
+                                <option value="10">10개씩</option>
+                                <option value="20">20개씩</option>
+                                <option value="50">50개씩</option>
+                            </select>
+
+                            <button onclick="searchAdminPosts()">검색</button>
+                            <button onclick="resetAdminPostSearch()">초기화</button>
+                            <button onclick="reloadAdminPosts()">새로고침</button>
+                        </div>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                            <tr>
+                                <th>게시글 ID</th>
+                                <th>타입</th>
+                                <th>제목 / 내용 요약</th>
+                                <th>게시자</th>
+                                <th>조회</th>
+                                <th>댓글</th>
+                                <th>좋아요</th>
+                                <th>캘린더 공유</th>
+                                <th>작성일</th>
+                                <th>파일</th>
+                                <th>작업</th>
+                            </tr>
+                            </thead>
+
+                            <tbody id="adminPostTableBody">
+                            <tr>
+                                <td colspan="11">게시글을 불러오는 중입니다.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="pagination-box">
+                        <button id="adminPostFirstBtn" onclick="goFirstAdminPostPage()">처음</button>
+                        <button id="adminPostPrevBtn" onclick="prevAdminPostPage()">이전</button>
+                        <span id="adminPostPageInfo">1 / 1</span>
+                        <button id="adminPostNextBtn" onclick="nextAdminPostPage()">다음</button>
+                        <button id="adminPostLastBtn" onclick="goLastAdminPostPage()">마지막</button>
                     </div>
                 </div>
             </div>
@@ -829,6 +924,7 @@
 <script src="/js/admin/admin-payments.js"></script>
 <script src="/js/admin/admin-premium.js"></script>
 <script src="/js/admin/admin-reports.js"></script>
+<script src="/js/admin/admin-posts.js"></script>
 <script src="/js/admin/admin-members.js"></script>
 <script src="/js/admin/admin-groups.js"></script>
 <script src="/js/admin/admin-stats.js"></script>

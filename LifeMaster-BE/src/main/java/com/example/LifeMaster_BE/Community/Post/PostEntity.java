@@ -53,10 +53,25 @@ public class PostEntity {
     @JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
     private MemberEntity member;
 
-    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(
+            mappedBy = "post",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
     private List<PostLikeEntity> likes = new ArrayList<>();
 
-    @OneToMany(mappedBy = "post", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @OneToMany(
+            mappedBy = "post",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private List<CommentEntity> comments = new ArrayList<>();
+
+    @OneToMany(
+            mappedBy = "post",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
     private List<ReportEntity> reports = new ArrayList<>();
 
     private int commentCount = 0;
