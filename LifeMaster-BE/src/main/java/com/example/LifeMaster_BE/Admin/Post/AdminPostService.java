@@ -31,7 +31,6 @@ public class AdminPostService {
             int size
     ) {
         String normalizedKeyword = normalizeKeyword(keyword);
-
         Long numericKeyword = parseLongOrNull(normalizedKeyword);
 
         Pageable pageable = PageRequest.of(
@@ -46,6 +45,35 @@ public class AdminPostService {
                 numericKeyword,
                 numericKeyword,
                 pageable
+        );
+    }
+
+    /**
+     * 관리자용 게시글 상세 조회.
+     */
+    @Transactional(readOnly = true)
+    public AdminPostResponseDto getPostDetail(Long postId) {
+        PostEntity post = postRepository.findById(postId)
+                .orElseThrow(() ->
+                        new EntityNotFoundException(
+                                "게시글을 찾을 수 없습니다. postId=" + postId
+                        )
+                );
+
+        return new AdminPostResponseDto(
+                post.getId(),
+                post.getTitle(),
+                post.getContent(),
+                post.getFile(),
+                post.getType(),
+                post.getCalendarShared(),
+                post.getMember().getId(),
+                post.getMember().getEmail(),
+                post.getMember().getNickname(),
+                post.getViewCount(),
+                post.getCommentCount(),
+                (long) post.getLikes().size(),
+                post.getCreatedAt()
         );
     }
 
@@ -71,8 +99,6 @@ public class AdminPostService {
 
     /**
      * 관리자 권한으로 게시글 삭제.
-     *
-     * 일반 게시글 삭제와 달리 작성자 본인 확인을 하지 않습니다.
      */
     @Transactional
     public void deletePost(Long postId) {

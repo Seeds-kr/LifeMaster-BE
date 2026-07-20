@@ -4,12 +4,18 @@ import com.example.LifeMaster_BE.Admin.Dto.AdminPostResponseDto;
 import com.example.LifeMaster_BE.Admin.Dto.AdminPostSummaryDto;
 import com.example.LifeMaster_BE.Community.Post.PostType;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(
+        name = "Admin - Post",
+        description = "관리자 게시글 관리 API"
+)
 @RestController
 @RequestMapping("/admin/posts")
 @RequiredArgsConstructor
@@ -28,13 +34,25 @@ public class AdminPostController {
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Page<AdminPostResponseDto>> getPosts(
+            @Parameter(description = "검색 키워드")
             @RequestParam(required = false) String keyword,
+
+            @Parameter(description = "게시글 타입")
             @RequestParam(required = false) PostType type,
+
+            @Parameter(description = "페이지 번호")
             @RequestParam(defaultValue = "0") int page,
+
+            @Parameter(description = "페이지 크기")
             @RequestParam(defaultValue = "10") int size
     ) {
         Page<AdminPostResponseDto> response =
-                adminPostService.getPosts(keyword, type, page, size);
+                adminPostService.getPosts(
+                        keyword,
+                        type,
+                        page,
+                        size
+                );
 
         return ResponseEntity.ok(response);
     }
@@ -46,9 +64,26 @@ public class AdminPostController {
     @GetMapping("/summary")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<AdminPostSummaryDto> getPostSummary() {
-        return ResponseEntity.ok(
-                adminPostService.getPostSummary()
-        );
+        AdminPostSummaryDto response =
+                adminPostService.getPostSummary();
+
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(
+            summary = "관리자 게시글 상세 조회",
+            description = "관리자가 특정 게시글의 상세 정보를 조회합니다."
+    )
+    @GetMapping("/{postId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<AdminPostResponseDto> getPostDetail(
+            @Parameter(description = "게시글 ID")
+            @PathVariable Long postId
+    ) {
+        AdminPostResponseDto response =
+                adminPostService.getPostDetail(postId);
+
+        return ResponseEntity.ok(response);
     }
 
     @Operation(
@@ -58,6 +93,7 @@ public class AdminPostController {
     @DeleteMapping("/{postId}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deletePost(
+            @Parameter(description = "게시글 ID")
             @PathVariable Long postId
     ) {
         adminPostService.deletePost(postId);
