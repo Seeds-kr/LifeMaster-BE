@@ -1,62 +1,27 @@
 name: Deploy to Server
-
 on:
   push:
-    branches:
-      - develop
-
+    branches: [develop]
 permissions:
   contents: read
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Install cloudflared
         run: |
-          curl -sL \
-            https://github.com/cloudflare/cloudflared/releases/download/2026.5.1/cloudflared-linux-amd64 \
-            -o /tmp/cloudflared
-
+          curl -sL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o /tmp/cloudflared
           sudo install /tmp/cloudflared /usr/local/bin/cloudflared
-
-          cloudflared --version
-
       - name: Set up SSH key
         run: |
           mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-
           printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-
-      - name: Test Cloudflare Service Token
-        env:
-          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
-          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
-        run: |
-          STATUS=$(curl -sS -o /tmp/cf-response.txt -w "%{http_code}" \
-            -H "CF-Access-Client-Id: ${CF_ACCESS_CLIENT_ID}" \
-            -H "CF-Access-Client-Secret: ${CF_ACCESS_CLIENT_SECRET}" \
-            https://ssh.harvester.kr)
-
-          echo "Cloudflare response status: $STATUS"
-          head -c 500 /tmp/cf-response.txt || true
-          echo
-
-          if [ "$STATUS" = "302" ] || [ "$STATUS" = "401" ] || [ "$STATUS" = "403" ]; then
-            echo "Cloudflare Service Token authentication failed."
-            exit 1
-          fi
-
       - name: Deploy
-        env:
-          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
-          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
         run: |
-          ssh \
-            -o StrictHostKeyChecking=accept-new \
-            -o "ProxyCommand=cloudflared access ssh --hostname %h --service-token-id ${CF_ACCESS_CLIENT_ID} --service-token-secret ${CF_ACCESS_CLIENT_SECRET}" \
-            -i ~/.ssh/id_ed25519 \
-            harvester@ssh.harvester.kr
+          ssh -o StrictHostKeyChecking=accept-new \
+              -o ProxyCommand="cloudflared access ssh —hostname %h \
+                 —service-token-id ${{ secrets.CF_ACCESS_CLIENT_ID }} \
+                 —service-token-secret ${{ secrets.CF_ACCESS_CLIENT_SECRET }}" \
+              -i ~/.ssh/id_ed25519 \
+              harvester@ssh.harvester.kr
