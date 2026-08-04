@@ -26,9 +26,12 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
 
       - name: Deploy
+        env:
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
         run: |
           ssh \
             -o StrictHostKeyChecking=accept-new \
-            -o ProxyCommand="cloudflared access ssh --hostname %h --service-token-id ${{ secrets.CF_ACCESS_CLIENT_ID }} --service-token-secret ${{ secrets.CF_ACCESS_CLIENT_SECRET }}" \
+            -o "ProxyCommand=cloudflared access ssh --hostname %h --service-token-id ${CF_ACCESS_CLIENT_ID} --service-token-secret ${CF_ACCESS_CLIENT_SECRET}" \
             -i ~/.ssh/id_ed25519 \
             harvester@ssh.harvester.kr
