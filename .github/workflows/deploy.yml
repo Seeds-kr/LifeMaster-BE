@@ -13,33 +13,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Install cloudflared
+        run: |
+          curl -sL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o /tmp/cloudflared
+          sudo install /tmp/cloudflared /usr/local/bin/cloudflared
 
-      - name: Set up SSH private key
+      - name: Set up SSH key
         run: |
           mkdir -p ~/.ssh
-          printf "%s" "${{ secrets.EC2_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-
-      - name: Add server to known_hosts
-        run: |
-          ssh-keyscan -H -p ${{ secrets.EC2_PORT }} ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
-
-      - name: Test SSH Connection
-        run: |
-          ssh \
-            -o StrictHostKeyChecking=no \
-            -i ~/.ssh/id_rsa \
-            -p ${{ secrets.EC2_PORT }} \
-            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
-            "echo Connected"
+          chmod 700 ~/.ssh
+          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
 
       - name: Deploy
         run: |
           ssh \
-            -o StrictHostKeyChecking=no \
-            -i ~/.ssh/id_rsa \
-            -p ${{ secrets.EC2_PORT }} \
-            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
-            "bash ~/deploy.sh"
+            -o StrictHostKeyChecking=accept-new \
+            -o ProxyCommand="cloudflared access ssh --hostname %h --service-token-id ${{ secrets.CF_ACCESS_CLIENT_ID }} --service-token-secret ${{ secrets.CF_ACCESS_CLIENT_SECRET }}" \
+            -i ~/.ssh/id_ed25519 \
+            harvester@ssh.harvester.kr
