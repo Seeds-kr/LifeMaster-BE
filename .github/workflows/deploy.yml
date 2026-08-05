@@ -1,27 +1,33 @@
 name: Deploy to Server
+
 on:
   push:
     branches: [develop]
+
 permissions:
   contents: read
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Install cloudflared
-        run: |
-          curl -sL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o /tmp/cloudflared
-          sudo install /tmp/cloudflared /usr/local/bin/cloudflared
       - name: Set up SSH key
         run: |
           mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
           printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
+
+      - name: Pin server host key
+        run: |
+          echo "121.160.114.96 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICUVqx5lrfmPTbdloDU2Bmi/R+Jl8fXAsSxbzDtSor8m" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
       - name: Deploy
         run: |
-          ssh -o StrictHostKeyChecking=accept-new \
-              -o ProxyCommand="cloudflared access ssh —hostname %h \
-                 —service-token-id ${{ secrets.CF_ACCESS_CLIENT_ID }} \
-                 —service-token-secret ${{ secrets.CF_ACCESS_CLIENT_SECRET }}" \
+          ssh -n \
+              -o BatchMode=yes \
+              -o StrictHostKeyChecking=yes \
+              -o IdentitiesOnly=yes \
               -i ~/.ssh/id_ed25519 \
-              harvester@ssh.harvester.kr
+              harvester@121.160.114.96
