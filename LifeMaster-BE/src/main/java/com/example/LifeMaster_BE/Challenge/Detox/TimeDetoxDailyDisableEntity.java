@@ -7,6 +7,7 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Getter
 @Setter
@@ -43,16 +44,20 @@ public class TimeDetoxDailyDisableEntity {
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "disabled_at")
+    private LocalTime disabledAt;
+
     public static TimeDetoxDailyDisableEntity create(
             MemberEntity member,
             TimeDetoxEntity timeDetox,
-            LocalDate disabledDate
+            LocalDate disabledDate,
+            LocalTime disabledAt
     ) {
         TimeDetoxDailyDisableEntity entity = new TimeDetoxDailyDisableEntity();
         entity.setMember(member);
         entity.setTimeDetox(timeDetox);
         entity.setDisabledDate(disabledDate);
-        entity.setCreatedAt(LocalDateTime.now());
+        entity.setDisabledAt(disabledAt);
         return entity;
     }
 }

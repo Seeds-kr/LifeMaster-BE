@@ -25,4 +25,9 @@ public interface TodoRepository extends JpaRepository<TodoEntity, Long> {
     Optional<TodoEntity> findByIdAndCalendarMemberId(Long id, Long memberId);
 
     long countByMemberId(Long memberId);
+
+    Optional<TodoEntity> findByIdAndMember_Id(
+            Long id,
+            Long memberId
+    );
 }

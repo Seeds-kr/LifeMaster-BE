@@ -57,4 +57,11 @@ public interface GoalAchievementRepository extends JpaRepository<GoalAchievement
         ORDER BY COUNT(ga) DESC, ga.user.nickname ASC
     """)
     List<Object[]> findGroupRankingTotal(@Param("groupId") Long groupId);
+
+    void deleteByGroupIdAndGoalIdAndUserIdAndPeriodStartDate(
+            Long groupId,
+            Long goalId,
+            Long userId,
+            LocalDate periodStartDate
+    );
 }

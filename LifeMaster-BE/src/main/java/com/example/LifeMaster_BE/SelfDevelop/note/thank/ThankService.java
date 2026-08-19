@@ -9,6 +9,7 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -21,16 +22,28 @@ public class ThankService {
 
     private final ThankRepository thankRepository;
     private final MemberRepository memberRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public ThankEntity createThank(CreateThankDto thankDto, Long memberId){
-
+    public ThankEntity createThank(CreateThankDto thankDto, Long memberId) {
         ThankEntity newThank1 = thankDto.toEntity();
+
         MemberEntity member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new EntityNotFoundException("Member not found"));
+
         ThankEntity newThank = newThank1.toBuilder()
                 .member(member)
                 .build();
-        return thankRepository.save(newThank);
+
+        ThankEntity saved = thankRepository.save(newThank);
+
+        eventPublisher.publishEvent(
+                new GratitudeProgressChangedEvent(
+                        memberId,
+                        saved.getThankDate()
+                )
+        );
+
+        return saved;
     }
 
     public ThankResponse getThank(Long thankId, Long memberId){
@@ -52,10 +65,6 @@ public class ThankService {
         return updateThankData(thank, thankDto);
     }
 
-    public void deleteThank(Long thankId){
-        thankRepository.deleteById(thankId);
-    }
-
     private ThankEntity updateThankData(ThankEntity thank, UpdateThankDto thankDto){
         thank.setThankOne(thankDto.getThankOne());
         thank.setThankTwo(thankDto.getThankTwo());
@@ -73,7 +82,17 @@ public class ThankService {
 
     public void deleteThank(Long thankId, Long memberId) {
         ThankEntity thank = getThankByIdAndMemberId(thankId, memberId);
+        LocalDate thankDate = thank.getThankDate();
+
         thankRepository.delete(thank);
+        thankRepository.flush();
+
+        eventPublisher.publishEvent(
+                new GratitudeProgressChangedEvent(
+                        memberId,
+                        thankDate
+                )
+        );
     }
 
     public long countThankByMemberIdAndDate(Long memberId, LocalDate thankDate) {

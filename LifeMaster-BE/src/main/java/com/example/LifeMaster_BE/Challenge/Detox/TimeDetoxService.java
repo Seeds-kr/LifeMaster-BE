@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +33,7 @@ public class TimeDetoxService {
     private final DetoxVerificationRepository detoxVerificationRepository;
     private final SubscriptionAccessService subscriptionAccessService;
     private final TimeDetoxDailyDisableRepository dailyDisableRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     private static final ZoneId KST = ZoneId.of("Asia/Seoul");
     private static final DateTimeFormatter HH_MM = DateTimeFormatter.ofPattern("HH:mm");
@@ -159,16 +161,13 @@ public class TimeDetoxService {
                 );
     }
 
+    @Transactional
     public TimeDetoxEntity updateSchedule(Long memberId, Long id, TimeDetoxEntity updatedSchedule) {
-
         MemberEntity member = getMemberOrThrow(memberId);
         subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
 
-        TimeDetoxEntity schedule = repository
-                .findByIdAndMember_Id(id, memberId)
-                .orElseThrow(() ->
-                        new EntityNotFoundException("Schedule not found or no permission")
-                );
+        TimeDetoxEntity schedule = repository.findByIdAndMember_Id(id, memberId)
+                .orElseThrow(() -> new EntityNotFoundException("Schedule not found or no permission"));
 
         schedule.setCycle(updatedSchedule.getCycle());
         schedule.setDay(validateAndNormalizeDay(updatedSchedule.getDay()));
@@ -176,26 +175,32 @@ public class TimeDetoxService {
         schedule.setEndTime(updatedSchedule.getEndTime());
         schedule.setLockedApps(updatedSchedule.getLockedApps());
 
-        return repository.save(schedule);
+        TimeDetoxEntity saved = repository.save(schedule);
+
+        eventPublisher.publishEvent(
+                new DetoxProgressChangedEvent(memberId, LocalDate.now(KST))
+        );
+
+        return saved;
     }
 
     @Transactional
     public void deleteSchedule(Long memberId, Long id) {
-
         MemberEntity member = getMemberOrThrow(memberId);
         subscriptionAccessService.validateFeatureAccess(member, FeatureType.Detox);
 
-        TimeDetoxEntity schedule = repository
-                .findByIdAndMember_Id(id, memberId)
+        TimeDetoxEntity schedule = repository.findByIdAndMember_Id(id, memberId)
                 .orElseThrow(() ->
-                        new EntityNotFoundException("해당 스케줄이 없거나 삭제 권한이 없습니다.")
-                );
+                        new EntityNotFoundException("해당 스케줄이 없거나 삭제 권한이 없습니다."));
 
-        // 1. 오늘만 비활성화 기록 먼저 삭제
         dailyDisableRepository.deleteAllByMember_IdAndTimeDetox_Id(memberId, id);
 
-        // 2. 그 다음 시간 디톡스 삭제
         repository.delete(schedule);
+        repository.flush();
+
+        eventPublisher.publishEvent(
+                new DetoxProgressChangedEvent(memberId, LocalDate.now(KST))
+        );
     }
 
     public TimeDetoxEntity toggleActivation(
@@ -262,6 +267,7 @@ public class TimeDetoxService {
         return phrase;
     }
 
+    @Transactional
     public boolean verifyPhraseAndEndDetox(Long memberId, String inputPhrase) {
 
         MemberEntity member = getMemberOrThrow(memberId);
@@ -315,13 +321,26 @@ public class TimeDetoxService {
 
         for (TimeDetoxEntity schedule : runningSchedules) {
             TimeDetoxDailyDisableEntity disableLog =
-                    TimeDetoxDailyDisableEntity.create(member, schedule, today);
+                    TimeDetoxDailyDisableEntity.create(
+                            member,
+                            schedule,
+                            today,
+                            nowTime
+                    );
 
             dailyDisableRepository.save(disableLog);
         }
 
         token.setUsed(true);
         detoxVerificationRepository.save(token);
+
+        // 비상탈출로 실제 디톡스 시간이 변경되었으므로
+        // 그룹 DETOX 목표 재계산 이벤트 발생
+        if (!runningSchedules.isEmpty()) {
+            eventPublisher.publishEvent(
+                    new DetoxProgressChangedEvent(memberId, today)
+            );
+        }
 
         return true;
     }

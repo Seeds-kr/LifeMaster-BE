@@ -7,6 +7,7 @@ import com.example.LifeMaster_BE.UserManager.Member.Subscription.FeatureType;
 import com.example.LifeMaster_BE.UserManager.Member.Subscription.SubscriptionAccessService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -37,6 +38,8 @@ public class ChallengeService {
     private final ChallengeCompletionRepository challengeCompletionRepository;
 
     private final Map<Long, SseEmitter> emitters = new ConcurrentHashMap<>();
+
+    private final ApplicationEventPublisher eventPublisher;
 
     // 챌린지 생성
     public Challenge createChallenge(ChallengeDto.Create challengeDto, String email) {
@@ -276,8 +279,11 @@ public class ChallengeService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
     }
 
-    public ChallengeDto.CompleteResponse completeChallenge(Long challId, CustomUserDetails user) {
-
+    @Transactional
+    public ChallengeDto.CompleteResponse completeChallenge(
+            Long challId,
+            CustomUserDetails user
+    ) {
         Long memberId = user.getId();
 
         MemberEntity member = memberRepository.findById(memberId)
@@ -286,11 +292,15 @@ public class ChallengeService {
         Challenge challenge = challengeRepository.findById(challId)
                 .orElseThrow(() -> new RuntimeException("챌린지 없음"));
 
-        String today = LocalDate.now(ZoneId.of("Asia/Seoul"))
-                .format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        LocalDate todayDate = LocalDate.now(ZoneId.of("Asia/Seoul"));
+        String today = todayDate.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
         if (challengeCompletionRepository
-                .existsByUserIdAndChallenge_ChallIdAndDateKey(memberId, challId, today)) {
+                .existsByUserIdAndChallenge_ChallIdAndDateKey(
+                        memberId,
+                        challId,
+                        today
+                )) {
             throw new RuntimeException("이미 오늘 완료한 챌린지입니다.");
         }
 
@@ -304,6 +314,10 @@ public class ChallengeService {
                 .build();
 
         challengeCompletionRepository.save(completion);
+
+        eventPublisher.publishEvent(
+                new ChallengeProgressChangedEvent(memberId, todayDate)
+        );
 
         return ChallengeDto.CompleteResponse.builder()
                 .challId(challId)

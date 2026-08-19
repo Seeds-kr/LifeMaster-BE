@@ -15,7 +15,6 @@ public class RepeatDetoxController {
 
     private final RepeatDetoxService repeatDetoxService;
 
-    // 생성
     @PostMapping
     public ResponseEntity<Void> createRepeatDetox(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -25,7 +24,6 @@ public class RepeatDetoxController {
         return ResponseEntity.ok().build();
     }
 
-    // 전체 조회
     @GetMapping
     public ResponseEntity<RepeatDetoxDto.ListResponse> getRepeatDetox(
             @AuthenticationPrincipal CustomUserDetails userDetails
@@ -35,7 +33,6 @@ public class RepeatDetoxController {
         );
     }
 
-    // 삭제
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteRepeatDetox(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -45,7 +42,6 @@ public class RepeatDetoxController {
         return ResponseEntity.noContent().build();
     }
 
-    // 앱 실행 시 차단 여부
     @GetMapping("/lock-status")
     public ResponseEntity<List<RepeatDetoxDto.LockStatusResponse>> getLockStatus(
             @AuthenticationPrincipal CustomUserDetails userDetails
@@ -55,7 +51,6 @@ public class RepeatDetoxController {
         );
     }
 
-    // 상세 상태
     @GetMapping("/{id}")
     public ResponseEntity<RepeatDetoxDto.DetailResponse> getDetail(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -66,32 +61,27 @@ public class RepeatDetoxController {
         );
     }
 
-    // 비상탈출 문장 생성
-    @GetMapping("/generate-phrase")
-    public ResponseEntity<RepeatDetoxDto.PhraseResponse> generatePhrase() {
+    @GetMapping("/{id}/generate-phrase")
+    public ResponseEntity<RepeatDetoxDto.PhraseResponse> generatePhrase(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long id
+    ) {
         return ResponseEntity.ok(
-                repeatDetoxService.generatePhrase()
+                repeatDetoxService.generatePhrase(userDetails.getId(), id)
         );
     }
 
-    // 비상탈출 검증
-    @PostMapping("/verify-phrase")
+    @PostMapping("/{id}/verify-phrase")
     public ResponseEntity<Boolean> verifyPhrase(
-            @RequestParam Long id,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long id,
             @RequestParam String phrase
     ) {
         return ResponseEntity.ok(
-                repeatDetoxService.verifyPhrase(id, phrase)
+                repeatDetoxService.verifyPhrase(userDetails.getId(), id, phrase)
         );
     }
 
-    // ================================
-    // ✅ 핵심 추가 API
-    // ================================
-
-    /**
-     * 프론트 UsageStats → 서버 동기화
-     */
     @PatchMapping("/{id}/usage")
     public ResponseEntity<Void> syncUsage(
             @AuthenticationPrincipal CustomUserDetails userDetails,

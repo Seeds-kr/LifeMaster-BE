@@ -14,4 +14,10 @@ public interface ThankRepository extends JpaRepository<ThankEntity, Long> {
     Optional<ThankEntity> findByIdAndMember_Id(Long thankId, Long memberId);
 
     long countByMember_IdAndThankDate(Long memberId, LocalDate thankDate);
+
+    long countByMember_IdAndThankDateBetween(
+            Long memberId,
+            LocalDate startDate,
+            LocalDate endDate
+    );
 }

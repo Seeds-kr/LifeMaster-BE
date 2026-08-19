@@ -3,6 +3,7 @@ package com.example.LifeMaster_BE.Group.GoalProgress;
 import com.example.LifeMaster_BE.Group.Goal.GoalDuration;
 import com.example.LifeMaster_BE.Group.Goal.GoalEntity;
 import com.example.LifeMaster_BE.Group.Goal.GoalRepository;
+import com.example.LifeMaster_BE.Group.Goal.GoalType;
 import com.example.LifeMaster_BE.Group.GoalAchievement.GoalAchievementEntity;
 import com.example.LifeMaster_BE.Group.GoalAchievement.GoalAchievementRepository;
 import com.example.LifeMaster_BE.Group.GroupEntity;
@@ -12,14 +13,15 @@ import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import com.example.LifeMaster_BE.UserManager.Member.Subscription.FeatureType;
 import com.example.LifeMaster_BE.UserManager.Member.Subscription.SubscriptionAccessService;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import org.springframework.data.domain.Pageable;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Collection;
 import java.util.List;
 
 @Service
@@ -34,13 +36,29 @@ public class GoalProgressService {
     private final GoalAchievementRepository goalAchievementRepository;
     private final SubscriptionAccessService subscriptionAccessService;
 
+    private final SleepGoalProgressService sleepGoalProgressService;
+    private final PomodoroGoalProgressService pomodoroGoalProgressService;
+    private final DetoxGoalProgressService detoxGoalProgressService;
+
+    private final RepeatDetoxGoalProgressService repeatDetoxGoalProgressService;
+
+    private final ChallengeGoalProgressService challengeGoalProgressService;
+
+    private final GratitudeGoalProgressService gratitudeGoalProgressService;
+
+    private final ReflectionGoalProgressService reflectionGoalProgressService;
+
     public GoalProgressService(
             GoalProgressRepository goalProgressRepository,
             GoalRepository goalRepository,
             GroupRepository groupRepository,
             MemberRepository memberRepository,
             GoalAchievementRepository goalAchievementRepository,
-            SubscriptionAccessService subscriptionAccessService
+            SubscriptionAccessService subscriptionAccessService,
+            SleepGoalProgressService sleepGoalProgressService,
+            PomodoroGoalProgressService pomodoroGoalProgressService,
+            DetoxGoalProgressService detoxGoalProgressService,
+            RepeatDetoxGoalProgressService repeatDetoxGoalProgressService, ChallengeGoalProgressService challengeGoalProgressService, GratitudeGoalProgressService gratitudeGoalProgressService, ReflectionGoalProgressService reflectionGoalProgressService
     ) {
         this.goalProgressRepository = goalProgressRepository;
         this.goalRepository = goalRepository;
@@ -48,119 +66,169 @@ public class GoalProgressService {
         this.memberRepository = memberRepository;
         this.goalAchievementRepository = goalAchievementRepository;
         this.subscriptionAccessService = subscriptionAccessService;
+        this.sleepGoalProgressService = sleepGoalProgressService;
+        this.pomodoroGoalProgressService = pomodoroGoalProgressService;
+        this.detoxGoalProgressService = detoxGoalProgressService;
+        this.repeatDetoxGoalProgressService = repeatDetoxGoalProgressService;
+        this.challengeGoalProgressService = challengeGoalProgressService;
+        this.gratitudeGoalProgressService = gratitudeGoalProgressService;
+        this.reflectionGoalProgressService = reflectionGoalProgressService;
     }
 
-    /**
-     * 그룹 목표 전체 진행률
-     * 공식: (현재 기간 총 진행값 / (목표값 * 참여 유저 수)) * 100
-     */
+    @Transactional(readOnly = true)
     public double calculateProgress(Long userId, GoalEntity goal) {
-
         MemberEntity member = getMemberOrThrow(userId);
-
         subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
 
-        LocalDateTime startTime = getStartDateTimeForCurrentPeriod(goal.getDuration());
+        Collection<MemberEntity> members = goal.getGroup().getMembers();
 
-        List<GoalProgressEntity> progressList =
-                goalProgressRepository.findByGoalAndSubmittedAtAfter(goal, startTime);
-
-        int groupMemberCount = goal.getGroup().getMembers().size();
-
-        if (groupMemberCount == 0) {
+        if (members == null || members.isEmpty() || goal.getValue() <= 0) {
             return 0.0;
         }
 
-        int goalValue = goal.getValue();
-        if (goalValue <= 0) {
-            return 0.0;
+        double totalProgress;
+
+        if (isAutomaticGoal(goal.getGoalType())) {
+            totalProgress = members.stream()
+                    .mapToDouble(user -> getActualProgress(goal, user))
+                    .sum();
+        } else {
+            LocalDateTime startTime = getStartDateTimeForCurrentPeriod(goal.getDuration());
+
+            totalProgress = goalProgressRepository
+                    .findByGoalAndSubmittedAtAfter(goal, startTime)
+                    .stream()
+                    .mapToDouble(GoalProgressEntity::getProgressValue)
+                    .sum();
         }
 
-        double totalProgress = progressList.stream()
-                .mapToDouble(GoalProgressEntity::getProgressValue)
-                .sum();
-
-        double raw = (totalProgress / (goalValue * (double) groupMemberCount)) * 100.0;
+        double raw = (totalProgress / (goal.getValue() * (double) members.size())) * 100.0;
         return Math.min(raw, 100.0);
     }
 
-    /**
-     * 특정 유저의 현재 기간 목표 진행률
-     * 공식: (현재 기간 유저 진행값 / 목표값) * 100
-     */
+    @Transactional(readOnly = true)
     public double calculateUserProgress(GoalEntity goal, MemberEntity user) {
-
         MemberEntity member = getMemberOrThrow(user.getId());
-
         subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
 
-        LocalDateTime startTime = getStartDateTimeForCurrentPeriod(goal.getDuration());
+        if (goal.getValue() <= 0) return 0.0;
 
-        List<GoalProgressEntity> progressList =
-                goalProgressRepository.findByGoalAndUserAndSubmittedAtAfter(goal, user, startTime);
-
-        double totalProgress = progressList.stream()
-                .mapToDouble(GoalProgressEntity::getProgressValue)
-                .sum();
-
-        int goalValue = goal.getValue();
-        if (goalValue <= 0) {
-            return 0.0;
-        }
-
-        double raw = (totalProgress / goalValue) * 100.0;
-        return Math.min(raw, 100.0);
+        double totalProgress = getActualProgress(goal, member);
+        return Math.min((totalProgress / goal.getValue()) * 100.0, 100.0);
     }
 
-    /**
-     * 현재 캘린더 기간 시작 시각 반환
-     * DAILY   : 오늘 00:00
-     * WEEKLY  : 이번 주 월요일 00:00
-     * MONTHLY : 이번 달 1일 00:00
-     */
+    private double getActualProgress(GoalEntity goal, MemberEntity user) {
+        LocalDate startDate = getPeriodStartDate(goal.getDuration());
+        LocalDate endDate = getPeriodEndDate(goal.getDuration());
+
+        return switch (goal.getGoalType()) {
+            case SLEEP ->
+                    sleepGoalProgressService.calculateSleepHours(
+                            user,
+                            startDate,
+                            endDate
+                    );
+
+            case POMODORO ->
+                    pomodoroGoalProgressService.calculatePomodoroMinutes(
+                            user,
+                            startDate,
+                            endDate
+                    );
+
+            case DETOX ->
+                    detoxGoalProgressService.calculateDetoxMinutes(
+                            user,
+                            startDate,
+                            endDate
+                    )
+                            + repeatDetoxGoalProgressService.calculateDetoxMinutes(
+                            user,
+                            startDate,
+                            endDate
+                    );
+
+            case CHALLENGE ->
+                    challengeGoalProgressService.calculateChallengeCount(
+                            user,
+                            startDate,
+                            endDate
+                    );
+
+            case GRATITUDE ->
+                    gratitudeGoalProgressService.calculateGratitudeCount(
+                            user,
+                            startDate,
+                            endDate
+                    );
+
+            case REFLECTION ->
+                    reflectionGoalProgressService.calculateReflectionCount(
+                            user,
+                            startDate,
+                            endDate
+                    );
+
+            default -> {
+                LocalDateTime startTime =
+                        getStartDateTimeForCurrentPeriod(
+                                goal.getDuration()
+                        );
+
+                yield goalProgressRepository
+                        .findByGoalAndUserAndSubmittedAtAfter(
+                                goal,
+                                user,
+                                startTime
+                        )
+                        .stream()
+                        .mapToDouble(
+                                GoalProgressEntity::getProgressValue
+                        )
+                        .sum();
+            }
+        };
+    }
+
+    private boolean isAutomaticGoal(GoalType goalType) {
+        return goalType == GoalType.SLEEP
+                || goalType == GoalType.POMODORO
+                || goalType == GoalType.DETOX
+                || goalType == GoalType.CHALLENGE
+                || goalType == GoalType.GRATITUDE
+                || goalType == GoalType.REFLECTION;
+    }
+
     private LocalDateTime getStartDateTimeForCurrentPeriod(GoalDuration duration) {
         LocalDate today = LocalDate.now(ZONE_ID);
 
-        switch (duration) {
-            case DAILY:
-                return today.atStartOfDay();
-
-            case WEEKLY:
-                return today.with(DayOfWeek.MONDAY).atStartOfDay();
-
-            case MONTHLY:
-                return today.withDayOfMonth(1).atStartOfDay();
-
-            default:
-                throw new IllegalArgumentException("Invalid duration: " + duration);
-        }
+        return switch (duration) {
+            case DAILY -> today.atStartOfDay();
+            case WEEKLY -> today.with(DayOfWeek.MONDAY).atStartOfDay();
+            case MONTHLY -> today.withDayOfMonth(1).atStartOfDay();
+        };
     }
 
-    /**
-     * 현재 캘린더 기간 시작 날짜 반환
-     * achievement 중복 체크용
-     */
     private LocalDate getPeriodStartDate(GoalDuration duration) {
         LocalDate today = LocalDate.now(ZONE_ID);
 
-        switch (duration) {
-            case DAILY:
-                return today;
-
-            case WEEKLY:
-                return today.with(DayOfWeek.MONDAY);
-
-            case MONTHLY:
-                return today.withDayOfMonth(1);
-
-            default:
-                throw new IllegalArgumentException("Invalid duration: " + duration);
-        }
+        return switch (duration) {
+            case DAILY -> today;
+            case WEEKLY -> today.with(DayOfWeek.MONDAY);
+            case MONTHLY -> today.withDayOfMonth(1);
+        };
     }
 
-    /**
-     * 목표 진행 기록 추가
-     */
+    private LocalDate getPeriodEndDate(GoalDuration duration) {
+        LocalDate today = LocalDate.now(ZONE_ID);
+
+        return switch (duration) {
+            case DAILY -> today;
+            case WEEKLY -> today.with(DayOfWeek.SUNDAY);
+            case MONTHLY -> today.withDayOfMonth(today.lengthOfMonth());
+        };
+    }
+
     @Transactional
     public GoalProgressEntity addGoalProgress(
             Long groupId,
@@ -168,9 +236,7 @@ public class GoalProgressService {
             Long userId,
             double progressValue
     ) {
-
         MemberEntity member = getMemberOrThrow(userId);
-
         subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
 
         GroupEntity group = groupRepository.findById(groupId)
@@ -194,21 +260,32 @@ public class GoalProgressService {
             throw new IllegalArgumentException("Progress value must be greater than 0.");
         }
 
-        GoalProgressEntity goalProgress =
-                new GoalProgressEntity(user, group, goal, progressValue);
+        if (isAutomaticGoal(goal.getGoalType())) {
+            throw new IllegalArgumentException(
+                    goal.getGoalType() + " goal progress is calculated automatically."
+            );
+        }
 
-        GoalProgressEntity saved = goalProgressRepository.save(goalProgress);
+        GoalProgressEntity saved = goalProgressRepository.save(
+                new GoalProgressEntity(user, group, goal, progressValue)
+        );
 
-        saveAchievementIfCompleted(group, goal, user);
+        syncAchievement(group, goal, user);
 
         return saved;
     }
 
-    /**
-     * 현재 기간 내 100% 이상 달성 시 achievement 저장
-     * 같은 기간 내 중복 저장 방지
-     */
-    private void saveAchievementIfCompleted(GroupEntity group, GoalEntity goal, MemberEntity user) {
+    @Transactional
+    public void syncAchievement(Long userId, GoalEntity goal) {
+        MemberEntity user = getMemberOrThrow(userId);
+        GroupEntity group = goal.getGroup();
+
+        if (!group.getMembers().contains(user)) return;
+
+        syncAchievement(group, goal, user);
+    }
+
+    private void syncAchievement(GroupEntity group, GoalEntity goal, MemberEntity user) {
         LocalDate periodStartDate = getPeriodStartDate(goal.getDuration());
 
         boolean alreadyAchieved = goalAchievementRepository
@@ -219,22 +296,12 @@ public class GoalProgressService {
                         periodStartDate
                 );
 
-        if (alreadyAchieved) {
-            return;
-        }
+        if (goal.getValue() <= 0) return;
 
-        LocalDateTime startTime = getStartDateTimeForCurrentPeriod(goal.getDuration());
+        double actualProgress = getActualProgress(goal, user);
+        boolean completed = actualProgress >= goal.getValue();
 
-        List<GoalProgressEntity> progressList =
-                goalProgressRepository.findByGoalAndUserAndSubmittedAtAfter(goal, user, startTime);
-
-        double totalProgress = progressList.stream()
-                .mapToDouble(GoalProgressEntity::getProgressValue)
-                .sum();
-
-        double userProgress = calculateUserProgress(goal, user);
-
-        if (userProgress >= 100.0 && totalProgress >= goal.getValue()) {
+        if (completed && !alreadyAchieved) {
             GoalAchievementEntity achievement = new GoalAchievementEntity(
                     group,
                     goal,
@@ -244,28 +311,41 @@ public class GoalProgressService {
             );
 
             goalAchievementRepository.save(achievement);
+
+        } else if (!completed && alreadyAchieved) {
+            goalAchievementRepository
+                    .deleteByGroupIdAndGoalIdAndUserIdAndPeriodStartDate(
+                            group.getId(),
+                            goal.getId(),
+                            user.getId(),
+                            periodStartDate
+                    );
         }
     }
 
-    /**
-     * 목표 진행 기록 삭제
-     */
+    @Transactional
     public void deleteGoalProgress(Long userId, Long progressId) {
-
         MemberEntity member = getMemberOrThrow(userId);
-
         subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
 
-        if (!goalProgressRepository.existsById(progressId)) {
-            throw new RuntimeException("Goal progress not found with id: " + progressId);
+        GoalProgressEntity progress = goalProgressRepository.findById(progressId)
+                .orElseThrow(() ->
+                        new RuntimeException("Goal progress not found with id: " + progressId));
+
+        if (!progress.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("You can delete only your own goal progress.");
         }
 
-        goalProgressRepository.deleteById(progressId);
+        GroupEntity group = progress.getGroup();
+        GoalEntity goal = progress.getGoal();
+        MemberEntity user = progress.getUser();
+
+        goalProgressRepository.delete(progress);
+        goalProgressRepository.flush();
+
+        syncAchievement(group, goal, user);
     }
 
-    /**
-     * 전체 목표 진행 기록 조회
-     */
     @Transactional(readOnly = true)
     public List<GoalProgressResponseDTO> getAllGoalProgress() {
         return goalProgressRepository.findAllWithDetails()
@@ -274,9 +354,6 @@ public class GoalProgressService {
                 .toList();
     }
 
-    /**
-     * 사용자 ID 기준 목표 진행 기록 조회
-     */
     @Transactional(readOnly = true)
     public List<GoalProgressResponseDTO> getGoalProgressByUserId(Long userId) {
         MemberEntity user = memberRepository.findById(userId)
@@ -301,25 +378,20 @@ public class GoalProgressService {
         );
     }
 
-    /**
-     * 그룹 삭제 시 진행 기록 삭제
-     */
     public void deleteByGroupId(Long groupId) {
         goalProgressRepository.deleteByGroupId(groupId);
     }
 
     private MemberEntity getMemberOrThrow(Long userId) {
         return memberRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
+                .orElseThrow(() ->
+                        new IllegalArgumentException("User not found with ID: " + userId));
     }
 
     @Transactional(readOnly = true)
     public List<AdminGroupGoalProgressDTO> getGoalProgressByGroupId(Long groupId) {
-
         if (!groupRepository.existsById(groupId)) {
-            throw new IllegalArgumentException(
-                    "Group not found with id: " + groupId
-            );
+            throw new IllegalArgumentException("Group not found with id: " + groupId);
         }
 
         return goalProgressRepository.findByGroupIdWithDetails(groupId)
@@ -349,9 +421,7 @@ public class GoalProgressService {
             Pageable pageable
     ) {
         if (!groupRepository.existsById(groupId)) {
-            throw new IllegalArgumentException(
-                    "Group not found with id: " + groupId
-            );
+            throw new IllegalArgumentException("Group not found with id: " + groupId);
         }
 
         return goalProgressRepository
@@ -359,9 +429,7 @@ public class GoalProgressService {
                 .map(this::toAdminDto);
     }
 
-    private AdminGroupGoalProgressDTO toAdminDto(
-            GoalProgressEntity progress
-    ) {
+    private AdminGroupGoalProgressDTO toAdminDto(GoalProgressEntity progress) {
         return new AdminGroupGoalProgressDTO(
                 progress.getId(),
                 progress.getUser().getId(),

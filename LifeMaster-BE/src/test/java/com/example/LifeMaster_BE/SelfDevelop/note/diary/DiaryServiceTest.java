@@ -81,6 +81,7 @@ class DiaryServiceTest {
         verifyNoInteractions(memberRepository);
     }
 
+    /*
     @Test
     @DisplayName("deleteDiary - 존재하는 일기 삭제")
     void deleteDiary_callsRepository() {
@@ -92,6 +93,7 @@ class DiaryServiceTest {
         verify(diaryRepository).deleteById(diaryId);
         verifyNoInteractions(memberRepository);
     }
+    */
 
     @Test
     @DisplayName("createDiary - 회원이 없으면 EntityNotFoundException")

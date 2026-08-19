@@ -8,6 +8,7 @@ import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -81,22 +82,34 @@ public class TodoService {
         return todoRepository.findByTitle(title);
     }
 
-    public boolean deleteById(Long id) {
-        if (todoRepository.existsById(id)) {
-            Optional<TodoEntity> todoOptional = todoRepository.findById(id);
-            todoOptional.ifPresent(todo -> {
-                pomodoroTimerService.deleteAllByTodoId(todo.getId());
+    @Transactional
+    public boolean deleteById(Long memberId, Long id) {
+        Optional<TodoEntity> todoOptional = todoRepository.findById(id);
 
-                ScheduleCalendarEntity calendar = todo.getCalendar();
-                if (calendar != null) {
-                    calendar.getTodos().remove(todo);
-                }
-
-                todoRepository.deleteById(todo.getId());
-            });
-            return true;
+        if (todoOptional.isEmpty()) {
+            return false;
         }
-        return false;
+
+        TodoEntity todo = todoOptional.get();
+
+        // 본인의 Todo인지 확인
+        if (todo.getMember() == null ||
+                !todo.getMember().getId().equals(memberId)) {
+            throw new IllegalArgumentException("Not owner");
+        }
+
+        // 해당 사용자의 Todo에 연결된 Pomodoro만 삭제
+        pomodoroTimerService.deleteAllByTodoId(memberId, todo.getId());
+
+        ScheduleCalendarEntity calendar = todo.getCalendar();
+
+        if (calendar != null) {
+            calendar.getTodos().remove(todo);
+        }
+
+        todoRepository.delete(todo);
+
+        return true;
     }
 
     public Optional<TodoEntity> updateDateTitle(Long memberId, Long id, String date, String title) {
@@ -164,5 +177,15 @@ public class TodoService {
 
     public List<TodoEntity> getTodosByMemberAndDate(Long memberId, String date) {
         return todoRepository.findByMemberIdAndDate(memberId, date);
+    }
+
+    public Optional<TodoEntity> findByIdAndMemberId(
+            Long id,
+            Long memberId
+    ) {
+        return todoRepository.findByIdAndMember_Id(
+                id,
+                memberId
+        );
     }
 }

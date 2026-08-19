@@ -16,4 +16,10 @@ public interface DiaryRepository extends JpaRepository<DiaryEntity, Long> {
     Optional<DiaryEntity> findByIdAndMemberId(Long diaryId, Long memberId);
 
     long countByMember_IdAndDiaryDate(Long memberId, LocalDate diaryDate);
+
+    long countByMember_IdAndDiaryDateBetween(
+            Long memberId,
+            LocalDate startDate,
+            LocalDate endDate
+    );
 }

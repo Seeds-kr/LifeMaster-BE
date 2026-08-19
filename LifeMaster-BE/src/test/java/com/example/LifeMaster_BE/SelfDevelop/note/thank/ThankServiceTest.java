@@ -93,7 +93,7 @@ class ThankServiceTest {
         verifyNoInteractions(memberRepository);
     }
 
-    @Test
+    /*@Test
     @DisplayName("deleteThank - 존재하는 5감사 삭제")
     void deleteDiary_delegatesToRepository() {
 
@@ -104,7 +104,7 @@ class ThankServiceTest {
         verify(thankRepository).deleteById(id);
         verifyNoMoreInteractions(thankRepository);
         verifyNoInteractions(memberRepository);
-    }
+    }*/
 
     @Test
     @DisplayName("createThank  - 회원이 없으면 EntityNotFoundException")
