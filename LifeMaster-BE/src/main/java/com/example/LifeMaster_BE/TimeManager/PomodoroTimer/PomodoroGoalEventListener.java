@@ -6,6 +6,7 @@ import com.example.LifeMaster_BE.Group.Goal.GoalType;
 import com.example.LifeMaster_BE.Group.GoalProgress.GoalProgressService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -22,7 +23,7 @@ public class PomodoroGoalEventListener {
     @TransactionalEventListener(
             phase = TransactionPhase.AFTER_COMMIT
     )
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handlePomodoroCompleted(
             PomodoroCompletedEvent event
     ) {
