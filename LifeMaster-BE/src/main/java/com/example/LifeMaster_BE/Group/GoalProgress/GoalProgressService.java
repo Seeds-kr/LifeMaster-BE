@@ -117,77 +117,22 @@ public class GoalProgressService {
         return Math.min((totalProgress / goal.getValue()) * 100.0, 100.0);
     }
 
-    private double getActualProgress(GoalEntity goal, MemberEntity user) {
-        LocalDate startDate = getPeriodStartDate(goal.getDuration());
-        LocalDate endDate = getPeriodEndDate(goal.getDuration());
+    private double getActualProgress(
+            GoalEntity goal,
+            MemberEntity user
+    ) {
+        LocalDate startDate =
+                getPeriodStartDate(goal.getDuration());
 
-        return switch (goal.getGoalType()) {
-            case SLEEP ->
-                    sleepGoalProgressService.calculateSleepHours(
-                            user,
-                            startDate,
-                            endDate
-                    );
+        LocalDate endDate =
+                getPeriodEndDate(goal.getDuration());
 
-            case POMODORO ->
-                    pomodoroGoalProgressService.calculatePomodoroMinutes(
-                            user,
-                            startDate,
-                            endDate
-                    );
-
-            case DETOX ->
-                    detoxGoalProgressService.calculateDetoxMinutes(
-                            user,
-                            startDate,
-                            endDate
-                    )
-                            + repeatDetoxGoalProgressService.calculateDetoxMinutes(
-                            user,
-                            startDate,
-                            endDate
-                    );
-
-            case CHALLENGE ->
-                    challengeGoalProgressService.calculateChallengeCount(
-                            user,
-                            startDate,
-                            endDate
-                    );
-
-            case GRATITUDE ->
-                    gratitudeGoalProgressService.calculateGratitudeCount(
-                            user,
-                            startDate,
-                            endDate
-                    );
-
-            case REFLECTION ->
-                    reflectionGoalProgressService.calculateReflectionCount(
-                            user,
-                            startDate,
-                            endDate
-                    );
-
-            default -> {
-                LocalDateTime startTime =
-                        getStartDateTimeForCurrentPeriod(
-                                goal.getDuration()
-                        );
-
-                yield goalProgressRepository
-                        .findByGoalAndUserAndSubmittedAtAfter(
-                                goal,
-                                user,
-                                startTime
-                        )
-                        .stream()
-                        .mapToDouble(
-                                GoalProgressEntity::getProgressValue
-                        )
-                        .sum();
-            }
-        };
+        return calculateActualProgress(
+                goal,
+                user,
+                startDate,
+                endDate
+        );
     }
 
     private boolean isAutomaticGoal(GoalType goalType) {
@@ -446,5 +391,64 @@ public class GoalProgressService {
                 progress.getProgressValue(),
                 progress.getSubmittedAt()
         );
+    }
+
+    @Transactional(readOnly = true)
+    public double calculateActualProgress(
+            GoalEntity goal,
+            MemberEntity user,
+            LocalDate startDate,
+            LocalDate endDate
+    ) {
+        return switch (goal.getGoalType()) {
+
+            case SLEEP ->
+                    sleepGoalProgressService.calculateSleepHours(
+                            user,
+                            startDate,
+                            endDate
+                    );
+
+            case POMODORO ->
+                    pomodoroGoalProgressService.calculatePomodoroMinutes(
+                            user,
+                            startDate,
+                            endDate
+                    );
+
+            case DETOX ->
+                    detoxGoalProgressService.calculateDetoxMinutes(
+                            user,
+                            startDate,
+                            endDate
+                    )
+                            +
+                            repeatDetoxGoalProgressService.calculateDetoxMinutes(
+                                    user,
+                                    startDate,
+                                    endDate
+                            );
+
+            case CHALLENGE ->
+                    challengeGoalProgressService.calculateChallengeCount(
+                            user,
+                            startDate,
+                            endDate
+                    );
+
+            case GRATITUDE ->
+                    gratitudeGoalProgressService.calculateGratitudeCount(
+                            user,
+                            startDate,
+                            endDate
+                    );
+
+            case REFLECTION ->
+                    reflectionGoalProgressService.calculateReflectionCount(
+                            user,
+                            startDate,
+                            endDate
+                    );
+        };
     }
 }

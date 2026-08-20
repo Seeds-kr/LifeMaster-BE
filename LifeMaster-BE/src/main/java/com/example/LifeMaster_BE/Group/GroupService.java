@@ -416,78 +416,220 @@ public class GroupService {
         return groupRepository.save(group);
     }
 
-    public List<Map<String, Object>> getGroupGoalProgress(Long UserId, Long groupId) {
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getGroupGoalProgress(
+            Long userId,
+            Long groupId
+    ) {
 
-        MemberEntity member = getMemberOrThrow(UserId);
+        MemberEntity requestUser = getMemberOrThrow(userId);
 
-        subscriptionAccessService.validateFeatureAccess(member, FeatureType.GROUP);
+        subscriptionAccessService.validateFeatureAccess(
+                requestUser,
+                FeatureType.GROUP
+        );
 
         GroupEntity group = groupRepository.findById(groupId)
-                .orElseThrow(() -> new RuntimeException("Group not found with id: " + groupId));
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Group not found with id: " + groupId
+                        )
+                );
 
-        List<GoalEntity> goals = group.getGoals();
+        List<GoalEntity> goals =
+                new ArrayList<>(group.getGoals());
 
-        List<MemberEntity> allUsers = group.getMembers().stream()
-                .sorted(Comparator.comparing(MemberEntity::getEmail))
-                .toList();
+        List<MemberEntity> allUsers =
+                group.getMembers()
+                        .stream()
+                        .sorted(
+                                Comparator.comparing(
+                                        MemberEntity::getEmail
+                                )
+                        )
+                        .toList();
 
-        List<Map<String, Object>> goalProgressList = new ArrayList<>();
+        List<Map<String, Object>> goalProgressList =
+                new ArrayList<>();
+
+        LocalDate today =
+                LocalDate.now(ZoneId.of("Asia/Seoul"));
 
         for (GoalEntity goal : goals) {
-            LocalDateTime startTime = getStartDateTimeForCurrentPeriod(goal.getDuration());
 
-            List<GoalProgressEntity> progressList =
-                    goalProgressRepository.findByGoalAndSubmittedAtAfter(goal, startTime);
+            LocalDate startDate =
+                    getStartDateForDuration(
+                            goal.getDuration(),
+                            today
+                    );
 
-            Map<String, Object> goalData = new HashMap<>();
+            LocalDate endDate =
+                    getEndDateForDuration(
+                            goal.getDuration(),
+                            today
+                    );
+
+            Map<String, Object> goalData =
+                    new HashMap<>();
+
             goalData.put("goalId", goal.getId());
             goalData.put("goalName", goal.getName());
-            goalData.put("goalCreationTime", goal.getCreatedAt());
-            goalData.put("goalDuration", goal.getDuration());
-            goalData.put("goalValue", goal.getValue());
-            goalData.put("goalCondition", goal.getGoalCondition());
-            goalData.put("goalType", goal.getGoalType());
+            goalData.put(
+                    "goalCreationTime",
+                    goal.getCreatedAt()
+            );
+            goalData.put(
+                    "goalDuration",
+                    goal.getDuration()
+            );
+            goalData.put(
+                    "goalValue",
+                    goal.getValue()
+            );
+            goalData.put(
+                    "goalCondition",
+                    goal.getGoalCondition()
+            );
+            goalData.put(
+                    "goalType",
+                    goal.getGoalType()
+            );
 
-            List<Map<String, Object>> userProgressList = new ArrayList<>();
+            List<Map<String, Object>> userProgressList =
+                    new ArrayList<>();
 
-            int goalValue = goal.getValue();
+            double goalValue =
+                    goal.getValue();
 
             for (MemberEntity user : allUsers) {
-                double totalProgress = progressList.stream()
-                        .filter(progress -> progress.getUser().getId().equals(user.getId()))
-                        .mapToDouble(GoalProgressEntity::getProgressValue)
-                        .sum();
 
-                totalProgress = roundToTwoDecimalPlaces(totalProgress);
+                double totalProgress =
+                        goalProgressService
+                                .calculateActualProgress(
+                                        goal,
+                                        user,
+                                        startDate,
+                                        endDate
+                                );
+
+                totalProgress =
+                        roundToTwoDecimalPlaces(
+                                totalProgress
+                        );
 
                 double progressPercentage;
                 boolean isAchieved;
 
                 if (goalValue <= 0) {
+
                     progressPercentage = 0.0;
                     isAchieved = false;
+
                 } else {
-                    double raw = (totalProgress / goalValue) * 100.0;
-                    progressPercentage = Math.min(raw, 100.0);
-                    progressPercentage = roundToTwoDecimalPlaces(progressPercentage);
-                    isAchieved = totalProgress >= goalValue;
+
+                    double raw =
+                            (totalProgress / goalValue)
+                                    * 100.0;
+
+                    progressPercentage =
+                            Math.min(raw, 100.0);
+
+                    progressPercentage =
+                            roundToTwoDecimalPlaces(
+                                    progressPercentage
+                            );
+
+                    isAchieved =
+                            totalProgress >= goalValue;
                 }
 
-                Map<String, Object> userProgressData = new HashMap<>();
-                userProgressData.put("userId", user.getId());
-                userProgressData.put("userEmail", user.getEmail());
-                userProgressData.put("progressPercentage", String.format("%.1f%%", progressPercentage));
-                userProgressData.put("progressValue", totalProgress);
-                userProgressData.put("isAchieved", isAchieved);
+                Map<String, Object> userProgressData =
+                        new HashMap<>();
 
-                userProgressList.add(userProgressData);
+                userProgressData.put(
+                        "userId",
+                        user.getId()
+                );
+
+                userProgressData.put(
+                        "userEmail",
+                        user.getEmail()
+                );
+
+                userProgressData.put(
+                        "progressPercentage",
+                        String.format(
+                                "%.1f%%",
+                                progressPercentage
+                        )
+                );
+
+                userProgressData.put(
+                        "progressValue",
+                        totalProgress
+                );
+
+                userProgressData.put(
+                        "isAchieved",
+                        isAchieved
+                );
+
+                userProgressList.add(
+                        userProgressData
+                );
             }
 
-            goalData.put("userProgress", userProgressList);
-            goalProgressList.add(goalData);
+            goalData.put(
+                    "userProgress",
+                    userProgressList
+            );
+
+            goalProgressList.add(
+                    goalData
+            );
         }
 
         return goalProgressList;
+    }
+
+    private LocalDate getStartDateForDuration(
+            GoalDuration duration,
+            LocalDate today
+    ) {
+        return switch (duration) {
+
+            case DAILY ->
+                    today;
+
+            case WEEKLY ->
+                    today.with(
+                            DayOfWeek.MONDAY
+                    );
+
+            case MONTHLY ->
+                    today.withDayOfMonth(1);
+        };
+    }
+
+    private LocalDate getEndDateForDuration(
+            GoalDuration duration,
+            LocalDate today
+    ) {
+        return switch (duration) {
+
+            case DAILY ->
+                    today;
+
+            case WEEKLY ->
+                    today.with(
+                            DayOfWeek.SUNDAY
+                    );
+
+            case MONTHLY ->
+                    today.withDayOfMonth(
+                            today.lengthOfMonth()
+                    );
+        };
     }
 
     private LocalDateTime getStartDateTimeForCurrentPeriod(GoalDuration duration) {
@@ -880,30 +1022,66 @@ public class GroupService {
     }
 
     @Transactional(readOnly = true)
-    public List<GoalStatisticsResponseDto> getRecentGoalStatistics(Long requestUserId, Long groupId) {
+    public List<GoalStatisticsResponseDto>
+    getRecentGoalStatistics(
+            Long requestUserId,
+            Long groupId
+    ) {
 
-        MemberEntity requestUser = getMemberOrThrow(requestUserId);
+        MemberEntity requestUser =
+                getMemberOrThrow(
+                        requestUserId
+                );
 
-        subscriptionAccessService.validateFeatureAccess(
-                requestUser,
-                FeatureType.ADVANCED_STATISTICS
-        );
+        subscriptionAccessService
+                .validateFeatureAccess(
+                        requestUser,
+                        FeatureType.ADVANCED_STATISTICS
+                );
 
-        GroupEntity group = groupRepository.findById(groupId)
-                .orElseThrow(() -> new IllegalArgumentException("Group not found with ID: " + groupId));
+        GroupEntity group =
+                groupRepository.findById(
+                                groupId
+                        )
+                        .orElseThrow(() ->
+                                new IllegalArgumentException(
+                                        "Group not found with ID: "
+                                                + groupId
+                                )
+                        );
 
-        if (!group.getMembers().contains(requestUser)) {
-            throw new IllegalArgumentException("User is not a member of this group.");
+        if (!group.getMembers()
+                .contains(requestUser)) {
+
+            throw new IllegalArgumentException(
+                    "User is not a member of this group."
+            );
         }
 
-        List<GoalEntity> goals = new ArrayList<>(group.getGoals());
+        List<GoalEntity> goals =
+                new ArrayList<>(
+                        group.getGoals()
+                );
 
-        // 그룹 통계에 등록된 목표가 있으면 해당 목표만 통계로 표시
-        if (group.getStatistics() != null && !group.getStatistics().isEmpty()) {
-            Set<Long> statisticGoalIds = new HashSet<>(group.getStatistics());
+        /*
+         * 그룹 통계에 등록된 목표가 있으면
+         * 해당 목표만 반환
+         */
+        if (group.getStatistics() != null
+                && !group.getStatistics().isEmpty()) {
+
+            Set<Long> statisticGoalIds =
+                    new HashSet<>(
+                            group.getStatistics()
+                    );
 
             goals = goals.stream()
-                    .filter(goal -> statisticGoalIds.contains(goal.getId()))
+                    .filter(goal ->
+                            statisticGoalIds
+                                    .contains(
+                                            goal.getId()
+                                    )
+                    )
                     .toList();
         }
 
@@ -911,77 +1089,101 @@ public class GroupService {
             return List.of();
         }
 
-        ZoneId zoneId = ZoneId.of("Asia/Seoul");
+        ZoneId zoneId =
+                ZoneId.of("Asia/Seoul");
 
-        LocalDate today = LocalDate.now(zoneId);
+        LocalDate today =
+                LocalDate.now(zoneId);
 
-        // 오늘 포함 최근 7일
-        // 예: 오늘이 6월 18일이면 6월 12일 ~ 6월 18일
-        LocalDate startDate = today.minusDays(6);
-
-        LocalDateTime startDateTime = startDate.atStartOfDay();
-        LocalDateTime endDateTime = today.plusDays(1).atStartOfDay();
-
-        List<GoalProgressEntity> progressList =
-                goalProgressRepository.findRecentProgressByGroupAndGoals(
-                        groupId,
-                        goals,
-                        startDateTime,
-                        endDateTime
+        List<MemberEntity> members =
+                new ArrayList<>(
+                        group.getMembers()
                 );
 
-        int memberCount = group.getMembers().size();
+        int memberCount =
+                members.size();
 
-        List<GoalStatisticsResponseDto> result = new ArrayList<>();
+        List<GoalStatisticsResponseDto> result =
+                new ArrayList<>();
 
         for (GoalEntity goal : goals) {
 
-            List<Double> userValues = new ArrayList<>();
-            List<Double> groupAverageValues = new ArrayList<>();
+            List<Double> userValues =
+                    new ArrayList<>();
 
-            // 오늘 포함 최근 7일
-            // 배열 순서: 6일 전, 5일 전, 4일 전, 3일 전, 2일 전, 어제, 오늘
+            List<Double> groupAverageValues =
+                    new ArrayList<>();
+
+            /*
+             * 6일 전 → 오늘
+             *
+             * 각 날짜의 실제 원본 데이터를
+             * 직접 계산한다.
+             */
             for (int i = 6; i >= 0; i--) {
-                LocalDate targetDate = today.minusDays(i);
 
-                double userTotal = progressList.stream()
-                        .filter(progress -> progress.getGoal().getId().equals(goal.getId()))
-                        .filter(progress -> progress.getUser().getId().equals(requestUserId))
-                        .filter(progress -> isSameDate(progress.getSubmittedAt(), targetDate))
-                        .mapToDouble(GoalProgressEntity::getProgressValue)
-                        .sum();
+                LocalDate targetDate =
+                        today.minusDays(i);
 
-                double groupTotal = progressList.stream()
-                        .filter(progress -> progress.getGoal().getId().equals(goal.getId()))
-                        .filter(progress -> isSameDate(progress.getSubmittedAt(), targetDate))
-                        .mapToDouble(GoalProgressEntity::getProgressValue)
-                        .sum();
+                /*
+                 * 현재 로그인 사용자
+                 */
+                double userTotal =
+                        goalProgressService
+                                .calculateActualProgress(
+                                        goal,
+                                        requestUser,
+                                        targetDate,
+                                        targetDate
+                                );
 
-                double groupAverage = memberCount == 0
-                        ? 0.0
-                        : groupTotal / memberCount;
+                /*
+                 * 그룹 전체
+                 */
+                double groupTotal = 0.0;
 
-                userValues.add(roundToTwoDecimalPlaces(userTotal));
-                groupAverageValues.add(roundToTwoDecimalPlaces(groupAverage));
+                for (MemberEntity member : members) {
+
+                    groupTotal +=
+                            goalProgressService
+                                    .calculateActualProgress(
+                                            goal,
+                                            member,
+                                            targetDate,
+                                            targetDate
+                                    );
+                }
+
+                double groupAverage =
+                        memberCount == 0
+                                ? 0.0
+                                : groupTotal
+                                / memberCount;
+
+                userValues.add(
+                        roundToTwoDecimalPlaces(
+                                userTotal
+                        )
+                );
+
+                groupAverageValues.add(
+                        roundToTwoDecimalPlaces(
+                                groupAverage
+                        )
+                );
             }
 
-            result.add(new GoalStatisticsResponseDto(
-                    goal.getId(),
-                    goal.getGoalType(),
-                    userValues,
-                    groupAverageValues
-            ));
+            result.add(
+                    new GoalStatisticsResponseDto(
+                            goal.getId(),
+                            goal.getGoalType(),
+                            userValues,
+                            groupAverageValues
+                    )
+            );
         }
 
         return result;
-    }
-
-    private boolean isSameDate(LocalDateTime submittedAt, LocalDate targetDate) {
-        if (submittedAt == null) {
-            return false;
-        }
-
-        return submittedAt.toLocalDate().equals(targetDate);
     }
 
     private double roundToTwoDecimalPlaces(double value) {
