@@ -3,6 +3,7 @@ package com.example.LifeMaster_BE.Security;
 import com.example.LifeMaster_BE.Exception.CustomException.MemberSuspendedException;
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
+import com.example.LifeMaster_BE.UserManager.Member.MemberStatus;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +25,8 @@ public class CustomUserDetailService implements UserDetailsService {
     @Override
     public CustomUserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
 
-        MemberEntity member = memberRepository.findByEmail(email)
+        // 탈퇴하지 않은 회원만 조회
+        MemberEntity member = memberRepository.findByEmailAndMemberStatusNot(email, MemberStatus.DELETED)
                 .orElseThrow(() ->  new UsernameNotFoundException("사용자를 찾을 수 없습니다: " + email));
 
         // 정지 상태 체크

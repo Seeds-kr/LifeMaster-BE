@@ -16,6 +16,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import com.example.LifeMaster_BE.UserManager.Member.LoginType;
+import com.example.LifeMaster_BE.UserManager.Member.MemberStatus;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -80,7 +81,8 @@ public class RegisterService {
     }
 
     public boolean checkNicknameAvailable(String nickname){
-        return memberRepository.existsByNickname(nickname);
+        // 탈퇴하지 않은 회원 중에서 닉네임 중복 체크
+        return memberRepository.existsByNicknameAndMemberStatusNot(nickname, MemberStatus.DELETED);
     }
 
     private void checkBeforeRegister(String email, String password, String confirmPassword){
@@ -94,7 +96,8 @@ public class RegisterService {
     }
 
     private boolean checkEmailDuplicate(String email){
-        return memberRepository.existsByEmail(email);
+        // 탈퇴하지 않은 회원 중에서 이메일 중복 체크
+        return memberRepository.existsByEmailAndMemberStatusNot(email, MemberStatus.DELETED);
     }
 
     private boolean confirmPassword(String password, String confirmPassword){

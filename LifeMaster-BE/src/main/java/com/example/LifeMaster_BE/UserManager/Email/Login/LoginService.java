@@ -2,6 +2,7 @@ package com.example.LifeMaster_BE.UserManager.Email.Login;
 
 import com.example.LifeMaster_BE.UserManager.Member.MemberEntity;
 import com.example.LifeMaster_BE.UserManager.Member.MemberRepository;
+import com.example.LifeMaster_BE.UserManager.Member.MemberStatus;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,8 +26,10 @@ public class LoginService {
     }
 
     private boolean checkPassword(String email, String password) {
-        MemberEntity memberEntity = memberRepository.findByEmail(email)
+        // 탈퇴하지 않은 회원만 조회
+        MemberEntity memberEntity = memberRepository.findByEmailAndMemberStatusNot(email, MemberStatus.DELETED)
                 .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
+
         BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder();
 
         return bCryptPasswordEncoder.matches(password, memberEntity.getPassword());

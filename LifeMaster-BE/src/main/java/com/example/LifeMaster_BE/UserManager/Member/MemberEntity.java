@@ -83,6 +83,9 @@ public class MemberEntity {
     @CreatedDate
     private LocalDateTime createdAt;
 
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     // Many-to-Many 관계 추가
     @ManyToMany
     @JsonIgnore
@@ -244,5 +247,16 @@ public class MemberEntity {
             return true;
         }
         return false;
+    }
+
+    // 회원 탈퇴 관련 메서드
+    public void withdraw() {
+        this.memberStatus = MemberStatus.DELETED;
+        this.loginStatus = false;
+        this.deletedAt = LocalDateTime.now();
+    }
+
+    public boolean isDeleted() {
+        return this.memberStatus == MemberStatus.DELETED;
     }
 }

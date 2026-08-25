@@ -19,12 +19,22 @@ public class MyPageService {
         MemberEntity member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new EntityNotFoundException("Member Not Found"));
 
+        // 탈퇴한 회원인지 확인
+        if (member.isDeleted()) {
+            throw new IllegalStateException("탈퇴한 회원입니다.");
+        }
+
         return new MyPageDto(member.getId(), member.getNickname(), member.getEmail());
     }
 
     public MyPageDto updateMemberInfo(Long memberId, String nickName, String email){
         MemberEntity member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new EntityNotFoundException("Member Not Found"));
+
+        // 탈퇴한 회원인지 확인
+        if (member.isDeleted()) {
+            throw new IllegalStateException("탈퇴한 회원입니다.");
+        }
 
         member.updateByMyPage(nickName, email);
         memberRepository.save(member);
@@ -36,6 +46,8 @@ public class MyPageService {
         MemberEntity member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new EntityNotFoundException("Member Not Found"));
 
-        memberRepository.delete(member);
+        // Soft Delete: 회원 탈퇴 처리
+        member.withdraw();
+        memberRepository.save(member);
     }
 }

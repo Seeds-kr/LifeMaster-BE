@@ -28,6 +28,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import com.example.LifeMaster_BE.UserManager.Member.LoginType;
+import com.example.LifeMaster_BE.UserManager.Member.MemberStatus;
 
 import java.time.Instant;
 import java.util.*;
@@ -173,7 +174,8 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         MemberEntity member = new MemberEntity(user.getEmail(), user.getIdentifier());
         member.setLoginType(LoginType.GOOGLE);
 
-        Optional<MemberEntity> existing = memberRepository.findByEmail(user.getEmail());
+        // 탈퇴하지 않은 회원만 조회
+        Optional<MemberEntity> existing = memberRepository.findByEmailAndMemberStatusNot(user.getEmail(), MemberStatus.DELETED);
 
         if (existing.isEmpty()) {
             String baseNickname = resolveNickname(
@@ -237,7 +239,8 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
             MemberEntity member = new MemberEntity(user.getEmail(),user.getIdentifier());
             member.setLoginType(LoginType.NAVER);
 
-            Optional<MemberEntity> existing = memberRepository.findByEmail(user.getEmail());
+            // 탈퇴하지 않은 회원만 조회
+            Optional<MemberEntity> existing = memberRepository.findByEmailAndMemberStatusNot(user.getEmail(), MemberStatus.DELETED);
 
             if (existing.isEmpty()) {
                 String baseNickname = resolveNickname(
@@ -454,7 +457,8 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
     }
 
     private MemberEntity saveOrUpdateMember(MemberEntity usersEntity) {
-        MemberEntity user = memberRepository.findByEmail(usersEntity.getEmail())
+        // 탈퇴하지 않은 회원만 조회
+        MemberEntity user = memberRepository.findByEmailAndMemberStatusNot(usersEntity.getEmail(), MemberStatus.DELETED)
                 .map(entity -> entity.updateOAuthInfo(
                         usersEntity.getPicture(),
                         usersEntity.getNickname(),
@@ -474,7 +478,8 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         String nickname = baseNickname;
         int suffix = 1;
 
-        while (memberRepository.existsByNickname(nickname)) {
+        // 탈퇴하지 않은 회원 중에서 닉네임 중복 체크
+        while (memberRepository.existsByNicknameAndMemberStatusNot(nickname, MemberStatus.DELETED)) {
             nickname = baseNickname + "_" + suffix++;
         }
         return nickname;

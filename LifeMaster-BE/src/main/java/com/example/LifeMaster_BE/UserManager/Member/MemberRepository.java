@@ -19,6 +19,12 @@ public interface MemberRepository extends JpaRepository<MemberEntity, Long> {
     boolean existsByNickname(String nickname);
     boolean existsByEmail(String Email);
 
+    // 탈퇴하지 않은 회원 조회 메서드 (일반 사용자용)
+    boolean existsByNicknameAndMemberStatusNot(String nickname, MemberStatus status);
+    boolean existsByEmailAndMemberStatusNot(String email, MemberStatus status);
+    Optional<MemberEntity> findByEmailAndMemberStatusNot(String email, MemberStatus status);
+
+    // 기존 메서드 (관리자용 - 탈퇴 회원 포함)
     Optional<MemberEntity> findByEmail(String email);
 
     @Query("SELECT m.email FROM MemberEntity m WHERE m.id = :id")
